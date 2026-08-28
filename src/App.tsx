@@ -8,14 +8,12 @@ import Analytics from './pages/Analytics';
 import Departments from './pages/Departments';
 import SettingsPage from './pages/Settings';
 import AdminLogin from './pages/AdminLogin';
-import LandingPage from './pages/LandingPage';
-import GetTheApp from './pages/GetTheApp';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AdminNavProvider } from './context/AdminNavContext';
 import { useEffect } from 'react';
 import './App.css';
 
-// -- Admin auth guard ---------------------------------------------------------
+// ── Admin auth guard ─────────────────────────────────────────────────────────
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('userRole');
@@ -26,7 +24,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// -- Scroll to top on route change --------------------------------------------
+// ── Scroll to top on route change ────────────────────────────────────────────
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
@@ -49,9 +47,9 @@ function App() {
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
-          {/* Public */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/get-the-app" element={<GetTheApp />} />
+          {/* Admin Login (Primary Portal Access) */}
+          <Route path="/" element={<AdminLogin />} />
+          <Route path="/login" element={<AdminLogin />} />
           <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Protected admin routes */}
