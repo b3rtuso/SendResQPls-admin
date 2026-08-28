@@ -1,0 +1,31 @@
+{
+  "name": "SendResQPls - Emergency Reporting",
+  "short_name": "SendResQPls",
+  "description": "Report emergencies instantly. AI-powered disaster incident reporting for MDRRMO Balayan.",
+  "start_url": "/mobile",
+  "scope": "/mobile",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#DC2626",
+  "theme_color": "#1E3A5F",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "utilities",
+    "government"
+  ],
+  "lang": "en",
+  "dir": "ltr"
+}
