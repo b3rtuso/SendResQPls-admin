@@ -6,7 +6,7 @@ import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
   Stethoscope, HardHat, Anchor, ShieldCheck, Clock,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info,
+  Info, Activity, CheckCircle2, Radio,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
@@ -324,10 +324,10 @@ export default function Dashboard() {
   }, [incidents]);
 
   const STAT_CARDS = [
-    { label: 'Total Reports',   value: stats.total,      accent: '#2563EB', bg: 'rgba(37, 99, 235, 0.05)', glow: 'rgba(37, 99, 235, 0.15)', activeGlow: 'rgba(37, 99, 235, 0.3)', filter: 'ALL' },
-    { label: 'Pending',         value: stats.pending,    accent: '#F59E0B', bg: 'rgba(245, 158, 11, 0.05)', glow: 'rgba(245, 158, 11, 0.15)', activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
-    { label: 'Dispatched',      value: stats.dispatched, accent: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.05)', glow: 'rgba(139, 92, 246, 0.15)', activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
-    { label: 'Resolved Today',  value: stats.resolved,   accent: '#22C55E', bg: 'rgba(34, 197, 94, 0.05)', glow: 'rgba(34, 197, 94, 0.15)', activeGlow: 'rgba(34, 197, 94, 0.3)', filter: 'RESOLVED' },
+    { label: 'Total Reports',  value: stats.total,      accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: Activity,     activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
+    { label: 'Pending',        value: stats.pending,    accent: '#D97706', chipBg: '#FFFBEB', chipBorder: '#FDE68A', icon: Clock,        activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
+    { label: 'Dispatched',     value: stats.dispatched, accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: Radio,        activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
+    { label: 'Resolved Today', value: stats.resolved,   accent: '#059669', chipBg: '#ECFDF5', chipBorder: '#D1FAE5', icon: CheckCircle2, activeGlow: 'rgba(34, 197, 94, 0.3)',  filter: 'RESOLVED' },
   ];
 
   if (loading && incidents.length === 0) {
@@ -576,7 +576,7 @@ export default function Dashboard() {
           }
         `}</style>
         <div className="stats-grid fade-in">
-          {STAT_CARDS.map(({ label, value, accent, activeGlow, filter }) => {
+          {STAT_CARDS.map(({ label, value, accent, chipBg, chipBorder, icon: Icon, activeGlow, filter }) => {
             const isActive = statusFilter === filter;
             const prevValue = prevStats[filter === 'ALL' ? 'total' : filter === 'PENDING' ? 'pending' : filter === 'DISPATCHED' ? 'dispatched' : 'resolved'];
             const delta = value - prevValue;
@@ -600,8 +600,24 @@ export default function Dashboard() {
                   transform: isActive ? 'translateY(-2px)' : 'none',
                 }}
               >
-                <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-                  {label}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {label}
+                  </div>
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9,
+                    background: chipBg,
+                    border: `1px solid ${chipBorder}`,
+                    color: accent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <Icon size={16} strokeWidth={2.2} />
+                  </div>
                 </div>
                 <StatValue value={value} />
                 <TrendBadge value={delta} />

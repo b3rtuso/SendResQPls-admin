@@ -7,11 +7,11 @@ import {
 } from 'recharts';
 import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
-  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle
+  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './analytics-map.css';
@@ -106,34 +106,7 @@ function MapBoundsController() {
   return null;
 }
 
-function buildPopupContent(brgy: Barangay, incidentType: string): string {
-  const risk = brgy.riskProfile[incidentType];
-  if (!risk) return '';
-  const incType = INCIDENT_TYPES_SVG.find(t => t.id === incidentType);
-  const riskClass = risk.riskLevel.toLowerCase();
 
-  return `
-    <div class="map-popup">
-      <div class="popup-header">
-        <div class="popup-icon" style="background: ${incType?.color || '#3B82F6'}22; color: ${incType?.color || '#3B82F6'}; font-weight: bold;">
-          
-        </div>
-        <div>
-          <div class="popup-title">${brgy.name}</div>
-          <div class="popup-subtitle">${incType?.label || incidentType} Risk Assessment</div>
-        </div>
-      </div>
-      <div class="risk-badge ${riskClass}">
-        ${riskClass === 'high' ? '🔴' : riskClass === 'medium' ? '🟡' : '🟢'}
-        ${risk.riskLevel} RISK
-      </div>
-      <div class="prescription-box">
-        <div class="prescription-label">📋 Recommended Action</div>
-        <div class="prescription-text">${risk.prescription}</div>
-      </div>
-    </div>
-  `;
-}
 
 function getRiskExplanation(type: string, riskTier: 'ALL' | 'HIGH' | 'MEDIUM' | 'LOW') {
   const t = type.toLowerCase();
@@ -328,6 +301,7 @@ function getRiskExplanation(type: string, riskTier: 'ALL' | 'HIGH' | 'MEDIUM' | 
 export default function Analytics() {
   const [tab, setTab] = useState<'map' | 'forecast' | 'reports'>('map');
   const [selectedType, setSelectedType] = useState('fire');
+  const [selectedBarangay, setSelectedBarangay] = useState<Barangay | null>(null);
   const [reportFilter, setReportFilter] = useState('All Types');
   const [trendYear, setTrendYear] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
@@ -419,15 +393,15 @@ export default function Analytics() {
     <>
       <Header title="Analytics & Reports" subtitle="Forecasting, incident mapping, and analysis" />
       <div className="page-content">
-        <div className="tabs fade-in">
+        <div className="tabs fade-in" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
           <button className={`tab ${tab === 'map' ? 'active' : ''}`} onClick={() => setTab('map')}>
-            <MapPin size={16} style={{ marginRight: 6, verticalAlign: -3 }} /> Incident Map
+            Incident Map <MapPin size={16} style={{ marginLeft: 6, verticalAlign: -3 }} />
           </button>
           <button className={`tab ${tab === 'forecast' ? 'active' : ''}`} onClick={() => setTab('forecast')}>
-            <TrendingUp size={16} style={{ marginRight: 6, verticalAlign: -3 }} /> Incident Forecast
+            Incident Forecast <TrendingUp size={16} style={{ marginLeft: 6, verticalAlign: -3 }} />
           </button>
           <button className={`tab ${tab === 'reports' ? 'active' : ''}`} onClick={() => setTab('reports')}>
-            <FileText size={16} style={{ marginRight: 6, verticalAlign: -3 }} /> Incident Reports
+            Incident Reports <FileText size={16} style={{ marginLeft: 6, verticalAlign: -3 }} />
           </button>
         </div>
 
@@ -453,6 +427,87 @@ export default function Analytics() {
                 })}
               </div>
 
+              {/* Left-docked Risk Assessment Popup (positioned below filter bar & before risk level legend) */}
+              {selectedBarangay && (() => {
+                const risk = selectedBarangay.riskProfile[selectedType];
+                const incType = INCIDENT_TYPES_SVG.find(t => t.id === selectedType);
+                if (!risk) return null;
+                const riskClass = risk.riskLevel.toLowerCase();
+                return (
+                  <div className="map-left-popup-card fade-in" style={{
+                    position: 'absolute',
+                    top: 72,
+                    left: 16,
+                    zIndex: 1000,
+                    width: 300,
+                    maxWidth: 'calc(100% - 32px)',
+                    maxHeight: 'calc(100% - 140px)',
+                    overflowY: 'auto',
+                    background: 'rgba(15, 23, 42, 0.95)',
+                    backdropFilter: 'blur(20px) saturate(1.8)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(1.8)',
+                    borderRadius: 16,
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.45)',
+                    padding: '16px 18px',
+                    color: 'white',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 10,
+                          background: `${incType?.color || '#3B82F6'}22`,
+                          color: incType?.color || '#3B82F6',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          {incType ? <incType.icon size={18} /> : null}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{selectedBarangay.name}</div>
+                          <div style={{ fontSize: 10.5, color: 'rgba(255, 255, 255, 0.6)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>
+                            {incType?.label || selectedType} Risk Assessment
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedBarangay(null)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: 24,
+                          height: 24,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          cursor: 'pointer',
+                          padding: 0,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    <div className={`risk-badge ${riskClass}`} style={{ marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>
+                      {riskClass === 'high' ? '🔴' : riskClass === 'medium' ? '🟡' : '🟢'}
+                      {risk.riskLevel} RISK
+                    </div>
+
+                    <div className="prescription-box" style={{ background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: 12 }}>
+                      <div className="prescription-label" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.45)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <FileText size={11} /> RECOMMENDED ACTION
+                      </div>
+                      <div className="prescription-text" style={{ fontSize: 12, lineHeight: 1.55, color: 'rgba(255, 255, 255, 0.9)' }}>
+                        {risk.prescription}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <MapContainer
                 center={[BALAYAN_CENTER.lat, BALAYAN_CENTER.lng]}
                 zoom={13}
@@ -476,11 +531,12 @@ export default function Analytics() {
                       key={brgy.name}
                       position={[brgy.lat, brgy.lng]}
                       icon={createMarkerIcon(risk.riskLevel)}
-                    >
-                      <Popup maxWidth={300} minWidth={280}>
-                        <div dangerouslySetInnerHTML={{ __html: buildPopupContent(brgy, selectedType) }} />
-                      </Popup>
-                    </Marker>
+                      eventHandlers={{
+                        click: () => {
+                          setSelectedBarangay(brgy);
+                        },
+                      }}
+                    />
                   );
                 })}
               </MapContainer>
