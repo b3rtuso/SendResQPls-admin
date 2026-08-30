@@ -354,6 +354,8 @@ export default function SettingsPage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
           background: #FAFBFC;
         }
 
@@ -364,6 +366,7 @@ export default function SettingsPage() {
           margin: 0;
           display: flex;
           align-items: center;
+          flex-wrap: wrap;
           gap: 8px;
         }
 
@@ -376,6 +379,16 @@ export default function SettingsPage() {
           grid-template-columns: 1fr 1fr;
           gap: 16px;
           margin-bottom: 16px;
+        }
+
+        @media (max-width: 640px) {
+          .st-form-row {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          .st-card-body {
+            padding: 16px;
+          }
         }
 
         .st-form-group {
@@ -811,17 +824,17 @@ export default function SettingsPage() {
 
         {/* ── Full Width Section: Team Management ── */}
         <div className="st-card fade-in">
-          <div className="st-card-header">
-            <div className="st-card-title">
-              <Users size={18} style={{ color: '#2563EB' }} />
-              Team Management
-              <span style={{ fontSize: 11, background: '#2563EB', color: '#FFFFFF', borderRadius: 999, padding: '2px 8px', fontWeight: 800, marginLeft: 6 }}>
+          <div className="st-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div className="st-card-title" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <Users size={18} style={{ color: '#2563EB', flexShrink: 0 }} />
+              <span>Team Management</span>
+              <span style={{ fontSize: 11, background: '#2563EB', color: '#FFFFFF', borderRadius: 999, padding: '2px 8px', fontWeight: 800, flexShrink: 0 }}>
                 {admins.length} Admin{admins.length !== 1 ? 's' : ''}
               </span>
             </div>
             <button
               className="st-btn-primary"
-              style={{ padding: '7px 14px', fontSize: 12.5 }}
+              style={{ padding: '7px 14px', fontSize: 12.5, whiteSpace: 'nowrap' }}
               onClick={() => setShowCreateAdmin(v => !v)}
             >
               {showCreateAdmin ? <><X size={14} /> Close Form</> : <><UserPlus size={14} /> Add Administrator</>}

@@ -1,50 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { Phone, PhoneOff, PhoneIncoming, Clock, Search, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
+import { Phone, Search, RefreshCw, ExternalLink, Trash2, Radio, Building2, Layers } from 'lucide-react';
 import type { CallLog } from '../types';
 import { getCallLogs, deleteCallLog } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-
-const statusIcon = { Accepted: PhoneIncoming, 'No Response': PhoneOff, Declined: PhoneOff };
-const statusBadge = { Accepted: 'resolved', 'No Response': 'pending', Declined: 'rejected' };
 
 export default function CallLogs() {
   const navigate = useNavigate();
   const [logs, setLogs] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
-  const [metrics, setMetrics] = useState({
-    total: 0,
-    accepted: 0,
-    noResponse: 0,
-    declined: 0,
-  });
 
   const loadLogs = async () => {
     try {
-      const res = await getCallLogs(filter, search);
+      const res = await getCallLogs('ALL', search);
       const data = res.data;
       if (data && data.logs) {
         setLogs(data.logs);
-        setMetrics(data.metrics || {
-          total: data.logs.length,
-          accepted: data.logs.filter((l: any) => l.status === 'Accepted').length,
-          noResponse: data.logs.filter((l: any) => l.status === 'No Response').length,
-          declined: data.logs.filter((l: any) => l.status === 'Declined').length,
-        });
       } else if (Array.isArray(data)) {
         setLogs(data);
-        setMetrics({
-          total: data.length,
-          accepted: data.filter((l: any) => l.status === 'Accepted').length,
-          noResponse: data.filter((l: any) => l.status === 'No Response').length,
-          declined: data.filter((l: any) => l.status === 'Declined').length,
-        });
       }
     } catch (err) {
       console.warn('[CallLogs] Failed to fetch call logs:', err);
@@ -58,7 +35,7 @@ export default function CallLogs() {
     loadLogs();
     const interval = setInterval(loadLogs, 8000);
     return () => clearInterval(interval);
-  }, [filter, search]);
+  }, [search]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -75,18 +52,25 @@ export default function CallLogs() {
     }
   };
 
-  const filteredLogs = logs.filter(log => {
-    if (filter !== 'ALL' && log.status !== filter) return false;
-    if (!search.trim()) return true;
+  const filteredLogs = useMemo(() => {
+    if (!search.trim()) return logs;
     const q = search.toLowerCase();
-    return (
+    return logs.filter(log =>
       (log.id && log.id.toLowerCase().includes(q)) ||
       (log.callerName && log.callerName.toLowerCase().includes(q)) ||
       (log.department && log.department.toLowerCase().includes(q)) ||
       (log.contact && log.contact.toLowerCase().includes(q)) ||
       (log.requestId && log.requestId.toLowerCase().includes(q))
     );
-  });
+  }, [logs, search]);
+
+  const metrics = useMemo(() => {
+    const total = logs.length;
+    const incidentLinked = logs.filter(l => l.requestId && l.requestId !== 'DIRECT_DISPATCH' && l.requestId !== 'DIRECT').length;
+    const directDispatch = total - incidentLinked;
+    const departments = new Set(logs.map(l => l.department).filter(Boolean)).size;
+    return { total, incidentLinked, directDispatch, departments };
+  }, [logs]);
 
   return (
     <>
@@ -144,7 +128,7 @@ export default function CallLogs() {
 
         @media (max-width: 640px) {
           .cl-stats-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
           }
         }
@@ -168,31 +152,31 @@ export default function CallLogs() {
 
           <div className="cl-stat-card">
             <div>
-              <div className="cl-stat-label">Accepted</div>
-              <div className="cl-stat-value">{metrics.accepted}</div>
+              <div className="cl-stat-label">Incident Dispatches</div>
+              <div className="cl-stat-value">{metrics.incidentLinked}</div>
             </div>
             <div className="cl-stat-icon" style={{ background: 'rgba(34, 197, 94, 0.08)', color: '#16A34A' }}>
-              <PhoneIncoming size={20} />
+              <Radio size={20} />
             </div>
           </div>
 
           <div className="cl-stat-card">
             <div>
-              <div className="cl-stat-label">No Response</div>
-              <div className="cl-stat-value">{metrics.noResponse}</div>
+              <div className="cl-stat-label">Direct Hotlines</div>
+              <div className="cl-stat-value">{metrics.directDispatch}</div>
             </div>
             <div className="cl-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: '#D97706' }}>
-              <Clock size={20} />
+              <Layers size={20} />
             </div>
           </div>
 
           <div className="cl-stat-card">
             <div>
-              <div className="cl-stat-label">Declined</div>
-              <div className="cl-stat-value">{metrics.declined}</div>
+              <div className="cl-stat-label">Departments</div>
+              <div className="cl-stat-value">{metrics.departments}</div>
             </div>
-            <div className="cl-stat-icon" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#DC2626' }}>
-              <PhoneOff size={20} />
+            <div className="cl-stat-icon" style={{ background: 'rgba(139, 92, 246, 0.08)', color: '#8B5CF6' }}>
+              <Building2 size={20} />
             </div>
           </div>
         </div>
@@ -209,29 +193,6 @@ export default function CallLogs() {
               className="pl-9 bg-[#F8FAFC] text-sm h-10 border-[#E2E8F0]"
             />
           </div>
-
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            style={{
-              padding: '9px 14px',
-              border: '1px solid #E2E8F0',
-              borderRadius: 9,
-              fontSize: 13,
-              color: '#334155',
-              background: '#F8FAFC',
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-              outline: 'none',
-              fontWeight: 600,
-              height: 40,
-            }}
-          >
-            <option value="ALL">All Call Statuses</option>
-            <option value="Accepted">Accepted</option>
-            <option value="No Response">No Response</option>
-            <option value="Declined">Declined</option>
-          </select>
 
           <Button
             variant="outline"
@@ -264,10 +225,10 @@ export default function CallLogs() {
           overflow: 'hidden',
         }}>
           <div className="table-responsive">
-            <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+            <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  {['Log ID', 'Linked Request', 'Caller Identity', 'Target Department', 'Contact', 'Duration', 'Call Status', 'Timestamp', ''].map(h => (
+                  {['Log ID', 'Linked Request', 'Caller Identity', 'Target Department', 'Contact', 'Timestamp', ''].map(h => (
                     <th key={h} style={{ padding: '14px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                       {h}
                     </th>
@@ -277,14 +238,14 @@ export default function CallLogs() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
                       <RefreshCw size={20} className="spin" style={{ margin: '0 auto 8px', display: 'block' }} />
                       Loading communication records...
                     </td>
                   </tr>
                 ) : filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '64px 24px', color: '#94A3B8' }}>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '64px 24px', color: '#94A3B8' }}>
                       <div style={{
                         width: 48, height: 48, borderRadius: 12,
                         background: '#F8FAFC', border: '1px solid #E2E8F0',
@@ -299,7 +260,6 @@ export default function CallLogs() {
                   </tr>
                 ) : (
                   filteredLogs.map((log) => {
-                    const Icon = (statusIcon as any)[log.status] || Phone;
                     const isIncidentLinked = log.requestId && log.requestId !== 'DIRECT_DISPATCH' && log.requestId !== 'DIRECT';
                     return (
                       <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
@@ -339,12 +299,6 @@ export default function CallLogs() {
                           <a href={`tel:${log.contact?.replace(/[^0-9+]/g, '')}`} style={{ color: '#2563EB', textDecoration: 'none', fontWeight: 600 }}>
                             {log.contact}
                           </a>
-                        </td>
-                        <td style={{ padding: '14px 16px', fontVariantNumeric: 'tabular-nums', color: '#475569' }}>{log.duration}</td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <Badge className={`badge ${(statusBadge as any)[log.status] || 'resolved'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <Icon size={12} /> {log.status}
-                          </Badge>
                         </td>
                         <td style={{ padding: '14px 16px', color: '#64748B', fontSize: 12 }}>
                           {new Date(log.timestamp || log.createdAt || Date.now()).toLocaleDateString('en-US', {

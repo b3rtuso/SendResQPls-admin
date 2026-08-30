@@ -694,7 +694,7 @@ export default function Analytics() {
         {tab === 'forecast' && (
           <div className="fade-in">
             {/* Stat Cards */}
-            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <div className="stats-grid">
               <div className="stat-card"><div className="stat-info"><h3>YTD Total (2026)</h3><div className="stat-value">{yearlySummary.totalCurrentYear}</div><div className="stat-change up">Jan – May actual data</div></div><div className="stat-icon blue"><BarChart3 size={22} /></div></div>
               <div className="stat-card"><div className="stat-info"><h3>Peak Month</h3><div className="stat-value">{yearlySummary.peakMonth}</div><div className="stat-change up">{yearlySummary.peakMonthCount} incidents recorded</div></div><div className="stat-icon red"><TrendingUp size={22} /></div></div>
               <div className="stat-card"><div className="stat-info"><h3>Full Year Projected</h3><div className="stat-value">{yearlySummary.predictedTotal}</div><div className="stat-change down">↓ {Math.abs(yearlySummary.yoyGrowth)}% vs 2024</div></div><div className="stat-icon purple"><TrendingUp size={22} /></div></div>
@@ -862,7 +862,27 @@ export default function Analytics() {
         {tab === 'reports' && (
           <div className="fade-in">
             {/* ── KPI Stat Cards — TOP ── */}
-            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
+            <style>{`
+              .analytics-reports-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 18px;
+                margin-bottom: 24px;
+              }
+              @media (max-width: 1024px) {
+                .analytics-reports-grid {
+                  grid-template-columns: repeat(2, 1fr);
+                  gap: 14px;
+                }
+              }
+              @media (max-width: 640px) {
+                .analytics-reports-grid {
+                  grid-template-columns: 1fr;
+                  gap: 12px;
+                }
+              }
+            `}</style>
+            <div className="analytics-reports-grid">
               <div className="stat-card">
                 <div className="stat-info">
                   <h3>Total Reports</h3>

@@ -400,12 +400,12 @@ export default function Requests() {
         }
 
         .rq-desktop-table {
-          display: block;
+          display: block !important;
           width: 100%;
         }
 
         .rq-mobile-cards {
-          display: none;
+          display: none !important;
           flex-direction: column;
           gap: 12px;
           padding: 14px;
@@ -436,10 +436,10 @@ export default function Requests() {
 
         @media (max-width: 1024px) {
           .rq-desktop-table {
-            display: none;
+            display: none !important;
           }
           .rq-mobile-cards {
-            display: flex;
+            display: flex !important;
           }
           .rq-card-container {
             border: none;
@@ -606,7 +606,7 @@ export default function Requests() {
           ) : (
             <>
               {/* Desktop Table View */}
-              <div className="rq-desktop-table" style={{ overflowX: 'auto' }}>
+              <div className="rq-desktop-table hidden lg:block" style={{ overflowX: 'auto' }}>
                 <table className="rq-table" style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
                   <thead>
                     <tr>
@@ -875,7 +875,7 @@ export default function Requests() {
               </div>
 
               {/* Mobile Card List View (< 1024px) */}
-              <div className="rq-mobile-cards">
+              <div className="rq-mobile-cards block lg:hidden">
                 {paged.map((inc) => {
                   const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                   const normalized = normalizeIncidentType(inc.aiDetectedType);

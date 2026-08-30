@@ -544,6 +544,16 @@ export default function Dashboard() {
             Filter by:
           </span>
         </div>
+        <style>{`
+          .db-stat-card {
+            padding: 20px 22px;
+          }
+          @media (max-width: 640px) {
+            .db-stat-card {
+              padding: 14px 14px !important;
+            }
+          }
+        `}</style>
         <div className="stats-grid fade-in">
           {STAT_CARDS.map(({ label, value, accent, bg, activeGlow, filter }) => {
             const isActive = statusFilter === filter;
@@ -553,11 +563,11 @@ export default function Dashboard() {
             return (
               <div
                 key={label}
+                className="db-stat-card"
                 onClick={() => handleStatCardClick(filter as Status | 'ALL')}
                 style={{
                   background: isActive ? bg : 'white',
                   borderRadius: 14,
-                  padding: '22px',
                   boxShadow: isUrgentPending && !isActive
                     ? `0 0 0 2px ${accent}20, 0 4px 20px rgba(245,158,11,0.2), 0 0 0 4px rgba(245,158,11,0.08)`
                     : isActive
