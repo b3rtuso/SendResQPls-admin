@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
-import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Incident, Status, Department } from '../types';
 import { getIncidents, updateIncidentStatus, invalidateCache } from '../api/client';
 import { Button } from '@/components/ui/button';
@@ -847,22 +847,23 @@ export default function Requests() {
 
                               <Button
                                 size="sm"
+                                variant="outline"
                                 onClick={() => navigate(`/requests/${inc.id}`)}
                                 style={{
                                   padding: '5px 12px',
                                   borderRadius: 7,
-                                  background: '#2563EB',
-                                  color: '#FFFFFF',
-                                  border: 'none',
-                                  fontSize: 12,
-                                  fontWeight: 700,
                                   height: 'auto',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 4,
+                                  background: 'var(--primary-bg)',
+                                  color: 'var(--primary)',
+                                  border: '1px solid rgba(37,99,235,0.2)',
+                                  fontSize: 11.5,
+                                  fontWeight: 700,
+                                  transition: 'all 0.15s',
                                 }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.color = 'var(--primary)'; }}
                               >
-                                View <ArrowRight size={12} />
+                                View
                               </Button>
                             </div>
                           </td>
@@ -987,14 +988,23 @@ export default function Requests() {
 
                           <Button
                             size="sm"
+                            variant="outline"
                             onClick={() => navigate(`/requests/${inc.id}`)}
                             style={{
-                              padding: '6px 14px', borderRadius: 8, background: '#2563EB',
-                              color: '#FFFFFF', border: 'none', fontSize: 12, fontWeight: 700,
-                              display: 'flex', alignItems: 'center', gap: 4,
+                              padding: '5px 14px',
+                              borderRadius: 7,
+                              background: 'var(--primary-bg)',
+                              color: 'var(--primary)',
+                              border: '1px solid rgba(37,99,235,0.2)',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              height: 'auto',
+                              transition: 'all 0.15s',
                             }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.color = 'var(--primary)'; }}
                           >
-                            View <ArrowRight size={12} />
+                            View
                           </Button>
                         </div>
                       </div>

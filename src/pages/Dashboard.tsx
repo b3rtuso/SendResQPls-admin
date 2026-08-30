@@ -953,7 +953,23 @@ export default function Dashboard() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: '#64748B' }}>
                           <span>📍 {brgy}</span>
-                          <span style={{ fontWeight: 700, color: '#2563EB', fontSize: 11.5 }}>View →</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={e => { e.stopPropagation(); navigate(`/requests/${inc.id}`); }}
+                            style={{
+                              padding: '4px 12px',
+                              borderRadius: 7,
+                              height: 'auto',
+                              background: 'var(--primary-bg)',
+                              color: 'var(--primary)',
+                              border: '1px solid rgba(37,99,235,0.2)',
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                            }}
+                          >
+                            View
+                          </Button>
                         </div>
                       </div>
                     );
