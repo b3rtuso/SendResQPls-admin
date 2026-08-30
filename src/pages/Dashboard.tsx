@@ -471,16 +471,34 @@ export default function Dashboard() {
                   <svg width="92" height="92" viewBox="0 0 92 92" style={{ transform: 'rotate(-90deg)' }}>
                     <circle cx="46" cy="46" r="36" fill="none" stroke="rgba(255, 255, 255, 0.25)" strokeWidth="12" />
                     <circle cx="46" cy="46" r="36" fill="none" stroke="#FFFFFF" strokeWidth="12" strokeDasharray="226.19" strokeDashoffset="75" strokeLinecap="round" />
-                    <circle cx="46" cy="46" r="36" fill="none" stroke="#93C5FD" strokeWidth="12" strokeDasharray="226.19" strokeDashoffset="160" strokeLinecap="round" />
                   </svg>
                   <div style={{
                     position: 'absolute',
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: '#FFFFFF',
-                    fontStyle: 'italic',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    lineHeight: 1.1,
                   }}>
-                    {predictedCount}
+                    <span style={{
+                      fontSize: 22,
+                      fontWeight: 800,
+                      color: '#FFFFFF',
+                      fontStyle: 'italic',
+                    }}>
+                      {predictedCount}
+                    </span>
+                    <span style={{
+                      fontSize: 9.5,
+                      fontWeight: 700,
+                      color: 'rgba(255, 255, 255, 0.75)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      marginTop: 1,
+                    }}>
+                      incidents
+                    </span>
                   </div>
                 </div>
               </div>
@@ -503,16 +521,17 @@ export default function Dashboard() {
                 width: 48, height: 48, borderRadius: '50%',
                 background: 'rgba(255,255,255,0.15)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
                 animation: 'pulse 2s infinite',
               }}>
                 <AlertTriangle size={24} color="white" />
               </div>
               <div>
-                <div style={{ color: 'white', fontWeight: 800, fontSize: 16, letterSpacing: '-0.2px' }}>
-                  ACTIVE EMERGENCIES: {pendingCount} report{pendingCount !== 1 ? 's' : ''} need attention
+                <div style={{ fontSize: 18, fontWeight: 800, color: 'white', letterSpacing: '-0.2px' }}>
+                  {pendingCount} Pending Emergency {pendingCount === 1 ? 'Report' : 'Reports'}
                 </div>
-                <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 2 }}>
-                  Critical incidents reported recently — dispatch pending
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 2 }}>
+                  Triage queue requires active dispatcher review and department dispatch.
                 </div>
               </div>
             </div>
@@ -555,7 +574,7 @@ export default function Dashboard() {
           }
         `}</style>
         <div className="stats-grid fade-in">
-          {STAT_CARDS.map(({ label, value, accent, bg, activeGlow, filter }) => {
+          {STAT_CARDS.map(({ label, value, accent, activeGlow, filter }) => {
             const isActive = statusFilter === filter;
             const prevValue = prevStats[filter === 'ALL' ? 'total' : filter === 'PENDING' ? 'pending' : filter === 'DISPATCHED' ? 'dispatched' : 'resolved'];
             const delta = value - prevValue;
@@ -566,17 +585,14 @@ export default function Dashboard() {
                 className="db-stat-card"
                 onClick={() => handleStatCardClick(filter as Status | 'ALL')}
                 style={{
-                  background: isActive ? bg : 'white',
-                  borderRadius: 14,
+                  background: isActive ? `${accent}0a` : '#FFFFFF',
+                  borderRadius: 16,
+                  border: `1px solid ${isActive ? accent : '#E2E8F0'}`,
                   boxShadow: isUrgentPending && !isActive
-                    ? `0 0 0 2px ${accent}20, 0 4px 20px rgba(245,158,11,0.2), 0 0 0 4px rgba(245,158,11,0.08)`
+                    ? `0 0 0 2px ${accent}20, 0 4px 20px rgba(245,158,11,0.2)`
                     : isActive
-                      ? `0 0 0 2px ${accent}30, 0 4px 20px ${activeGlow}`
-                      : '0 1px 4px rgba(0,0,0,0.05)',
-                  borderTop: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
-                  borderRight: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
-                  borderBottom: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
-                  borderLeft: `4px solid ${accent}`,
+                      ? `0 0 0 1.5px ${accent}, 0 4px 18px ${activeGlow}`
+                      : '0 1px 3px rgba(15, 23, 42, 0.03), 0 2px 8px rgba(15, 23, 42, 0.02)',
                   cursor: 'pointer',
                   transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
                   transform: isActive ? 'translateY(-2px)' : 'none',
