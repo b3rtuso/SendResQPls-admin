@@ -116,7 +116,7 @@ function buildPopupContent(brgy: Barangay, incidentType: string): string {
     <div class="map-popup">
       <div class="popup-header">
         <div class="popup-icon" style="background: ${incType?.color || '#3B82F6'}22; color: ${incType?.color || '#3B82F6'}; font-weight: bold;">
-          🛡️
+          
         </div>
         <div>
           <div class="popup-title">${brgy.name}</div>

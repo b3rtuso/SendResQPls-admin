@@ -833,77 +833,133 @@ export default function Dashboard() {
                 <div style={{ fontSize: 12.5, marginTop: 4, color: '#94A3B8' }}>Clear the status filter to see all items.</div>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #F1F5F9' }}>
-                      {['ID', 'Type', 'Location', 'Status', 'Time', 'Action'].map(h => (
-                        <th key={h} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredIncidents.slice(0, 8).map((inc) => {
-                      const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
-                      const normalized = normalizeIncidentType(inc.aiDetectedType);
-                      const ti = TYPE_ICON[normalized] || { emoji: '⚠️', color: '#64748B' };
-                      return (
-                        <tr
-                          key={inc.id}
-                          style={{ borderBottom: '1px solid #F8FAFC', cursor: 'pointer', transition: 'background 0.1s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#F5F8FF'}
-                          onMouseLeave={e => e.currentTarget.style.background = ''}
-                          onClick={() => navigate(`/requests/${inc.id}`)}
-                        >
-                          <td style={{ padding: '13px 18px', fontFamily: 'monospace', fontSize: 10.5, color: '#94A3B8', whiteSpace: 'nowrap' }}>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden sm:block" style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #F1F5F9' }}>
+                        {['ID', 'Type', 'Location', 'Status', 'Time', 'Action'].map(h => (
+                          <th key={h} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredIncidents.slice(0, 8).map((inc) => {
+                        const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
+                        const normalized = normalizeIncidentType(inc.aiDetectedType);
+                        const ti = TYPE_ICON[normalized] || { emoji: '⚠️', color: '#64748B' };
+                        return (
+                          <tr
+                            key={inc.id}
+                            style={{ borderBottom: '1px solid #F8FAFC', cursor: 'pointer', transition: 'background 0.1s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#F5F8FF'}
+                            onMouseLeave={e => e.currentTarget.style.background = ''}
+                            onClick={() => navigate(`/requests/${inc.id}`)}
+                          >
+                            <td style={{ padding: '13px 18px', fontFamily: 'monospace', fontSize: 10.5, color: '#94A3B8', whiteSpace: 'nowrap' }}>
+                              #{inc.id.slice(0, 8).toUpperCase()}
+                            </td>
+                            <td style={{ padding: '13px 18px', whiteSpace: 'nowrap' }}>
+                              <span style={{ marginRight: 6 }}>{ti.emoji}</span>
+                              <span style={{ fontWeight: 600, color: '#1E293B' }}>{inc.aiDetectedType || 'Unknown'}</span>
+                            </td>
+                            <td style={{ padding: '13px 18px', color: '#475569', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {inc.latitude && inc.longitude
+                                ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
+                                : '—'}
+                            </td>
+                            <td style={{ padding: '13px 18px' }}>
+                              <Badge style={{
+                                padding: '3px 9px', borderRadius: 6,
+                                background: ss.bg, color: ss.color,
+                                fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+                                textTransform: 'uppercase',
+                                border: 'none',
+                              }}>
+                                {ss.label}
+                              </Badge>
+                            </td>
+                            <td style={{ padding: '13px 18px', color: '#94A3B8', fontSize: 12, whiteSpace: 'nowrap' }}>
+                              {timeAgo(inc.createdAt)}
+                            </td>
+                            <td style={{ padding: '13px 18px' }}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={e => { e.stopPropagation(); navigate(`/requests/${inc.id}`); }}
+                                style={{
+                                  padding: '5px 12px', borderRadius: 7, height: 'auto',
+                                  background: 'var(--primary-bg)', color: 'var(--primary)',
+                                  border: '1px solid rgba(37,99,235,0.2)', fontSize: 11.5, fontWeight: 700,
+                                  transition: 'all 0.15s',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                              >
+                                View
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Feed Cards */}
+                <div className="block sm:hidden" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {filteredIncidents.slice(0, 8).map((inc) => {
+                    const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
+                    const normalized = normalizeIncidentType(inc.aiDetectedType);
+                    const ti = TYPE_ICON[normalized] || { emoji: '⚠️', color: '#64748B' };
+                    const brgy = inc.latitude && inc.longitude
+                      ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
+                      : 'Balayan';
+                    return (
+                      <div
+                        key={inc.id}
+                        onClick={() => navigate(`/requests/${inc.id}`)}
+                        style={{
+                          background: '#F8FAFC',
+                          borderRadius: 10,
+                          padding: '12px 14px',
+                          border: '1px solid #E2E8F0',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 8,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#2563EB' }}>
                             #{inc.id.slice(0, 8).toUpperCase()}
-                          </td>
-                          <td style={{ padding: '13px 18px', whiteSpace: 'nowrap' }}>
-                            <span style={{ marginRight: 6 }}>{ti.emoji}</span>
-                            <span style={{ fontWeight: 600, color: '#1E293B' }}>{inc.aiDetectedType || 'Unknown'}</span>
-                          </td>
-                          <td style={{ padding: '13px 18px', color: '#475569', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {inc.latitude && inc.longitude
-                              ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
-                              : '—'}
-                          </td>
-                          <td style={{ padding: '13px 18px' }}>
-                            <Badge style={{
-                              padding: '3px 9px', borderRadius: 6,
-                              background: ss.bg, color: ss.color,
-                              fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
-                              textTransform: 'uppercase',
-                              border: 'none',
-                            }}>
-                              {ss.label}
-                            </Badge>
-                          </td>
-                          <td style={{ padding: '13px 18px', color: '#94A3B8', fontSize: 12, whiteSpace: 'nowrap' }}>
-                            {timeAgo(inc.createdAt)}
-                          </td>
-                          <td style={{ padding: '13px 18px' }}>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={e => { e.stopPropagation(); navigate(`/requests/${inc.id}`); }}
-                              style={{
-                                padding: '5px 12px', borderRadius: 7, height: 'auto',
-                                background: 'var(--primary-bg)', color: 'var(--primary)',
-                                border: '1px solid rgba(37,99,235,0.2)', fontSize: 11.5, fontWeight: 700,
-                                transition: 'all 0.15s',
-                              }}
-                              onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.color = 'var(--primary)'; }}
-                            >
-                              View
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </span>
+                          <Badge style={{
+                            padding: '2px 8px', borderRadius: 6,
+                            background: ss.bg, color: ss.color,
+                            fontSize: 10, fontWeight: 800,
+                            border: 'none',
+                          }}>
+                            {ss.label}
+                          </Badge>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13.5, color: '#1E293B' }}>
+                            <span>{ti.emoji}</span>
+                            <span>{inc.aiDetectedType || 'Emergency'}</span>
+                          </div>
+                          <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo(inc.createdAt)}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: '#64748B' }}>
+                          <span>📍 {brgy}</span>
+                          <span style={{ fontWeight: 700, color: '#2563EB', fontSize: 11.5 }}>View →</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
 

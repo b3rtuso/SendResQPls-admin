@@ -349,13 +349,13 @@ export default function RequestDetails() {
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>SEVERITY & URGENCY RANKING</strong>
                   <div style={{ fontSize: 14, fontWeight: 800, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     {(() => {
-                      const sev = incident.severity || 'MEDIUM';
+                      const sev = (incident.severity || 'MEDIUM').toUpperCase();
                       const score = incident.urgencyScore ?? 50;
-                      const sevColors: Record<string, { bg: string; color: string; border: string }> = {
-                        CRITICAL: { bg: '#FEE2E2', color: '#DC2626', border: '#FECACA' },
-                        HIGH:     { bg: '#FFEDD5', color: '#EA580C', border: '#FED7AA' },
-                        MEDIUM:   { bg: '#DBEAFE', color: '#2563EB', border: '#BFDBFE' },
-                        LOW:      { bg: '#F1F5F9', color: '#64748B', border: '#E2E8F0' },
+                      const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
+                        CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
+                        HIGH:     { bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3', dot: '#F43F5E' },
+                        MEDIUM:   { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', dot: '#F59E0B' },
+                        LOW:      { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981' },
                       };
                       const s = sevColors[sev] || sevColors.MEDIUM;
                       return (
@@ -363,7 +363,7 @@ export default function RequestDetails() {
                           <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 5,
+                            gap: 6,
                             padding: '4px 10px',
                             borderRadius: 8,
                             fontSize: 12.5,
@@ -372,7 +372,13 @@ export default function RequestDetails() {
                             color: s.color,
                             border: `1.5px solid ${s.border}`,
                           }}>
-                            {sev === 'CRITICAL' ? '🚨' : sev === 'HIGH' ? '⚡' : '🛡️'} {sev} PRIORITY
+                            <span style={{
+                              width: 7, height: 7, borderRadius: '50%',
+                              background: s.dot, display: 'inline-block',
+                              boxShadow: s.pulse ? `0 0 0 2px ${s.border}` : 'none',
+                              animation: s.pulse ? 'pulse-emergency 1.8s infinite' : 'none'
+                            }} />
+                            {sev} PRIORITY
                           </span>
                           <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-secondary)' }}>
                             Urgency Score: <strong style={{ color: 'var(--text-primary)' }}>{score}/100</strong>

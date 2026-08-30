@@ -399,51 +399,53 @@ export default function Requests() {
           -webkit-overflow-scrolling: touch;
         }
 
-        .rq-table {
+        .rq-desktop-table {
+          display: block;
           width: 100%;
-          min-width: 680px;
-          border-collapse: collapse;
-          font-size: 13px;
-          text-align: left;
         }
 
-        .rq-th {
-          padding: 14px 18px;
-          font-size: 11px;
-          font-weight: 800;
-          color: #64748B;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          background: #F8FAFC;
-          border-bottom: 1px solid #E2E8F0;
-          white-space: nowrap;
-          user-select: none;
+        .rq-mobile-cards {
+          display: none;
+          flex-direction: column;
+          gap: 12px;
+          padding: 14px;
         }
 
-        .rq-th.sortable {
+        .rq-mobile-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 14px;
+          padding: 14px 16px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          transition: all 0.15s ease;
           cursor: pointer;
-          transition: background 0.12s, color 0.12s;
         }
 
-        .rq-th.sortable:hover {
-          background: #EEF2F6;
-          color: #0F172A;
+        .rq-mobile-card:hover {
+          border-color: #93C5FD;
+          box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
         }
 
-        .rq-tr {
-          border-bottom: 1px solid #F1F5F9;
-          cursor: pointer;
-          transition: background 0.12s ease;
+        .rq-mobile-card.selected {
+          border-color: #2563EB;
+          background: rgba(37, 99, 235, 0.02);
         }
 
-        .rq-tr:hover {
-          background: #F8FAFC;
-        }
-
-        .rq-td {
-          padding: 14px 18px;
-          color: #334155;
-          vertical-align: middle;
+        @media (max-width: 1024px) {
+          .rq-desktop-table {
+            display: none;
+          }
+          .rq-mobile-cards {
+            display: flex;
+          }
+          .rq-card-container {
+            border: none;
+            background: transparent;
+            box-shadow: none;
+          }
         }
       `}</style>
 
@@ -603,11 +605,12 @@ export default function Requests() {
             </div>
           ) : (
             <>
-              <div style={{ overflowX: 'auto' }}>
-                <table className="rq-table">
+              {/* Desktop Table View */}
+              <div className="rq-desktop-table" style={{ overflowX: 'auto' }}>
+                <table className="rq-table" style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
                   <thead>
                     <tr>
-                      <th className="rq-th" style={{ width: 40, textAlign: 'center' }}>
+                      <th className="rq-th" style={{ width: 40, textAlign: 'center', padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap' }}>
                         <input
                           type="checkbox"
                           checked={paged.length > 0 && paged.every(inc => selectedIds.has(inc.id))}
@@ -616,7 +619,7 @@ export default function Requests() {
                           style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
                         />
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('id')}>
+                      <th className="rq-th sortable" onClick={() => handleSort('id')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span>Incident ID</span>
                           {sortKey === 'id' ? (
@@ -624,8 +627,8 @@ export default function Requests() {
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th">Evidence</th>
-                      <th className="rq-th sortable" onClick={() => handleSort('type')}>
+                      <th className="rq-th" style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap' }}>Evidence</th>
+                      <th className="rq-th sortable" onClick={() => handleSort('type')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span>Hazard Type</span>
                           {sortKey === 'type' ? (
@@ -633,7 +636,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('location')}>
+                      <th className="rq-th sortable" onClick={() => handleSort('location')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span>Barangay Location</span>
                           {sortKey === 'location' ? (
@@ -641,7 +644,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('unit')}>
+                      <th className="rq-th sortable" onClick={() => handleSort('unit')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span>Assigned Unit</span>
                           {sortKey === 'unit' ? (
@@ -649,7 +652,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('status')}>
+                      <th className="rq-th sortable" onClick={() => handleSort('status')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span>Triage Status</span>
                           {sortKey === 'status' ? (
@@ -657,7 +660,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')}>
+                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span>Reported</span>
                           {sortKey === 'createdAt' ? (
@@ -665,7 +668,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('urgency')}>
+                      <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span>Urgency</span>
                           {sortKey === 'urgency' ? (
@@ -673,7 +676,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th" style={{ textAlign: 'right' }}>Actions</th>
+                      <th className="rq-th" style={{ textAlign: 'right', padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -690,10 +693,14 @@ export default function Requests() {
                           key={inc.id}
                           className={`rq-tr ${selectedIds.has(inc.id) ? 'selected-row' : ''}`}
                           onClick={() => navigate(`/requests/${inc.id}`)}
-                          style={{ background: selectedIds.has(inc.id) ? 'rgba(37, 99, 235, 0.04)' : undefined }}
+                          style={{
+                            borderBottom: '1px solid #F1F5F9',
+                            cursor: 'pointer',
+                            background: selectedIds.has(inc.id) ? 'rgba(37, 99, 235, 0.04)' : undefined,
+                          }}
                         >
                           {/* Selection Checkbox */}
-                          <td className="rq-td" style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                          <td className="rq-td" style={{ textAlign: 'center', padding: '14px 18px' }} onClick={e => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={selectedIds.has(inc.id)}
@@ -704,12 +711,12 @@ export default function Requests() {
                           </td>
 
                           {/* Incident ID */}
-                          <td className="rq-td" style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: '#2563EB' }}>
+                          <td className="rq-td" style={{ padding: '14px 18px', fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: '#2563EB' }}>
                             #{inc.id.slice(0, 8).toUpperCase()}
                           </td>
 
                           {/* Evidence Photo */}
-                          <td className="rq-td" onClick={e => e.stopPropagation()}>
+                          <td className="rq-td" style={{ padding: '14px 18px' }} onClick={e => e.stopPropagation()}>
                             {inc.photoUrl ? (
                               <div
                                 onClick={e => { e.stopPropagation(); setPreviewUrl(inc.photoUrl); }}
@@ -733,7 +740,7 @@ export default function Requests() {
                           </td>
 
                           {/* Type */}
-                          <td className="rq-td">
+                          <td className="rq-td" style={{ padding: '14px 18px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <span>{emoji}</span>
                               <strong style={{ color: '#0F172A', fontWeight: 700 }}>
@@ -743,7 +750,7 @@ export default function Requests() {
                           </td>
 
                           {/* Location */}
-                          <td className="rq-td">
+                          <td className="rq-td" style={{ padding: '14px 18px' }}>
                             <span style={{
                               background: '#F1F5F9',
                               color: '#334155',
@@ -757,12 +764,12 @@ export default function Requests() {
                           </td>
 
                           {/* Unit */}
-                          <td className="rq-td" style={{ fontWeight: 600, color: '#475569' }}>
+                          <td className="rq-td" style={{ padding: '14px 18px', fontWeight: 600, color: '#475569' }}>
                             {inc.aiRecommendedDept || 'MDRRMO'}
                           </td>
 
                           {/* Status */}
-                          <td className="rq-td">
+                          <td className="rq-td" style={{ padding: '14px 18px' }}>
                             <Badge style={{
                               padding: '4px 10px',
                               borderRadius: 999,
@@ -778,33 +785,37 @@ export default function Requests() {
                           </td>
 
                           {/* Reported time */}
-                          <td className="rq-td" style={{ color: '#94A3B8', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+                          <td className="rq-td" style={{ padding: '14px 18px', color: '#94A3B8', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
                             {timeAgo(inc.createdAt)}
                           </td>
 
-                          {/* Urgency/Severity Badge */}
-                          <td className="rq-td">
+                          {/* Urgency/Severity Badge (Standardized: Low=Green, Med=Amber, High/Critical=Red) */}
+                          <td className="rq-td" style={{ padding: '14px 18px' }}>
                             {(() => {
                               const sev = (inc.severity || '').toUpperCase() || 'MEDIUM';
                               const score = inc.urgencyScore ?? getIncidentUrgencyScore(inc);
                               const isTerminal = inc.status === 'RESOLVED' || inc.status === 'REJECTED';
-                              const sevColors: Record<string, { bg: string; color: string; border: string; pulse?: boolean }> = {
-                                CRITICAL: { bg: '#FEE2E2', color: '#DC2626', border: '#FECACA', pulse: true },
-                                HIGH:     { bg: '#FFEDD5', color: '#EA580C', border: '#FED7AA', pulse: true },
-                                MEDIUM:   { bg: '#DBEAFE', color: '#2563EB', border: '#BFDBFE' },
-                                LOW:      { bg: '#F1F5F9', color: '#94A3B8', border: '#E2E8F0' },
+                              const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
+                                CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
+                                HIGH:     { bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3', dot: '#F43F5E' },
+                                MEDIUM:   { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', dot: '#F59E0B' },
+                                LOW:      { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981' },
                               };
                               const s = sevColors[sev] || sevColors.MEDIUM;
                               if (isTerminal) return <span style={{ fontSize: 11, color: '#94A3B8' }}>—</span>;
                               return (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 3 }}>
                                   <Badge style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    display: 'inline-flex', alignItems: 'center', gap: 5,
                                     padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
                                     background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
                                     whiteSpace: 'nowrap',
                                   }}>
-                                    {sev === 'CRITICAL' ? '🚨' : sev === 'HIGH' ? '⚡' : sev === 'LOW' ? '🛡️' : '🔵'} {sev}
+                                    <span style={{
+                                      width: 6, height: 6, borderRadius: '50%',
+                                      background: s.dot, display: 'inline-block',
+                                    }} />
+                                    <span>{sev}</span>
                                   </Badge>
                                   <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600 }}>
                                     Score: {Math.min(score, 100)}
@@ -815,7 +826,7 @@ export default function Requests() {
                           </td>
 
                           {/* Actions */}
-                          <td className="rq-td" style={{ textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                          <td className="rq-td" style={{ padding: '14px 18px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                             <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
                               {inc.status === 'PENDING' && (
                                 <Button
@@ -860,6 +871,136 @@ export default function Requests() {
                     })}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Card List View (< 1024px) */}
+              <div className="rq-mobile-cards">
+                {paged.map((inc) => {
+                  const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
+                  const normalized = normalizeIncidentType(inc.aiDetectedType);
+                  const emoji = TYPE_ICON[normalized] || '⚠️';
+                  const brgyName = inc.latitude && inc.longitude
+                    ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
+                    : 'Balayan';
+                  const sev = (inc.severity || '').toUpperCase() || 'MEDIUM';
+                  const score = inc.urgencyScore ?? getIncidentUrgencyScore(inc);
+                  const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
+                    CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
+                    HIGH:     { bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3', dot: '#F43F5E' },
+                    MEDIUM:   { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', dot: '#F59E0B' },
+                    LOW:      { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981' },
+                  };
+                  const s = sevColors[sev] || sevColors.MEDIUM;
+
+                  return (
+                    <div
+                      key={inc.id}
+                      className={`rq-mobile-card ${selectedIds.has(inc.id) ? 'selected' : ''}`}
+                      onClick={() => navigate(`/requests/${inc.id}`)}
+                    >
+                      {/* Top Row: ID, Status, Timestamp */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(inc.id)}
+                            onChange={e => toggleSelectOne(inc.id, e as any)}
+                            onClick={e => e.stopPropagation()}
+                            aria-label={`Select incident ${inc.id}`}
+                            style={{ cursor: 'pointer', width: 18, height: 18, accentColor: '#2563EB' }}
+                          />
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 13, color: '#2563EB' }}>
+                            #{inc.id.slice(0, 8).toUpperCase()}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Badge style={{
+                            padding: '3px 9px', borderRadius: 999,
+                            background: ss.bg, color: ss.color, border: `1px solid ${ss.border}`,
+                            fontSize: 10.5, fontWeight: 800,
+                          }}>
+                            {inc.status}
+                          </Badge>
+                          <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo(inc.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      {/* Middle: Incident Type, Evidence & Location */}
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        {inc.photoUrl ? (
+                          <div
+                            onClick={e => { e.stopPropagation(); setPreviewUrl(inc.photoUrl); }}
+                            style={{
+                              width: 52, height: 44, borderRadius: 8, overflow: 'hidden',
+                              border: '1px solid #E2E8F0', flexShrink: 0,
+                            }}
+                          >
+                            <img src={inc.photoUrl} alt="Evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        ) : (
+                          <div style={{ width: 52, height: 44, borderRadius: 8, background: '#F8FAFC', border: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <ImageIcon size={18} color="#94A3B8" />
+                          </div>
+                        )}
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <span>{emoji}</span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.aiDetectedType || 'Emergency'}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>📍 {brgyName}</span>
+                            <span style={{ color: '#CBD5E1' }}>•</span>
+                            <span>{inc.aiRecommendedDept || 'MDRRMO'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Severity & Action Buttons */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #F1F5F9' }}>
+                        <Badge style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
+                          background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
+                        }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot }} />
+                          <span>{sev}</span>
+                          <span style={{ fontSize: 10, opacity: 0.75 }}>({Math.min(score, 100)})</span>
+                        </Badge>
+
+                        <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
+                          {inc.status === 'PENDING' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={e => quickAction(e, inc.id, 'REVIEWING')}
+                              disabled={actionLoading === inc.id + 'REVIEWING'}
+                              style={{
+                                padding: '6px 12px', borderRadius: 8, border: '1px solid #BBF7D0',
+                                background: '#F0FDF4', color: '#16A34A', fontSize: 12, fontWeight: 700,
+                              }}
+                            >
+                              <CheckCircle2 size={13} /> Accept
+                            </Button>
+                          )}
+
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/requests/${inc.id}`)}
+                            style={{
+                              padding: '6px 14px', borderRadius: 8, background: '#2563EB',
+                              color: '#FFFFFF', border: 'none', fontSize: 12, fontWeight: 700,
+                              display: 'flex', alignItems: 'center', gap: 4,
+                            }}
+                          >
+                            View <ArrowRight size={12} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* ── Table Footer & Pagination ── */}

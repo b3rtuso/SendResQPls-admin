@@ -505,20 +505,7 @@ export default function AdminLogin() {
             </Button>
 
             {/* Return to landing page */}
-            <div style={{ textAlign: 'center', marginTop: 20 }}>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => navigate('/')}
-                style={{
-                  color: '#64748B',
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
-              >
-                Return to Main Page
-              </Button>
-            </div>
+            
           </form>
 
           {/* Bottom security footer */}
