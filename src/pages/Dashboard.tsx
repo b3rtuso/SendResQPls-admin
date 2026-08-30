@@ -421,7 +421,7 @@ export default function Dashboard() {
               </div>
 
               {/* Inner Sidebar Blue Card Panel */}
-              <div style={{
+              <div className="forecast-hero-card" style={{
                 background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
                 borderRadius: 18,
                 padding: '22px 28px',
@@ -461,16 +461,16 @@ export default function Dashboard() {
                 {/* Right Content Column: Donut Chart Indicator */}
                 <div style={{
                   position: 'relative',
-                  width: 92,
-                  height: 92,
+                  width: 104,
+                  height: 104,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
                 }}>
-                  <svg width="92" height="92" viewBox="0 0 92 92" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="46" cy="46" r="36" fill="none" stroke="rgba(255, 255, 255, 0.25)" strokeWidth="12" />
-                    <circle cx="46" cy="46" r="36" fill="none" stroke="#FFFFFF" strokeWidth="12" strokeDasharray="226.19" strokeDashoffset="75" strokeLinecap="round" />
+                  <svg width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
+                    <circle cx="52" cy="52" r="42" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="8" />
+                    <circle cx="52" cy="52" r="42" fill="none" stroke="#FFFFFF" strokeWidth="8" strokeDasharray="263.89" strokeDashoffset="86" strokeLinecap="round" />
                   </svg>
                   <div style={{
                     position: 'absolute',
@@ -479,23 +479,25 @@ export default function Dashboard() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    lineHeight: 1.1,
+                    lineHeight: 1,
+                    pointerEvents: 'none',
                   }}>
                     <span style={{
                       fontSize: 22,
-                      fontWeight: 800,
+                      fontWeight: 900,
                       color: '#FFFFFF',
                       fontStyle: 'italic',
+                      lineHeight: 1,
                     }}>
                       {predictedCount}
                     </span>
                     <span style={{
-                      fontSize: 9.5,
-                      fontWeight: 700,
-                      color: 'rgba(255, 255, 255, 0.75)',
+                      fontSize: 8.5,
+                      fontWeight: 800,
+                      color: 'rgba(255, 255, 255, 0.85)',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      marginTop: 1,
+                      letterSpacing: '0.06em',
+                      marginTop: 3,
                     }}>
                       incidents
                     </span>

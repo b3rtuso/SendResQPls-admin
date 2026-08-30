@@ -301,7 +301,6 @@ export default function Departments() {
                     display: 'flex', 
                     flexDirection: 'column',
                     position: 'relative',
-                    borderTop: `4px solid ${theme.color}`,
                   }}
                 >
                   {/* Header info */}
