@@ -1023,17 +1023,19 @@ export default function Requests() {
                 background: '#FAFBFC',
                 fontSize: 13,
                 color: '#64748B',
+                flexWrap: 'wrap',
+                gap: 12,
               }}>
-                <div>
+                <div style={{ whiteSpace: 'nowrap' }}>
                   Showing <strong>{Math.min(sortedAndFiltered.length, (page - 1) * PAGE_SIZE + 1)}</strong> to <strong>{Math.min(sortedAndFiltered.length, page * PAGE_SIZE)}</strong> of <strong>{sortedAndFiltered.length}</strong> reports
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
                     style={{
-                      padding: '6px 12px',
+                      padding: '6px 14px',
                       borderRadius: 8,
                       border: '1px solid #E2E8F0',
                       background: page === 1 ? '#F1F5F9' : '#FFFFFF',
@@ -1044,18 +1046,34 @@ export default function Requests() {
                       gap: 4,
                       fontSize: 12,
                       fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
                     <ChevronLeft size={14} /> Previous
                   </button>
-                  <span style={{ fontWeight: 700, color: '#0F172A', fontSize: 12 }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '5px 12px',
+                    borderRadius: 8,
+                    background: '#F1F5F9',
+                    border: '1px solid #E2E8F0',
+                    fontWeight: 800,
+                    color: '#0F172A',
+                    fontSize: 12,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    minWidth: '60px',
+                  }}>
                     {page} / {totalPages}
                   </span>
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     style={{
-                      padding: '6px 12px',
+                      padding: '6px 14px',
                       borderRadius: 8,
                       border: '1px solid #E2E8F0',
                       background: page === totalPages ? '#F1F5F9' : '#FFFFFF',
@@ -1066,6 +1084,8 @@ export default function Requests() {
                       gap: 4,
                       fontSize: 12,
                       fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
                     Next <ChevronRight size={14} />

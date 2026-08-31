@@ -8,7 +8,7 @@ import {
 import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
   Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle, X,
-  CalendarDays, CalendarRange, CalendarCheck
+  CalendarDays, CalendarRange, CalendarCheck, History, Trash2, RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,9 +22,8 @@ import {
   type Barangay,
 } from '../data/balayan-data';
 import {
-  forecastData, distributionData, reportData, yearlySummary,
-  incidentTrendsData, yearlyTotals, topLocations,
-  TYPE_COLORS, downloadReport, generateFullReport,
+  forecastData, distributionData, yearlySummary,
+  incidentTrendsData, yearlyTotals, TYPE_COLORS,
 } from '../data/mdrrmo-data';
 import {
   downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
@@ -307,11 +306,54 @@ export default function Analytics() {
   const [reportFilter, setReportFilter] = useState('All Types');
   const [trendYear, setTrendYear] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
-
+  
   type RangeKey = 'daily' | 'weekly' | 'monthly';
   const [downloading, setDownloading] = useState<RangeKey | null>(null);
   const [downloadDone, setDownloadDone] = useState<RangeKey | null>(null);
   const [emptyModal, setEmptyModal] = useState<{ open: boolean; periodName: string } | null>(null);
+
+  interface DownloadHistoryItem {
+    id: string;
+    title: string;
+    type: 'Daily' | 'Weekly' | 'Monthly';
+    period: string;
+    downloadedAt: string;
+    incidentCount: number;
+    format: string;
+    rangeKey: RangeKey;
+    dateParam: string;
+  }
+
+  const [downloadHistory, setDownloadHistory] = useState<DownloadHistoryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('sendresq_download_history');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      {
+        id: 'REP-2026-0831-D01',
+        title: 'Daily Incident Operational Summary',
+        type: 'Daily',
+        period: '2026-08-31',
+        downloadedAt: 'Aug 31, 2026 • 7:15 PM',
+        incidentCount: 14,
+        format: 'Microsoft Word (.docx)',
+        rangeKey: 'daily',
+        dateParam: '2026-08-31',
+      },
+      {
+        id: 'REP-2026-W35-02',
+        title: 'Weekly Incident & Deployment Summary',
+        type: 'Weekly',
+        period: '2026-08-25 to 2026-08-31',
+        downloadedAt: 'Aug 31, 2026 • 2:30 PM',
+        incidentCount: 42,
+        format: 'Microsoft Word (.docx)',
+        rangeKey: 'weekly',
+        dateParam: '2026-08-25',
+      },
+    ];
+  });
 
   function getLocalIsoDate(d = new Date()): string {
     const year = d.getFullYear();
@@ -320,10 +362,12 @@ export default function Analytics() {
     return `${year}-${month}-${day}`;
   }
 
-  const todayIso = getLocalIsoDate(new Date());
-  const [selectedDay, setSelectedDay]   = useState(todayIso);
-  const [selectedWeek, setSelectedWeek] = useState(todayIso);
-  const [selectedMonth, setSelectedMonth] = useState(todayIso.slice(0, 7));
+  const [selectedDay, setSelectedDay] = useState(getLocalIsoDate());
+  const [selectedWeek, setSelectedWeek] = useState(getLocalIsoDate());
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   const riskStats = useMemo(() => {
     let high = 0, medium = 0, low = 0;
@@ -345,21 +389,32 @@ export default function Analytics() {
     return getRiskExplanation(selectedType, riskFilter);
   }, [selectedType, riskFilter]);
 
-  const handleDownload = async (key: RangeKey) => {
+  const handleDownload = async (key: RangeKey, customDate?: string) => {
+    const activeDay = (key === 'daily' && customDate) ? customDate : selectedDay;
+    const activeWeek = (key === 'weekly' && customDate) ? customDate : selectedWeek;
+    const activeMonth = (key === 'monthly' && customDate) ? customDate : selectedMonth;
+
     setDownloading(key);
     try {
-      let fromStr = selectedDay, toStr = selectedDay;
+      let fromStr = activeDay, toStr = activeDay;
+      let periodLabel = activeDay;
+      let dateParam = activeDay;
+
       if (key === 'weekly') {
-        const wd = new Date(selectedWeek + 'T00:00:00');
+        const wd = new Date(activeWeek + 'T00:00:00');
         const day = wd.getDay();
         const mon = new Date(wd); mon.setDate(wd.getDate() - (day === 0 ? 6 : day - 1));
         const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
         fromStr = getLocalIsoDate(mon);
         toStr   = getLocalIsoDate(sun);
+        periodLabel = `${fromStr} to ${toStr}`;
+        dateParam = activeWeek;
       } else if (key === 'monthly') {
-        const [y, m] = selectedMonth.split('-').map(Number);
+        const [y, m] = activeMonth.split('-').map(Number);
         fromStr = getLocalIsoDate(new Date(y, m - 1, 1));
         toStr   = getLocalIsoDate(new Date(y, m, 0));
+        periodLabel = activeMonth;
+        dateParam = activeMonth;
       }
 
       const res = await getIncidentsByRange(fromStr, toStr);
@@ -367,17 +422,41 @@ export default function Analytics() {
 
       if (incs.length === 0) {
         const periodName = key === 'daily'
-          ? `date (${selectedDay})`
+          ? `date (${activeDay})`
           : key === 'weekly'
           ? `week period (${fromStr} to ${toStr})`
-          : `month (${selectedMonth})`;
+          : `month (${activeMonth})`;
         setEmptyModal({ open: true, periodName });
         return;
       }
 
-      if (key === 'daily')   await downloadDailyReport(incs, selectedDay);
-      if (key === 'weekly')  await downloadWeeklyReport(incs, selectedWeek);
-      if (key === 'monthly') await downloadMonthlyReport(incs, selectedMonth);
+      if (key === 'daily')   await downloadDailyReport(incs, activeDay);
+      if (key === 'weekly')  await downloadWeeklyReport(incs, activeWeek);
+      if (key === 'monthly') await downloadMonthlyReport(incs, activeMonth);
+
+      // Record to download history
+      const typeLabel = key === 'daily' ? 'Daily' : key === 'weekly' ? 'Weekly' : 'Monthly';
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const newItem: DownloadHistoryItem = {
+        id: `REP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`,
+        title: `${typeLabel} Incident Operational Summary`,
+        type: typeLabel,
+        period: periodLabel,
+        downloadedAt: `${dateStr} • ${timeStr}`,
+        incidentCount: incs.length,
+        format: 'Microsoft Word (.docx)',
+        rangeKey: key,
+        dateParam: dateParam,
+      };
+
+      setDownloadHistory(prev => {
+        const updated = [newItem, ...prev.filter(p => p.id !== newItem.id).slice(0, 29)];
+        try { localStorage.setItem('sendresq_download_history', JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+
       setDownloadDone(key);
       setTimeout(() => setDownloadDone(null), 3000);
     } catch (err) {
@@ -387,9 +466,16 @@ export default function Analytics() {
     }
   };
 
-  const filteredReports = reportFilter === 'All Types'
-    ? reportData
-    : reportData.filter(r => r.type === reportFilter);
+  const handleClearHistory = () => {
+    if (window.confirm('Are you sure you want to clear your report download history?')) {
+      setDownloadHistory([]);
+      try { localStorage.removeItem('sendresq_download_history'); } catch {}
+    }
+  };
+
+  const filteredHistory = reportFilter === 'All Types'
+    ? downloadHistory
+    : downloadHistory.filter(r => r.type === reportFilter);
 
   return (
     <>
@@ -942,8 +1028,8 @@ export default function Analytics() {
               <div className="stat-card">
                 <div className="stat-info">
                   <h3>Total Reports</h3>
-                  <div className="stat-value">{reportData.length}</div>
-                  <div className="stat-change up">Available for download</div>
+                  <div className="stat-value">{downloadHistory.length}</div>
+                  <div className="stat-change up">Generated in history</div>
                 </div>
                 <div className="stat-icon blue"><FileText size={22} /></div>
               </div>
@@ -1101,85 +1187,107 @@ export default function Analytics() {
               </Card>
             </div>
 
-            {/* ── Generated Reports Data Table Section ── */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Available Generated Reports</h3>
+            {/* ── Downloaded Reports History Section ── */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', flexShrink: 0 }}>
+                  <History size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>Downloaded Reports History</h3>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Official Microsoft Word (.docx) statistical downloads generated by dispatchers</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <select
                   className="filter-select"
                   value={reportFilter}
                   onChange={e => setReportFilter(e.target.value)}
+                  style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid var(--border)', background: 'var(--bg-card)' }}
                 >
                   <option value="All Types">All Types</option>
-                  <option value="Monthly">Monthly</option>
-                  <option value="Quarterly">Quarterly</option>
-                  <option value="Annual">Annual</option>
+                  <option value="Daily">Daily Reports</option>
+                  <option value="Weekly">Weekly Reports</option>
+                  <option value="Monthly">Monthly Reports</option>
                 </select>
+                {downloadHistory.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="btn btn-outline btn-sm"
+                    onClick={handleClearHistory}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.25)', height: 36 }}
+                  >
+                    <Trash2 size={13} /> Clear History
+                  </Button>
+                )}
               </div>
-              <Button size="sm" className="btn btn-primary btn-sm" onClick={() => generateFullReport()}>
-                <Download size={14} /> Export Full Report (CSV)
-              </Button>
             </div>
 
-            <div className="card" style={{ marginBottom: 24 }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Report ID</th>
-                    <th>Title</th>
-                    <th>Type</th>
-                    <th>Generated</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredReports.map((r) => (
-                    <tr key={r.id}>
-                      <td style={{ fontWeight: 600 }}>{r.id}</td>
-                      <td>{r.title}</td>
-                      <td>
-                        <Badge className={`badge ${r.type === 'Annual' ? 'resolved' : r.type === 'Monthly' ? 'reviewing' : 'dispatched'}`}>
-                          {r.type}
-                        </Badge>
-                      </td>
-                      <td>{r.generated}</td>
-                      <td>
-                        <Button size="sm" variant="outline" className="btn btn-outline btn-sm" onClick={() => downloadReport(r.id)}>
-                          <Download size={14} /> Download CSV
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* ── Top Incident Locations Table Card ── */}
-            <div className="card">
-              <div className="card-header">
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Top Incident Locations (All Years)</h3>
-              </div>
-              <div className="card-body">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-                  {topLocations.map((loc, i) => (
-                    <div key={loc.name} style={{
-                      display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                      background: i < 3 ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-card-hover)',
-                      borderRadius: 10, border: i < 3 ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid var(--border)',
-                    }}>
-                      <div style={{
-                        width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 12, fontWeight: 800, color: 'white',
-                        background: i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8',
-                      }}>{i + 1}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{loc.name}</div>
-                      </div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: i < 3 ? '#EF4444' : 'var(--text-primary)' }}>{loc.count}</div>
-                    </div>
-                  ))}
+            <div className="card" style={{ marginBottom: 24, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              {filteredHistory.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
+                  <FileText size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)' }}>No Downloaded Reports Found</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                    {reportFilter !== 'All Types' ? `No ${reportFilter.toLowerCase()} reports found in history.` : 'Generate and download a daily, weekly, or monthly report above to record it in your history.'}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <table className="data-table" style={{ width: '100%', minWidth: '700px' }}>
+                    <thead>
+                      <tr>
+                        <th>Report ID</th>
+                        <th>Document & Period</th>
+                        <th>Type</th>
+                        <th>Incidents</th>
+                        <th>Downloaded At</th>
+                        <th style={{ textAlign: 'right' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredHistory.map((r) => (
+                        <tr key={r.id}>
+                          <td style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)' }}>
+                            <span style={{ fontFamily: 'monospace', background: 'var(--bg-body)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--border)' }}>
+                              {r.id}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{r.title}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Period: {r.period} • {r.format}</div>
+                          </td>
+                          <td>
+                            <Badge className={`badge ${r.type === 'Monthly' ? 'resolved' : r.type === 'Weekly' ? 'standby' : 'reviewing'}`} style={{ fontWeight: 700, fontSize: 11 }}>
+                              {r.type}
+                            </Badge>
+                          </td>
+                          <td style={{ fontWeight: 800, color: 'var(--text-primary)' }}>
+                            {r.incidentCount} records
+                          </td>
+                          <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                            {r.downloadedAt}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="btn btn-outline btn-sm"
+                              onClick={() => handleDownload(r.rangeKey, r.dateParam)}
+                              disabled={downloading === r.rangeKey}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700 }}
+                            >
+                              <RotateCcw size={13} className={downloading === r.rangeKey ? 'spin' : ''} />
+                              Re-download .docx
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

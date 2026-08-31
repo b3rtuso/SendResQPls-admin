@@ -246,8 +246,8 @@ export default function Departments() {
         </div>
 
         {/* ── Search & Filter Controls ─────────────────────── */}
-        <div className="dept-search-wrapper fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 16 }}>
-          <div className="dept-filter-tabs" style={{ marginBottom: 0 }}>
+        <div className="dept-search-wrapper fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 16, flexWrap: 'wrap' }}>
+          <div className="dept-filter-tabs" style={{ marginBottom: 0, flexShrink: 0 }}>
             {(['ALL', 'Available', 'On Standby', 'Deployed'] as FilterStatus[]).map((tab) => (
               <button
                 key={tab}
@@ -259,8 +259,8 @@ export default function Departments() {
             ))}
           </div>
           
-          <div style={{ display: 'flex', gap: 12, flex: 1, justifyContent: 'flex-end', maxWidth: '600px' }}>
-            <div className="dept-search-box" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: 12, flex: '1 1 320px', justifyContent: 'flex-end', flexWrap: 'wrap', minWidth: 0 }}>
+            <div className="dept-search-box" style={{ flex: '1 1 200px', minWidth: '180px' }}>
               <Search size={18} className="dept-search-icon" />
               <input
                 type="text"
@@ -274,7 +274,7 @@ export default function Departments() {
             <Button 
               onClick={handleOpenAddModal}
               className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', flexShrink: 0, height: 42, padding: '0 16px' }}
             >
               <Plus size={16} /> Add Department
             </Button>
@@ -300,7 +300,9 @@ export default function Departments() {
                   style={{ 
                     display: 'flex', 
                     flexDirection: 'column',
+                    justifyContent: 'space-between',
                     position: 'relative',
+                    height: '100%',
                   }}
                 >
                   {/* Header info */}

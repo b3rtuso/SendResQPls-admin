@@ -6,7 +6,7 @@ import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
   Stethoscope, HardHat, Anchor, ShieldCheck, Clock,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info, Activity, CheckCircle2, Radio,
+  Info, Activity, CheckCircle2, Radio, MapPin,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
-import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals, monthlyDetails } from '../data/mdrrmo-data';
+import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals, monthlyDetails, topLocations } from '../data/mdrrmo-data';
 
 const DEPARTMENTS = [
   { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: Flame,       color: '#EF4444', bg: '#FEF2F2', tel: 'tel:(043) 211-6387' },
@@ -721,8 +721,8 @@ export default function Dashboard() {
                       data={donutData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={62}
-                      outerRadius={84}
+                      innerRadius={65}
+                      outerRadius={88}
                       paddingAngle={3}
                       dataKey="value"
                     >
@@ -744,22 +744,30 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
 
-                {/* Center Donut Total Label */}
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  textAlign: 'center',
-                  pointerEvents: 'none',
-                }}>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', lineHeight: 1, letterSpacing: '-0.5px' }}>
-                    {donutData.reduce((acc, curr) => acc + curr.value, 0)}
-                  </div>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 3 }}>
-                    Reports
-                  </div>
-                </div>
+                {/* Center Donut Total Label — Proportional Scaling for Growing Incident Counts */}
+                {(() => {
+                  const totalReports = donutData.reduce((acc, curr) => acc + curr.value, 0);
+                  const countStr = totalReports.toLocaleString();
+                  const dynamicFontSize = countStr.length > 5 ? 16 : countStr.length > 3 ? 19 : 24;
+                  return (
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      textAlign: 'center',
+                      pointerEvents: 'none',
+                      maxWidth: '92px',
+                    }}>
+                      <div style={{ fontSize: dynamicFontSize, fontWeight: 900, color: '#0F172A', lineHeight: 1.1, letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums' }}>
+                        {countStr}
+                      </div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 3 }}>
+                        Reports
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="donut-legend-list">
@@ -1070,6 +1078,65 @@ export default function Dashboard() {
                   </Button>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Top Incident Locations — Balayan Hotspots ─────── */}
+        <div className="card fade-in" style={{ marginTop: 24, overflow: 'hidden' }}>
+          <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', flexShrink: 0 }}>
+                <MapPin size={18} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Top Incident Locations</h3>
+                <div style={{ fontSize: 11.5, color: '#94A3B8' }}>Historical incident frequency across Balayan barangays & landmarks</div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '4px 12px', borderRadius: 20, border: '1px solid #DBEAFE' }}>
+              {topLocations.length} Key Hotspots
+            </span>
+          </div>
+          <div className="card-body" style={{ padding: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+              {topLocations.map((loc, i) => {
+                const maxCount = topLocations[0]?.count || 1;
+                const pct = Math.round((loc.count / maxCount) * 100);
+                const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
+                const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#F8FAFC';
+                return (
+                  <div key={loc.name} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                    background: i < 3 ? badgeBg : 'var(--bg-card-hover)',
+                    borderRadius: 12, border: i < 3 ? `1px solid ${badgeColor}33` : '1px solid var(--border)',
+                    transition: 'all 0.15s ease',
+                  }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 800, color: 'white', background: badgeColor, flexShrink: 0,
+                    }}>
+                      {i + 1}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {loc.name}
+                      </div>
+                      <div style={{ height: 4, width: '100%', background: '#E2E8F0', borderRadius: 2, marginTop: 6, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: badgeColor, borderRadius: 2 }} />
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 900, color: i < 3 ? badgeColor : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                        {loc.count}
+                      </div>
+                      <div style={{ fontSize: 9.5, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>
+                        Incidents
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
