@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, CheckCircle2, Upload, Camera, FileText, HeartPulse, UserCheck, ShieldAlert } from 'lucide-react';
+import { X,  Upload, Camera, FileText, HeartPulse, UserCheck, ShieldAlert } from 'lucide-react';
 import type { Incident, ResolutionForm } from '../types';
 import { getNearestBarangay } from '../data/balayan-data';
 
@@ -137,18 +137,6 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
           flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              background: 'rgba(34, 197, 94, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-            }}>
-              <CheckCircle2 size={22} color="#22C55E" />
-            </div>
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, letterSpacing: '-0.3px' }}>
                 Incident Resolution Questionnaire
