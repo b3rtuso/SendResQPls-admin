@@ -304,8 +304,8 @@ export default function Departments() {
                   }}
                 >
                   {/* Header info */}
-                  <div className="dept-card-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 0, flex: 1 }}>
+                  <div className="dept-card-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
                       <div style={{
                         width: 44, height: 44, borderRadius: 12,
                         background: theme.bg, color: theme.color,
@@ -315,49 +315,48 @@ export default function Departments() {
                         <IconComponent size={22} />
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>{dept.name}</h4>
-                        <div className="dept-sub" style={{ fontSize: 11.5, color: 'var(--text-secondary)', lineHeight: 1.35, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any} title={dept.fullName}>{dept.fullName}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
+                          <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{dept.name}</h4>
+                          <span className={`badge ${statusClass[dept.status] || 'available'}`} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', height: '22px', fontSize: 11, padding: '2px 8px' }}>
+                            <span 
+                              className="status-pulse-dot" 
+                              style={{ '--pulse-color': statusColor, background: statusColor, width: 6, height: 6, marginRight: 6 } as any} 
+                            />
+                            {dept.status}
+                          </span>
+                        </div>
+                        <div className="dept-sub" style={{ fontSize: 11.5, color: 'var(--text-secondary)', lineHeight: 1.35, marginTop: 3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any} title={dept.fullName}>{dept.fullName}</div>
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      <span className={`badge ${statusClass[dept.status] || 'available'}`} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', height: '22px' }}>
-                        <span 
-                          className="status-pulse-dot" 
-                          style={{ '--pulse-color': statusColor, background: statusColor, width: 6, height: 6, marginRight: 6 } as any} 
-                        />
-                        {dept.status}
-                      </span>
-                      
-                      {/* Edit Menu */}
-                      <div style={{ display: 'flex', gap: 2 }}>
-                        <button 
-                          onClick={() => handleOpenEditModal(dept)}
-                          title="Edit Unit"
-                          style={{
-                            background: 'none', border: 'none', color: 'var(--text-secondary)',
-                            cursor: 'pointer', padding: 6, borderRadius: 6, display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s'
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--border-light)'; e.currentTarget.style.color = 'var(--primary)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(dept.id, dept.name)}
-                          title="Delete Unit"
-                          style={{
-                            background: 'none', border: 'none', color: 'var(--text-secondary)',
-                            cursor: 'pointer', padding: 6, borderRadius: 6, display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s'
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; e.currentTarget.style.color = 'var(--danger)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
+                    {/* Action buttons (Edit & Delete) */}
+                    <div style={{ display: 'flex', gap: 2, flexShrink: 0, marginTop: 2 }}>
+                      <button 
+                        onClick={() => handleOpenEditModal(dept)}
+                        title="Edit Unit"
+                        style={{
+                          background: 'none', border: 'none', color: 'var(--text-secondary)',
+                          cursor: 'pointer', padding: 6, borderRadius: 6, display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--border-light)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(dept.id, dept.name)}
+                        title="Delete Unit"
+                        style={{
+                          background: 'none', border: 'none', color: 'var(--text-secondary)',
+                          cursor: 'pointer', padding: 6, borderRadius: 6, display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; e.currentTarget.style.color = 'var(--danger)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
                   </div>
 

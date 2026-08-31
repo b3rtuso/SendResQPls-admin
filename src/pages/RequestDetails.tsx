@@ -120,21 +120,32 @@ export default function RequestDetails() {
     handleStatusUpdate(confirmModal.targetStatus);
   };
 
-  useEffect(() => {
-    if (id) {
-      setLoading(true);
-      fetchIncident(id)
-        .then((res) => {
-          setIncident(res.data);
-          setCurrentStatus(res.data.status);
-          setNotes(res.data.adminNotes || '');
-        })
-        .catch(() => {
-          showToast('error', 'Failed to load incident', 'Could not fetch incident details from the database.');
-        })
-        .finally(() => setLoading(false));
+  const loadIncident = useCallback(async (showLoading = false) => {
+    if (!id) return;
+    if (showLoading) setLoading(true);
+    try {
+      const res = await fetchIncident(id);
+      if (res?.data) {
+        setIncident(res.data);
+        setCurrentStatus(res.data.status);
+        setNotes(res.data.adminNotes || '');
+      }
+    } catch {
+      if (showLoading) {
+        showToast('error', 'Failed to load incident', 'Could not fetch incident details from the database.');
+      }
+    } finally {
+      if (showLoading) setLoading(false);
     }
   }, [id, showToast]);
+
+  useEffect(() => {
+    loadIncident(true);
+    const interval = setInterval(() => {
+      loadIncident(false);
+    }, 8000); // 8s live polling to keep activity timeline & incident data synced
+    return () => clearInterval(interval);
+  }, [loadIncident]);
 
   useEffect(() => {
     if (incident) {
@@ -174,12 +185,18 @@ export default function RequestDetails() {
     setSaving(true);
 
     try {
-      await updateIncidentStatus(id!, { status, resolutionForm });
+      const res = await updateIncidentStatus(id!, { status, resolutionForm });
+      if (res?.data) {
+        setIncident(res.data);
+        setCurrentStatus(res.data.status);
+        setNotes(res.data.adminNotes || '');
+      }
       showToast(
         'success',
         `Status updated to ${status} 📱`,
         `Incident ${id?.slice(0, 8)}... marked as ${status}. Push notification sent to the reporter's mobile app.`
       );
+      loadIncident(false);
     } catch {
       // Automatic Rollback on failure
       setCurrentStatus(prevStatus);
@@ -201,8 +218,13 @@ export default function RequestDetails() {
     setSaving(true);
 
     try {
-      await updateIncidentStatus(id!, { status: currentStatus, adminNotes: notes });
+      const res = await updateIncidentStatus(id!, { status: currentStatus, adminNotes: notes });
+      if (res?.data) {
+        setIncident(res.data);
+        setNotes(res.data.adminNotes || '');
+      }
       showToast('success', 'Notes saved', 'Admin notes have been updated successfully.');
+      loadIncident(false);
     } catch {
       setIncident((prev) => prev ? { ...prev, adminNotes: prevNotes } : prev);
       showToast('error', 'Failed to save notes', 'Server returned an error. Notes reverted.');
@@ -222,9 +244,13 @@ export default function RequestDetails() {
     setSaving(true);
 
     try {
-      await updateIncidentStatus(id!, { assignedDepartment: deptKey });
+      const res = await updateIncidentStatus(id!, { assignedDepartment: deptKey });
       const dept = departments.find(d => d.key === deptKey);
+      if (res?.data) {
+        setIncident(res.data);
+      }
       showToast('success', `Department assigned: ${dept?.name}`, `Contact: ${dept?.contact} — You can now call them directly.`);
+      loadIncident(false);
     } catch {
       setIncident((prev) => prev ? { ...prev, assignedDepartment: prevDept } : prev);
       showToast('error', 'Failed to assign department', 'Server returned an error. Reverting department assignment.');
