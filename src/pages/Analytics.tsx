@@ -7,10 +7,12 @@ import {
 } from 'recharts';
 import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
-  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle, X
+  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle, X,
+  CalendarDays, CalendarRange, CalendarCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -957,116 +959,131 @@ export default function Analytics() {
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             </div>
 
-            {/* ── Live Downloadable Report Cards (July 19 Exact Design & Position) ── */}
+            {/* ── Refined Report Download Cards ── */}
             <div className="analytics-reports-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 28 }}>
 
               {/* ── DAILY REPORT CARD ── */}
-              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Calendar size={18} color="var(--primary)" />
+              <Card style={{ overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <CardHeader style={{ padding: '18px 20px 14px', borderBottom: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 12,
+                      background: '#EFF6FF',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <CalendarDays size={20} color="#2563EB" />
                     </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Daily Report</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Single-day incident summary</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>Daily Report</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2, fontWeight: 500 }}>Single-day incident summary</div>
                     </div>
                   </div>
-                </div>
-                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                </CardHeader>
+                <CardContent style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Date</label>
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Date</label>
                     <input
                       type="date"
                       className="filter-select"
-                      style={{ width: '100%', boxSizing: 'border-box' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-body)' }}
                       value={selectedDay}
                       onChange={e => setSelectedDay(e.target.value)}
                     />
                   </div>
                   <Button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'daily' ? 'var(--success)' : undefined, transition: 'background 0.3s' }}
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'daily' ? 'var(--success)' : undefined, transition: 'all 0.2s', borderRadius: 8, fontWeight: 700 }}
                     onClick={() => handleDownload('daily')}
                     disabled={downloading === 'daily'}
                   >
                     {downloading === 'daily' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'daily' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
                   </Button>
-                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
-                </div>
-              </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '0.02em' }}>Microsoft Word · MDRRMO soft copy format</div>
+                </CardContent>
+              </Card>
 
               {/* ── WEEKLY REPORT CARD ── */}
-              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245, 158, 11, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Calendar size={18} color="#F59E0B" />
+              <Card style={{ overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <CardHeader style={{ padding: '18px 20px 14px', borderBottom: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 12,
+                      background: '#FFFBEB',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <CalendarRange size={20} color="#D97706" />
                     </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Weekly Report</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>7-day operational breakdown</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>Weekly Report</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2, fontWeight: 500 }}>7-day operational breakdown</div>
                     </div>
                   </div>
-                </div>
-                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                </CardHeader>
+                <CardContent style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Week (Pick Any Day)</label>
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Week (Pick Any Day)</label>
                     <input
                       type="date"
                       className="filter-select"
-                      style={{ width: '100%', boxSizing: 'border-box' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-body)' }}
                       value={selectedWeek}
                       onChange={e => setSelectedWeek(e.target.value)}
                     />
                   </div>
                   <Button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'weekly' ? 'var(--success)' : '#F59E0B', borderColor: '#D97706', transition: 'background 0.3s' }}
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'weekly' ? 'var(--success)' : undefined, transition: 'all 0.2s', borderRadius: 8, fontWeight: 700 }}
                     onClick={() => handleDownload('weekly')}
                     disabled={downloading === 'weekly'}
                   >
                     {downloading === 'weekly' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'weekly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
                   </Button>
-                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
-                </div>
-              </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '0.02em' }}>Microsoft Word · MDRRMO soft copy format</div>
+                </CardContent>
+              </Card>
 
               {/* ── MONTHLY REPORT CARD ── */}
-              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(34, 197, 94, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Calendar size={18} color="#22C55E" />
+              <Card style={{ overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <CardHeader style={{ padding: '18px 20px 14px', borderBottom: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 12,
+                      background: '#ECFDF5',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <CalendarCheck size={20} color="#059669" />
                     </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Monthly Report</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Full-month statistical report</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>Monthly Report</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2, fontWeight: 500 }}>Full-month statistical report</div>
                     </div>
                   </div>
-                </div>
-                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                </CardHeader>
+                <CardContent style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Month</label>
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Month</label>
                     <input
                       type="month"
                       className="filter-select"
-                      style={{ width: '100%', boxSizing: 'border-box' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-body)' }}
                       value={selectedMonth}
                       onChange={e => setSelectedMonth(e.target.value)}
                     />
                   </div>
                   <Button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'monthly' ? 'var(--success)' : '#22C55E', borderColor: '#16A34A', transition: 'background 0.3s' }}
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'monthly' ? 'var(--success)' : undefined, transition: 'all 0.2s', borderRadius: 8, fontWeight: 700 }}
                     onClick={() => handleDownload('monthly')}
                     disabled={downloading === 'monthly'}
                   >
                     {downloading === 'monthly' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'monthly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
                   </Button>
-                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
-                </div>
-              </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '0.02em' }}>Microsoft Word · MDRRMO soft copy format</div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* ── Generated Reports Data Table Section ── */}

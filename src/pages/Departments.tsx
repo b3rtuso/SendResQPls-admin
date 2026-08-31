@@ -304,19 +304,19 @@ export default function Departments() {
                   }}
                 >
                   {/* Header info */}
-                  <div className="dept-card-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', minWidth: 0, flex: 1 }}>
+                  <div className="dept-card-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 0, flex: 1 }}>
                       <div style={{
-                        width: 40, height: 40, borderRadius: 10,
+                        width: 44, height: 44, borderRadius: 12,
                         background: theme.bg, color: theme.color,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0
                       }}>
-                        <IconComponent size={20} />
+                        <IconComponent size={22} />
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dept.name}</h4>
-                        <div className="dept-sub" style={{ fontSize: 11, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={dept.fullName}>{dept.fullName}</div>
+                        <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>{dept.name}</h4>
+                        <div className="dept-sub" style={{ fontSize: 11.5, color: 'var(--text-secondary)', lineHeight: 1.35, marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any} title={dept.fullName}>{dept.fullName}</div>
                       </div>
                     </div>
                     
@@ -362,18 +362,43 @@ export default function Departments() {
                   </div>
 
                   {/* Details Section */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, marginBottom: 18 }}>
-                    <div className="dept-detail" style={{ margin: 0 }}><Users size={14} style={{ color: 'var(--text-muted)' }} /> <strong>Head:</strong> {dept.headOfficer}</div>
-                    <div className="dept-detail" style={{ margin: 0 }}><Phone size={14} style={{ color: 'var(--text-muted)' }} /> <strong>Contact:</strong> {dept.contact}</div>
-                    <div className="dept-detail" style={{ margin: 0 }}><Mail size={14} style={{ color: 'var(--text-muted)' }} /> <strong>Email:</strong> {dept.email}</div>
-                    <div className="dept-detail" style={{ margin: 0 }}><Info size={14} style={{ color: 'var(--text-muted)' }} /> <strong>Personnel:</strong> {dept.personnelCount} Active Responders</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, marginBottom: 20 }}>
+                    <div className="dept-detail" style={{ margin: 0, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)' }}>
+                      <Users size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> 
+                      <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Head:</strong> {dept.headOfficer}</span>
+                    </div>
+                    <div className="dept-detail" style={{ margin: 0, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)' }}>
+                      <Phone size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> 
+                      <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Contact:</strong> {dept.contact}</span>
+                    </div>
+                    <div className="dept-detail" style={{ margin: 0, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)' }}>
+                      <Mail size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> 
+                      <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Email:</strong> {dept.email}</span>
+                    </div>
+                    <div className="dept-detail" style={{ margin: 0, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)' }}>
+                      <Info size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> 
+                      <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Personnel:</strong> {dept.personnelCount} Active Responders</span>
+                    </div>
                     
                     {/* Equipment tags */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                      <strong style={{ fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assigned Assets</strong>
-                      <div className="equipment-tags" style={{ marginTop: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Assigned Assets</span>
+                      <div className="equipment-tags" style={{ marginTop: 0, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                         {dept.equipment.map((eq) => (
-                          <span className="equipment-tag" key={eq} style={{ background: theme.bg, color: theme.color }}>
+                          <span 
+                            className="equipment-tag" 
+                            key={eq} 
+                            style={{ 
+                              background: theme.bg, 
+                              color: theme.color,
+                              border: `1px solid ${theme.color}25`,
+                              borderRadius: 8,
+                              padding: '3px 9px',
+                              fontSize: 11.5,
+                              fontWeight: 600,
+                              lineHeight: 1.3,
+                            }}
+                          >
                             {eq}
                           </span>
                         ))}

@@ -879,7 +879,7 @@ export default function Dashboard() {
             ) : (
               <>
                 {/* Desktop Table View */}
-                <div className="hidden sm:block" style={{ overflowX: 'auto' }}>
+                <div className="hidden lg:block" style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #F1F5F9' }}>
@@ -952,7 +952,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Mobile Feed Cards */}
-                <div className="block sm:hidden" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="flex flex-col gap-2.5 lg:hidden" style={{ padding: '12px' }}>
                   {filteredIncidents.slice(0, 8).map((inc) => {
                     const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                     const normalized = normalizeIncidentType(inc.aiDetectedType);
