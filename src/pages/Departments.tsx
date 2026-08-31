@@ -528,7 +528,7 @@ export default function Departments() {
                     <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Dept Code</Label>
                     <Input
                       type="text"
-                      placeholder="e.g. PCG"
+                      placeholder="e.g. PCG, BFP, PNP"
                       required
                       disabled={!!editingDept}
                       value={name}
@@ -541,7 +541,7 @@ export default function Departments() {
                     <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Full Agency Name</Label>
                     <Input
                       type="text"
-                      placeholder="e.g. Philippine Coast Guard"
+                      placeholder="e.g. Philippine Coast Guard - Balayan Sub-station"
                       required
                       value={fullName}
                       onChange={e => setFullName(e.target.value)}
@@ -569,7 +569,7 @@ export default function Departments() {
                     <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Contact Number</Label>
                     <Input
                       type="text"
-                      placeholder="e.g. (043) 211-1234"
+                      placeholder="e.g. (043) 211-1234 / 0917-123-4567"
                       required
                       value={contact}
                       onChange={e => setContact(e.target.value)}
@@ -580,7 +580,7 @@ export default function Departments() {
                     <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Email Address</Label>
                     <Input
                       type="email"
-                      placeholder="e.g. unit@gmail.com"
+                      placeholder="e.g. pcg.balayan@gov.ph"
                       required
                       value={email}
                       onChange={e => setEmail(e.target.value)}
@@ -597,7 +597,8 @@ export default function Departments() {
                       type="number"
                       required
                       min={0}
-                      value={personnelCount}
+                      placeholder="e.g. 24"
+                      value={personnelCount === 0 && !editingDept ? '' : personnelCount}
                       onChange={e => setPersonnelCount(parseInt(e.target.value) || 0)}
                       className="w-full text-sm"
                     />
@@ -625,7 +626,7 @@ export default function Departments() {
                   <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Assigned Equipment (Comma-separated)</Label>
                   <Input
                     type="text"
-                    placeholder="e.g. Patrol Boat, Life Vests, Rescue Rope"
+                    placeholder="e.g. Patrol Boat, Life Vests, Rescue Rope, First Aid Kit"
                     value={equipmentInput}
                     onChange={e => setEquipmentInput(e.target.value)}
                     className="w-full text-sm"

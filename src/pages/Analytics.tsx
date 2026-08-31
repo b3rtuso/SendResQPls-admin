@@ -395,15 +395,30 @@ export default function Analytics() {
     <>
       <Header title="Analytics & Reports" subtitle="Forecasting, incident mapping, and analysis" />
       <div className="page-content">
-        <div className="tabs fade-in" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
-          <button className={`tab ${tab === 'map' ? 'active' : ''}`} onClick={() => setTab('map')}>
-            <MapPin size={16} style={{ marginLeft: 6, verticalAlign: -3 }} /> Incident Map
+        <div className="tabs fade-in" style={{ overflowX: 'auto', whiteSpace: 'nowrap', display: 'flex', gap: 4 }}>
+          <button 
+            className={`tab ${tab === 'map' ? 'active' : ''}`} 
+            onClick={() => setTab('map')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexDirection: 'row' }}
+          >
+            <MapPin size={16} style={{ flexShrink: 0 }} /> 
+            <span>Incident Map</span>
           </button>
-          <button className={`tab ${tab === 'forecast' ? 'active' : ''}`} onClick={() => setTab('forecast')}>
-            <TrendingUp size={16} style={{ marginLeft: 6, verticalAlign: -3 }} /> Incident Forecast
+          <button 
+            className={`tab ${tab === 'forecast' ? 'active' : ''}`} 
+            onClick={() => setTab('forecast')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexDirection: 'row' }}
+          >
+            <TrendingUp size={16} style={{ flexShrink: 0 }} /> 
+            <span>Incident Forecast</span>
           </button>
-          <button className={`tab ${tab === 'reports' ? 'active' : ''}`} onClick={() => setTab('reports')}>
-            <FileText size={16} style={{ marginLeft: 6, verticalAlign: -3 }} /> Incident Reports
+          <button 
+            className={`tab ${tab === 'reports' ? 'active' : ''}`} 
+            onClick={() => setTab('reports')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexDirection: 'row' }}
+          >
+            <FileText size={16} style={{ flexShrink: 0 }} /> 
+            <span>Incident Reports</span>
           </button>
         </div>
 

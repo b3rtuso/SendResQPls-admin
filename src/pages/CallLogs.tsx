@@ -184,13 +184,14 @@ export default function CallLogs() {
         {/* ── Filter / Search Bar ── */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: 260, position: 'relative' }}>
-            <Search size={15} color="#94A3B8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
+            <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', zIndex: 1, pointerEvents: 'none' }} />
             <Input
               type="text"
               placeholder="Search call logs, caller identity, department, phone number..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-[#F8FAFC] text-sm h-10 border-[#E2E8F0]"
+              className="bg-[#F8FAFC] text-sm h-10 border-[#E2E8F0]"
+              style={{ paddingLeft: 38 }}
             />
           </div>
 
