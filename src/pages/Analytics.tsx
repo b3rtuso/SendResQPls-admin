@@ -395,13 +395,13 @@ export default function Analytics() {
       <div className="page-content">
         <div className="tabs fade-in" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
           <button className={`tab ${tab === 'map' ? 'active' : ''}`} onClick={() => setTab('map')}>
-            Incident Map <MapPin size={16} style={{ marginLeft: 6, verticalAlign: -3 }} />
+            <MapPin size={16} style={{ marginLeft: 6, verticalAlign: -3 }} /> Incident Map
           </button>
           <button className={`tab ${tab === 'forecast' ? 'active' : ''}`} onClick={() => setTab('forecast')}>
-            Incident Forecast <TrendingUp size={16} style={{ marginLeft: 6, verticalAlign: -3 }} />
+            <TrendingUp size={16} style={{ marginLeft: 6, verticalAlign: -3 }} /> Incident Forecast
           </button>
           <button className={`tab ${tab === 'reports' ? 'active' : ''}`} onClick={() => setTab('reports')}>
-            Incident Reports <FileText size={16} style={{ marginLeft: 6, verticalAlign: -3 }} />
+            <FileText size={16} style={{ marginLeft: 6, verticalAlign: -3 }} /> Incident Reports
           </button>
         </div>
 
@@ -427,31 +427,14 @@ export default function Analytics() {
                 })}
               </div>
 
-              {/* Left-docked Risk Assessment Popup (positioned below filter bar & before risk level legend) */}
+              {/* Vertically-centered Risk Assessment Card (left-docked, re-animates on change) */}
               {selectedBarangay && (() => {
                 const risk = selectedBarangay.riskProfile[selectedType];
                 const incType = INCIDENT_TYPES_SVG.find(t => t.id === selectedType);
                 if (!risk) return null;
                 const riskClass = risk.riskLevel.toLowerCase();
                 return (
-                  <div className="map-left-popup-card fade-in" style={{
-                    position: 'absolute',
-                    top: 72,
-                    left: 16,
-                    zIndex: 1000,
-                    width: 300,
-                    maxWidth: 'calc(100% - 32px)',
-                    maxHeight: 'calc(100% - 140px)',
-                    overflowY: 'auto',
-                    background: 'rgba(15, 23, 42, 0.95)',
-                    backdropFilter: 'blur(20px) saturate(1.8)',
-                    WebkitBackdropFilter: 'blur(20px) saturate(1.8)',
-                    borderRadius: 16,
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.45)',
-                    padding: '16px 18px',
-                    color: 'white',
-                  }}>
+                  <div key={selectedBarangay.name + selectedType} className="map-left-popup-card">
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{

@@ -261,6 +261,47 @@
   color: rgba(255, 255, 255, 0.85);
 }
 
+/* ---- Left-docked Vertically Centered Risk Assessment Card ---- */
+.map-left-popup-card {
+  position: absolute;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  left: 18px !important;
+  z-index: 1000 !important;
+  width: 310px;
+  max-width: calc(100% - 36px);
+  max-height: calc(100% - 130px);
+  overflow-y: auto;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 18px 20px;
+  color: white;
+  animation: brgyCardEntrance 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes brgyCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(calc(-50% + 18px)) scale(0.93);
+    filter: blur(5px);
+  }
+  60% {
+    opacity: 0.95;
+    transform: translateY(calc(-50% - 2px)) scale(1.01);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    filter: blur(0px);
+  }
+}
+
 /* ---- Map Legend ---- */
 .map-legend {
   position: absolute;
