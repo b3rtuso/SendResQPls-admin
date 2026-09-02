@@ -7,9 +7,13 @@ import {
 } from 'recharts';
 import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
-  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle, X,
+  Activity, Info, Car, AlertTriangle, X,
   CalendarDays, CalendarRange, CalendarCheck, History, Trash2, RotateCcw,
 } from 'lucide-react';
+import { FaFire, FaHouseFloodWater } from 'react-icons/fa6';
+import { FaBriefcaseMedical } from 'react-icons/fa';
+import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
+import { MdLandslide } from 'react-icons/md';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -33,14 +37,14 @@ import type { Incident } from '../types';
 
 // SVG Icon Incident Types (8 Official Types)
 const INCIDENT_TYPES_SVG = [
-  { id: 'fire',      label: 'Fire',       icon: Flame,       color: '#EF4444', desc: 'Structural and wildland fires across barangays' },
-  { id: 'flood',     label: 'Flood',      icon: Waves,       color: '#3B82F6', desc: 'Monsoon flooding & riverbank spillover risk' },
-  { id: 'medical',   label: 'Medical',    icon: Stethoscope, color: '#22C55E', desc: 'Medical emergencies & patient transport calls' },
-  { id: 'trauma',    label: 'Trauma',     icon: Activity,    color: '#F59E0B', desc: 'Physical injuries & severe trauma dispatches' },
-  { id: 'accident',  label: 'Accident',   icon: Car,         color: '#3B82F6', desc: 'Vehicular collisions & road traffic accidents' },
-  { id: 'crime',     label: 'Crime',      icon: ShieldAlert, color: '#8B5CF6', desc: 'Security, disturbance & assault incidents' },
-  { id: 'typhoon',   label: 'Typhoon',    icon: Wind,        color: '#8B5CF6', desc: 'Tropical storms & typhoon wind/rain damage' },
-  { id: 'landslide', label: 'Landslide',  icon: Mountain,    color: '#78716C', desc: 'Ground movement, mudslides & slope erosion' },
+  { id: 'fire',      label: 'Fire',       icon: FaFire,            color: '#EF4444', desc: 'Structural and wildland fires across barangays' },
+  { id: 'flood',     label: 'Flood',      icon: FaHouseFloodWater, color: '#3B82F6', desc: 'Monsoon flooding & riverbank spillover risk' },
+  { id: 'medical',   label: 'Medical',    icon: FaBriefcaseMedical,color: '#22C55E', desc: 'Medical emergencies & patient transport calls' },
+  { id: 'trauma',    label: 'Trauma',     icon: Activity,          color: '#F59E0B', desc: 'Physical injuries & severe trauma dispatches' },
+  { id: 'accident',  label: 'Accident',   icon: Car,               color: '#3B82F6', desc: 'Vehicular collisions & road traffic accidents' },
+  { id: 'crime',     label: 'Crime',      icon: RiCriminalFill,    color: '#8B5CF6', desc: 'Security, disturbance & assault incidents' },
+  { id: 'typhoon',   label: 'Typhoon',    icon: RiTyphoonFill,     color: '#8B5CF6', desc: 'Tropical storms & typhoon wind/rain damage' },
+  { id: 'landslide', label: 'Landslide',  icon: MdLandslide,       color: '#78716C', desc: 'Ground movement, mudslides & slope erosion' },
 ];
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -383,7 +387,7 @@ export default function Analytics() {
   }, [selectedType]);
 
   const currentIncident = INCIDENT_TYPES_SVG.find(t => t.id === selectedType);
-  const IconComp = currentIncident?.icon || Flame;
+  const IconComp = currentIncident?.icon || FaFire;
 
   const riskExplanation = useMemo(() => {
     return getRiskExplanation(selectedType, riskFilter);

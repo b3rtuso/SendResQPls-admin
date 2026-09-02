@@ -2,10 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import { DepartmentsSkeleton } from '../components/PageLoader';
 import {
-  Phone, Mail, Users, Search, ShieldCheck, Flame,
-  Stethoscope, HardHat, Anchor, Copy, Check, Info, ShieldAlert,
+  Phone, Mail, Users, Search, Anchor, Copy, Check, Info, ShieldAlert,
   Plus, Edit2, Trash2,
 } from 'lucide-react';
+import { FaFire } from 'react-icons/fa6';
+import { FaBriefcaseMedical } from 'react-icons/fa';
+import { MdEngineering, MdLocalShipping } from 'react-icons/md';
+import { GiPoliceOfficerHead } from 'react-icons/gi';
 import type { DepartmentInfo } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,17 +34,17 @@ const statusColors: Record<string, string> = {
 };
 
 const DEPT_THEME: Record<string, { icon: any; color: string; bg: string }> = {
-  BFP: { icon: Flame, color: '#EF4444', bg: '#FEF2F2' },
-  PNP: { icon: ShieldCheck, color: '#3B82F6', bg: '#EFF6FF' },
-  MEDICAL: { icon: Stethoscope, color: '#22C55E', bg: '#ECFDF5' },
-  ENGINEERING: { icon: HardHat, color: '#F59E0B', bg: '#FEFCE8' },
+  BFP: { icon: FaFire, color: '#EF4444', bg: '#FEF2F2' },
+  PNP: { icon: GiPoliceOfficerHead, color: '#3B82F6', bg: '#EFF6FF' },
+  MEDICAL: { icon: FaBriefcaseMedical, color: '#22C55E', bg: '#ECFDF5' },
+  ENGINEERING: { icon: MdEngineering, color: '#F59E0B', bg: '#FEFCE8' },
   RESCUE: { icon: Anchor, color: '#8B5CF6', bg: '#F5F3FF' },
 };
 
 const getDeptTheme = (name: string) => {
   const code = name.toUpperCase();
   if (DEPT_THEME[code]) return DEPT_THEME[code];
-  return { icon: ShieldCheck, color: '#64748B', bg: '#F1F5F9' }; // default fallback theme
+  return { icon: GiPoliceOfficerHead, color: '#64748B', bg: '#F1F5F9' }; // default fallback theme
 };
 
 type FilterStatus = 'ALL' | 'Available' | 'On Standby' | 'Deployed';
@@ -236,7 +239,7 @@ export default function Departments() {
           </div>
           <div className="dept-stat-item">
             <div className="dept-stat-icon-wrapper" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#EF4444' }}>
-              <Flame size={20} />
+              <MdLocalShipping size={20} />
             </div>
             <div className="dept-stat-info">
               <span className="dept-stat-value">{loading ? '—' : stats.deployedUnits}</span>
