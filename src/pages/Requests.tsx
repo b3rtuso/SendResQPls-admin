@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
 import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { FaFire, FaHouseFloodWater } from 'react-icons/fa6';
+import { FaBriefcaseMedical } from 'react-icons/fa';
+import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
+import { MdLandslide } from 'react-icons/md';
 import type { Incident, Status, Department } from '../types';
 import { getIncidents, updateIncidentStatus, invalidateCache } from '../api/client';
 import { Button } from '@/components/ui/button';
@@ -18,10 +22,16 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string; border: string }
   REJECTED:   { bg: '#FEE2E2', color: '#7F1D1D', border: '#FECACA' },
 };
 
-const TYPE_ICON: Record<string, string> = {
-  Fire: '🔥', Flood: '🌊', Medical: '🏥',
-  Accident: '🚗', Typhoon: '🌀', Landslide: '⛰️',
-  Trauma: '🩹', Crime: '🚨',
+type TypeIconEntry = { icon: React.ElementType | null; emoji?: string; color: string };
+const TYPE_ICON: Record<string, TypeIconEntry> = {
+  Fire:      { icon: FaFire,            color: '#DC2626' },
+  Flood:     { icon: FaHouseFloodWater, color: '#3B82F6' },
+  Medical:   { icon: FaBriefcaseMedical,color: '#22C55E' },
+  Crime:     { icon: RiCriminalFill,    color: '#8B5CF6' },
+  Typhoon:   { icon: RiTyphoonFill,     color: '#8B5CF6' },
+  Landslide: { icon: MdLandslide,       color: '#78716C' },
+  Trauma:    { icon: null, emoji: '🩹', color: '#F59E0B' },
+  Accident:  { icon: null, emoji: '🚗', color: '#3B82F6' },
 };
 
 const TAB_THEMES: Record<string, {
@@ -683,7 +693,7 @@ export default function Requests() {
                     {paged.map((inc) => {
                       const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                       const normalized = normalizeIncidentType(inc.aiDetectedType);
-                      const emoji = TYPE_ICON[normalized] || '⚠️';
+                      const ti = TYPE_ICON[normalized] || { icon: null, emoji: '⚠️', color: '#64748B' };
                       const brgyName = inc.latitude && inc.longitude
                         ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                         : 'Balayan';
@@ -742,7 +752,10 @@ export default function Requests() {
                           {/* Type */}
                           <td className="rq-td" style={{ padding: '14px 18px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span>{emoji}</span>
+                              {ti.icon
+                                ? <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
+                                : <span>{ti.emoji}</span>
+                              }
                               <strong style={{ color: '#0F172A', fontWeight: 700 }}>
                                 {inc.aiDetectedType || 'Emergency'}
                               </strong>
@@ -879,7 +892,7 @@ export default function Requests() {
                 {paged.map((inc) => {
                   const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                   const normalized = normalizeIncidentType(inc.aiDetectedType);
-                  const emoji = TYPE_ICON[normalized] || '⚠️';
+                  const ti = TYPE_ICON[normalized] || { icon: null, emoji: '⚠️', color: '#64748B' };
                   const brgyName = inc.latitude && inc.longitude
                     ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                     : 'Balayan';
@@ -947,7 +960,10 @@ export default function Requests() {
 
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                            <span>{emoji}</span>
+                            {ti.icon
+                              ? <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
+                              : <span>{ti.emoji}</span>
+                            }
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.aiDetectedType || 'Emergency'}</span>
                           </div>
                           <div style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>

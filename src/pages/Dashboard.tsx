@@ -3,11 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
-  AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
-  Stethoscope, HardHat, Anchor, ShieldCheck, Clock,
+  AlertTriangle, RefreshCw, ArrowRight, Phone, Anchor,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info, Activity, CheckCircle2, Radio, MapPin,
+  Info, MapPin, Clock,
 } from 'lucide-react';
+import { TbReport } from 'react-icons/tb';
+import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
+import { FaFileCircleCheck, FaFire, FaHouseFloodWater } from 'react-icons/fa6';
+import { FaBriefcaseMedical } from 'react-icons/fa';
+import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
+import { GiPoliceOfficerHead } from 'react-icons/gi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats, invalidateCache } from '../api/client';
@@ -18,11 +23,11 @@ import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals, monthlyDetails, topLocations } from '../data/mdrrmo-data';
 
 const DEPARTMENTS = [
-  { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: Flame,       color: '#EF4444', bg: '#FEF2F2', tel: 'tel:(043) 211-6387' },
-  { label: 'PNP',         sub: 'Philippine National Police', icon: ShieldCheck, color: '#3B82F6', bg: '#EFF6FF', tel: 'tel:(043) 211-4325' },
-  { label: 'Medical',     sub: 'EMS / Health Services',      icon: Stethoscope, color: '#22C55E', bg: '#ECFDF5', tel: 'tel:(043) 911-0012' },
-  { label: 'Engineering', sub: 'Public Works & Infra',       icon: HardHat,     color: '#F59E0B', bg: '#FEFCE8', tel: 'tel:(043) 211-5678' },
-  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Anchor,      color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
+  { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: FaFire,             color: '#EF4444', bg: '#FEF2F2', tel: 'tel:(043) 211-6387' },
+  { label: 'PNP',         sub: 'Philippine National Police', icon: GiPoliceOfficerHead, color: '#3B82F6', bg: '#EFF6FF', tel: 'tel:(043) 211-4325' },
+  { label: 'Medical',     sub: 'EMS / Health Services',      icon: FaBriefcaseMedical,  color: '#22C55E', bg: '#ECFDF5', tel: 'tel:(043) 911-0012' },
+  { label: 'Engineering', sub: 'Public Works & Infra',       icon: MdEngineering,       color: '#F59E0B', bg: '#FEFCE8', tel: 'tel:(043) 211-5678' },
+  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Anchor,              color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
 ];
 
 const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }> = {
@@ -33,15 +38,16 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }>
   REJECTED:   { bg: '#FEE2E2', color: '#7F1D1D', label: 'REJECTED'   },
 };
 
-const TYPE_ICON: Record<string, { emoji: string; color: string }> = {
-  'Fire':               { emoji: '🔥', color: '#DC2626' },
-  'Flood':              { emoji: '🌊', color: '#3B82F6' },
-  'Medical':            { emoji: '🏥', color: '#22C55E' },
-  'Trauma':             { emoji: '🩹', color: '#F59E0B' },
-  'Accident':           { emoji: '🚗', color: '#3B82F6' },
-  'Crime':              { emoji: '🚨', color: '#8B5CF6' },
-  'Typhoon':            { emoji: '🌀', color: '#8B5CF6' },
-  'Landslide':          { emoji: '⛰️', color: '#78716C' },
+type TypeIconEntry = { icon: React.ElementType | null; emoji?: string; color: string };
+const TYPE_ICON: Record<string, TypeIconEntry> = {
+  'Fire':      { icon: FaFire,            color: '#DC2626' },
+  'Flood':     { icon: FaHouseFloodWater, color: '#3B82F6' },
+  'Medical':   { icon: FaBriefcaseMedical,color: '#22C55E' },
+  'Crime':     { icon: RiCriminalFill,    color: '#8B5CF6' },
+  'Typhoon':   { icon: RiTyphoonFill,     color: '#8B5CF6' },
+  'Landslide': { icon: MdLandslide,       color: '#78716C' },
+  'Trauma':    { icon: null, emoji: '🩹', color: '#F59E0B' },
+  'Accident':  { icon: null, emoji: '🚗', color: '#3B82F6' },
 };
 
 const DONUT_COLORS: Record<string, string> = {
@@ -324,10 +330,10 @@ export default function Dashboard() {
   }, [incidents]);
 
   const STAT_CARDS = [
-    { label: 'Total Reports',  value: stats.total,      accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: Activity,     activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
-    { label: 'Pending',        value: stats.pending,    accent: '#D97706', chipBg: '#FFFBEB', chipBorder: '#FDE68A', icon: Clock,        activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
-    { label: 'Dispatched',     value: stats.dispatched, accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: Radio,        activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
-    { label: 'Resolved Today', value: stats.resolved,   accent: '#059669', chipBg: '#ECFDF5', chipBorder: '#D1FAE5', icon: CheckCircle2, activeGlow: 'rgba(34, 197, 94, 0.3)',  filter: 'RESOLVED' },
+    { label: 'Total Reports',  value: stats.total,      accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: TbReport,          activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
+    { label: 'Pending',        value: stats.pending,    accent: '#D97706', chipBg: '#FFFBEB', chipBorder: '#FDE68A', icon: MdPendingActions,   activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
+    { label: 'Dispatched',     value: stats.dispatched, accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: MdLocalShipping,    activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
+    { label: 'Resolved Today', value: stats.resolved,   accent: '#059669', chipBg: '#ECFDF5', chipBorder: '#D1FAE5', icon: FaFileCircleCheck,  activeGlow: 'rgba(34, 197, 94, 0.3)',  filter: 'RESOLVED' },
   ];
 
   if (loading && incidents.length === 0) {
@@ -616,7 +622,7 @@ export default function Dashboard() {
                     justifyContent: 'center',
                     flexShrink: 0,
                   }}>
-                    <Icon size={16} strokeWidth={2.2} />
+                    <Icon size={18} style={{ color: accent }} />
                   </div>
                 </div>
                 <StatValue value={value} />
@@ -959,7 +965,7 @@ export default function Dashboard() {
                       {filteredIncidents.slice(0, 8).map((inc) => {
                         const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                         const normalized = normalizeIncidentType(inc.aiDetectedType);
-                        const ti = TYPE_ICON[normalized] || { emoji: '⚠️', color: '#64748B' };
+                        const ti = TYPE_ICON[normalized] || { icon: null, emoji: '⚠️', color: '#64748B' };
                         return (
                           <tr
                             key={inc.id}
@@ -972,7 +978,12 @@ export default function Dashboard() {
                               #{inc.id.slice(0, 8).toUpperCase()}
                             </td>
                             <td style={{ padding: '13px 18px', whiteSpace: 'nowrap' }}>
-                              <span style={{ marginRight: 6 }}>{ti.emoji}</span>
+                              <span style={{ marginRight: 6, display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
+                                {ti.icon
+                                  ? <ti.icon size={16} style={{ color: ti.color }} />
+                                  : <span>{ti.emoji}</span>
+                                }
+                              </span>
                               <span style={{ fontWeight: 600, color: '#1E293B' }}>{inc.aiDetectedType || 'Unknown'}</span>
                             </td>
                             <td style={{ padding: '13px 18px', color: '#475569', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1023,7 +1034,7 @@ export default function Dashboard() {
                   {filteredIncidents.slice(0, 8).map((inc) => {
                     const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                     const normalized = normalizeIncidentType(inc.aiDetectedType);
-                    const ti = TYPE_ICON[normalized] || { emoji: '⚠️', color: '#64748B' };
+                    const ti = TYPE_ICON[normalized] || { icon: null, emoji: '⚠️', color: '#64748B' };
                     const brgy = inc.latitude && inc.longitude
                       ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                       : 'Balayan';
@@ -1057,7 +1068,10 @@ export default function Dashboard() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13.5, color: '#1E293B' }}>
-                            <span>{ti.emoji}</span>
+                            {ti.icon
+                              ? <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
+                              : <span>{ti.emoji}</span>
+                            }
                             <span>{inc.aiDetectedType || 'Emergency'}</span>
                           </div>
                           <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo(inc.createdAt)}</span>
