@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, FileText, Phone,
+  LayoutDashboard, FileText,
   BarChart3, Building2, Settings, LogOut, X,
 } from 'lucide-react';
+import { FaPhoneSquareAlt } from 'react-icons/fa';
 import { useAdminNav } from '../context/AdminNavContext';
 
 const navItems = [
-  { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
+  { to: '/dashboard',   icon: LayoutDashboard,  label: 'Dashboard'   },
   { to: '/requests',    icon: FileText,         label: 'Requests'    },
-  { to: '/call-logs',   icon: Phone,            label: 'Call Logs'   },
+  { to: '/call-logs',   icon: FaPhoneSquareAlt, label: 'Call Logs'   },
   { to: '/analytics',  icon: BarChart3,         label: 'Analytics'   },
   { to: '/departments', icon: Building2,        label: 'Departments' },
   { to: '/settings',   icon: Settings,          label: 'Settings'    },

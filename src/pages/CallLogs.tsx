@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { Phone, Search, RefreshCw, ExternalLink, Trash2, Radio, Building2, Layers } from 'lucide-react';
+import { Search, RefreshCw, ExternalLink, Trash2, Radio, Building2, Layers } from 'lucide-react';
+import { FaPhoneSquareAlt } from 'react-icons/fa';
 import type { CallLog } from '../types';
 import { getCallLogs, deleteCallLog } from '../api/client';
 import { Button } from '@/components/ui/button';
@@ -146,7 +147,7 @@ export default function CallLogs() {
               <div className="cl-stat-value">{metrics.total}</div>
             </div>
             <div className="cl-stat-icon" style={{ background: 'rgba(37, 99, 235, 0.08)', color: '#2563EB' }}>
-              <Phone size={20} />
+              <FaPhoneSquareAlt size={20} />
             </div>
           </div>
 
@@ -253,7 +254,7 @@ export default function CallLogs() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         margin: '0 auto 12px', color: '#64748B',
                       }}>
-                        <Phone size={22} />
+                        <FaPhoneSquareAlt size={22} />
                       </div>
                       <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 15 }}>No Call Logs Available</div>
                       <div style={{ fontSize: 13, marginTop: 4 }}>Calls made to assigned units or citizens are automatically indexed here in real time.</div>

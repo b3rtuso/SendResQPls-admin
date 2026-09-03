@@ -7,13 +7,14 @@ import {
 } from 'recharts';
 import {
   TrendingUp, FileText, Download, BarChart3, Calendar, Loader2, CheckCircle2,
-  Activity, Info, Car, AlertTriangle, X,
+  Info, Car, AlertTriangle, X,
   CalendarDays, CalendarRange, CalendarCheck, History, Trash2, RotateCcw,
 } from 'lucide-react';
 import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { MdLandslide } from 'react-icons/md';
+import { IoBandage } from 'react-icons/io5';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -40,7 +41,7 @@ const INCIDENT_TYPES_SVG = [
   { id: 'fire',      label: 'Fire',       icon: FaFire,            color: '#EF4444', desc: 'Structural and wildland fires across barangays' },
   { id: 'flood',     label: 'Flood',      icon: FaHouseFloodWater, color: '#3B82F6', desc: 'Monsoon flooding & riverbank spillover risk' },
   { id: 'medical',   label: 'Medical',    icon: FaBriefcaseMedical,color: '#22C55E', desc: 'Medical emergencies & patient transport calls' },
-  { id: 'trauma',    label: 'Trauma',     icon: Activity,          color: '#F59E0B', desc: 'Physical injuries & severe trauma dispatches' },
+  { id: 'trauma',    label: 'Trauma',     icon: IoBandage,         color: '#F59E0B', desc: 'Physical injuries & severe trauma dispatches' },
   { id: 'accident',  label: 'Accident',   icon: Car,               color: '#3B82F6', desc: 'Vehicular collisions & road traffic accidents' },
   { id: 'crime',     label: 'Crime',      icon: RiCriminalFill,    color: '#8B5CF6', desc: 'Security, disturbance & assault incidents' },
   { id: 'typhoon',   label: 'Typhoon',    icon: RiTyphoonFill,     color: '#8B5CF6', desc: 'Tropical storms & typhoon wind/rain damage' },

@@ -7,6 +7,7 @@ import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { MdLandslide } from 'react-icons/md';
+import { IoBandage } from 'react-icons/io5';
 import type { Incident, Status, Department } from '../types';
 import { getIncidents, updateIncidentStatus, invalidateCache } from '../api/client';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,7 @@ const TYPE_ICON: Record<string, TypeIconEntry> = {
   Crime:     { icon: RiCriminalFill,    color: '#8B5CF6' },
   Typhoon:   { icon: RiTyphoonFill,     color: '#8B5CF6' },
   Landslide: { icon: MdLandslide,       color: '#78716C' },
-  Trauma:    { icon: null, emoji: '🩹', color: '#F59E0B' },
+  Trauma:    { icon: IoBandage,         color: '#F59E0B' },
   Accident:  { icon: null, emoji: '🚗', color: '#3B82F6' },
 };
 

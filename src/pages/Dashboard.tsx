@@ -3,16 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
-  AlertTriangle, RefreshCw, ArrowRight, Phone, Anchor,
+  AlertTriangle, RefreshCw, ArrowRight, Anchor,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
   Info, Clock,
 } from 'lucide-react';
 import { TbReport } from 'react-icons/tb';
 import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
 import { FaFileCircleCheck, FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
-import { FaBriefcaseMedical } from 'react-icons/fa';
+import { FaBriefcaseMedical, FaPhoneSquareAlt } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { GiPoliceOfficerHead } from 'react-icons/gi';
+import { IoBandage } from 'react-icons/io5';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats, invalidateCache } from '../api/client';
@@ -46,7 +47,7 @@ const TYPE_ICON: Record<string, TypeIconEntry> = {
   'Crime':     { icon: RiCriminalFill,    color: '#8B5CF6' },
   'Typhoon':   { icon: RiTyphoonFill,     color: '#8B5CF6' },
   'Landslide': { icon: MdLandslide,       color: '#78716C' },
-  'Trauma':    { icon: null, emoji: '🩹', color: '#F59E0B' },
+  'Trauma':    { icon: IoBandage,         color: '#F59E0B' },
   'Accident':  { icon: null, emoji: '🚗', color: '#3B82F6' },
 };
 
@@ -1150,7 +1151,7 @@ export default function Dashboard() {
                     onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#2563EB'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#475569'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
                   >
-                    <Phone size={13} /> Call
+                    <FaPhoneSquareAlt size={13} /> Call
                   </Button>
                 </div>
               ))}
