@@ -131,8 +131,21 @@
 /* ===== RESET ===== */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote, dl, dd {
   margin: 0;
+}
+
+ul, ol {
   padding: 0;
+}
+
+/* Ensure all text-based inputs, selects, and textareas have breathing room from the border */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+textarea {
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
 body {
