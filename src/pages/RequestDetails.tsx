@@ -10,6 +10,7 @@ import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, cre
 import type { Status, Incident, ResolutionForm } from '../types';
 import ResolutionFormModal from '../components/ResolutionFormModal';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '../context/ConfirmContext';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -88,6 +89,7 @@ interface ToastState {
 export default function RequestDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const [currentStatus, setCurrentStatus] = useState<Status>('PENDING');
   const [saving, setSaving] = useState(false);
   const [notes, setNotes] = useState('');
@@ -215,6 +217,31 @@ export default function RequestDetails() {
       return;
     }
 
+    const originalNotes = (incident?.adminNotes || '').trim();
+    const currentNotes = notes.trim();
+
+    if (originalNotes === currentNotes) {
+      showToast('info', 'No Changes Detected', 'No modifications were made to the admin notes.');
+      return;
+    }
+
+    const isConfirmed = await confirm({
+      type: 'update',
+      title: 'Confirm Changes',
+      message: 'Are you sure you want to save this change to the admin notes?',
+      changes: [{
+        key: 'adminNotes',
+        label: 'Admin Notes',
+        oldValue: originalNotes,
+        newValue: currentNotes,
+        oldFormatted: originalNotes || '(empty)',
+        newFormatted: currentNotes || '(empty)',
+      }],
+      confirmText: 'Confirm Changes',
+      cancelText: 'Cancel',
+    });
+    if (!isConfirmed) return;
+
     const prevNotes = incident?.adminNotes || '';
     setIncident((prev) => prev ? { ...prev, adminNotes: notes } : prev);
     setSaving(true);
@@ -232,6 +259,24 @@ export default function RequestDetails() {
       showToast('error', 'Failed to save notes', 'Server returned an error. Notes reverted.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDiscardNotes = async () => {
+    if (!incident) return;
+    const originalNotes = (incident.adminNotes || '').trim();
+    if (notes.trim() === originalNotes) return;
+
+    const shouldDiscard = await confirm({
+      type: 'discard',
+      title: 'Discard Notes Changes?',
+      message: 'You have unsaved changes in the admin notes. Are you sure you want to discard your edits?',
+      confirmText: 'Discard Changes',
+      cancelText: 'Keep Editing',
+    });
+
+    if (shouldDiscard) {
+      setNotes(incident.adminNotes || '');
     }
   };
 
@@ -772,9 +817,30 @@ export default function RequestDetails() {
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
-                <Button className="btn btn-primary" disabled={saving} onClick={handleSaveNotes}>
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </Button>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <Button className="btn btn-primary" disabled={saving} onClick={handleSaveNotes}>
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  {incident && notes.trim() !== (incident.adminNotes || '').trim() && (
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={handleDiscardNotes}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 8,
+                        background: 'transparent',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-secondary)',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Discard Changes
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -956,6 +1022,47 @@ export default function RequestDetails() {
                   </strong>.
                   This action cannot be reversed.
                 </p>
+              </div>
+            </div>
+
+            {/* Before -> After Status Change Card */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              padding: '12px 14px',
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              borderRadius: 12,
+              marginBottom: 16,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748B' }}>
+                Status
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+                <span style={{
+                  color: '#EF4444',
+                  background: '#FEE2E2',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                  fontSize: 12,
+                }}>
+                  {currentStatus}
+                </span>
+                <span style={{ color: '#2563EB', fontWeight: 800, fontSize: 14 }}>→</span>
+                <span style={{
+                  color: '#15803D',
+                  background: '#DCFCE7',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                  fontSize: 12,
+                }}>
+                  {confirmModal.targetStatus}
+                </span>
               </div>
             </div>
 

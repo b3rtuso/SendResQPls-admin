@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X,  Upload, Camera, FileText, HeartPulse, UserCheck, ShieldAlert } from 'lucide-react';
 import type { Incident, ResolutionForm } from '../types';
 import { getNearestBarangay } from '../data/balayan-data';
+import { useConfirm } from '../context/ConfirmContext';
+import { detectFieldChanges } from '../utils/changeDetector';
 
 interface Props {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export default function ResolutionFormModal({ isOpen, onClose, onSubmit, incident, isSubmitting }: Props) {
+  const { confirm } = useConfirm();
   function getLocalIsoString(isoOrDate?: string | Date): string {
     const d = isoOrDate ? new Date(isoOrDate) : new Date();
     const year = d.getFullYear();
@@ -24,7 +27,7 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
   const defaultTime = incident?.createdAt ? new Date(incident.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
   const defaultLocation = incident ? getNearestBarangay(incident.latitude, incident.longitude) + ', Balayan, Batangas' : 'Balayan, Batangas';
 
-  const [formData, setFormData] = useState<ResolutionForm>({
+  const initialFormData = useMemo<ResolutionForm>(() => ({
     incidentType: incident?.aiDetectedType || 'Trauma Emergency',
     incidentDate: defaultDate,
     incidentTime: defaultTime,
@@ -69,8 +72,9 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
     destinationFacility: 'Balayan Medicare Hospital',
     transportTime: defaultTime,
     turnoverStatus: 'Stable upon turnover',
-  });
+  }), [incident, defaultDate, defaultTime, defaultLocation]);
 
+  const [formData, setFormData] = useState<ResolutionForm>(initialFormData);
   const [photoPreview, setPhotoPreview] = useState<string>('');
 
   if (!isOpen) return null;
@@ -92,40 +96,93 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSafeClose = async () => {
+    const changes = detectFieldChanges(initialFormData, formData, {
+      ignoreKeys: ['procedurePhotoUrl'],
+    });
+
+    if (changes.length === 0 && !photoPreview) {
+      onClose();
+      return;
+    }
+
+    const shouldDiscard = await confirm({
+      type: 'discard',
+      title: 'Discard Questionnaire Changes?',
+      message: 'You have unsaved entries in this incident resolution questionnaire. Are you sure you want to discard your changes?',
+      confirmText: 'Discard Changes',
+      cancelText: 'Keep Editing',
+    });
+
+    if (shouldDiscard) {
+      setFormData(initialFormData);
+      setPhotoPreview('');
+      onClose();
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       alert('Cannot submit resolution questionnaire. Active internet connection is required to sync changes.');
       return;
     }
+
+    const changes = detectFieldChanges(initialFormData, formData, {
+      labels: {
+        patientName: 'Patient Name',
+        howIncidentHappened: 'Incident Narrative',
+        dispositionStatus: 'Disposition Status',
+        destinationFacility: 'Hospital / Facility',
+        respondingAgency: 'Responding Agency',
+      },
+      ignoreKeys: ['procedurePhotoUrl'],
+    });
+
+    const isConfirmed = await confirm({
+      type: 'update',
+      title: 'Confirm Incident Resolution',
+      message: 'Are you sure you want to finalize and save this resolution questionnaire? This will resolve the incident and send push notifications to the citizen reporter.',
+      changes: changes.length > 0 ? changes : undefined,
+      confirmText: 'Complete & Resolve',
+      cancelText: 'Cancel',
+    });
+
+    if (!isConfirmed) return;
     onSubmit(formData);
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 9999,
-      background: 'rgba(15, 23, 42, 0.75)',
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'clamp(12px, 3vw, 24px)',
-      overflowY: 'auto',
-    }}>
-      <div style={{
-        background: '#FFFFFF',
-        borderRadius: 16,
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        width: 'min(820px, calc(100vw - 24px))',
-        maxHeight: 'min(92vh, calc(100vh - 24px))',
+    <div
+      onClick={handleSafeClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(15, 23, 42, 0.75)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        border: '1px solid #E2E8F0',
-      }}>
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'clamp(12px, 3vw, 24px)',
+        overflowY: 'auto',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#FFFFFF',
+          borderRadius: 16,
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          width: 'min(820px, calc(100vw - 24px))',
+          maxHeight: 'min(92vh, calc(100vh - 24px))',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          border: '1px solid #E2E8F0',
+        }}
+      >
         {/* Header */}
         <div style={{
           padding: '16px clamp(16px, 3vw, 24px)',
@@ -147,7 +204,8 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
             </div>
           </div>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={handleSafeClose}
             style={{
               background: 'rgba(255, 255, 255, 0.1)',
               border: 'none',
@@ -413,7 +471,7 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 12, borderTop: '1px solid #E2E8F0', flexWrap: 'wrap' }}>
-            <button type="button" onClick={onClose} className="btn btn-outline" disabled={isSubmitting}>
+            <button type="button" onClick={handleSafeClose} className="btn btn-outline" disabled={isSubmitting}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" style={{ background: '#22C55E', borderColor: '#22C55E', minWidth: 160 }} disabled={isSubmitting}>

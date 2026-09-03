@@ -23,6 +23,7 @@ import {
 } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
+import { detectFieldChanges } from '../utils/changeDetector';
 
 const statusClass: Record<string, string> = {
   Available: 'available',
@@ -64,6 +65,7 @@ export default function Departments() {
   // Modal and Form States
   const [showModal, setShowModal] = useState(false);
   const [editingDept, setEditingDept] = useState<DepartmentInfo | null>(null);
+  const [originalDept, setOriginalDept] = useState<DepartmentInfo | null>(null);
   const [name, setName] = useState('');
   const [fullName, setFullName] = useState('');
   const [headOfficer, setHeadOfficer] = useState('');
@@ -73,6 +75,28 @@ export default function Departments() {
   const [equipmentInput, setEquipmentInput] = useState('');
   const [status, setStatus] = useState('Available');
   const [saving, setSaving] = useState(false);
+
+  const DEPARTMENT_FIELD_LABELS: Record<string, string> = {
+    name: 'Dept Code',
+    fullName: 'Department Name',
+    headOfficer: 'Head Officer',
+    contact: 'Contact Number',
+    email: 'Email Address',
+    personnelCount: 'Active Responders',
+    equipment: 'Assigned Equipment',
+    status: 'Operational Status',
+  };
+
+  const getCurrentFormData = () => ({
+    name: name.toUpperCase().trim(),
+    fullName: fullName.trim(),
+    headOfficer: headOfficer.trim(),
+    contact: contact.trim(),
+    email: email.trim(),
+    personnelCount: parseInt(String(personnelCount), 10) || 0,
+    equipment: equipmentInput.split(',').map((eq) => eq.trim()).filter(Boolean),
+    status: status as DepartmentInfo['status'],
+  });
 
   const loadDepartments = async () => {
     setLoading(true);
@@ -92,6 +116,7 @@ export default function Departments() {
 
   const handleOpenAddModal = () => {
     setEditingDept(null);
+    setOriginalDept(null);
     setName('');
     setFullName('');
     setHeadOfficer('');
@@ -104,39 +129,125 @@ export default function Departments() {
   };
 
   const handleOpenEditModal = (dept: DepartmentInfo) => {
+    const savedCopy: DepartmentInfo = {
+      ...dept,
+      equipment: [...(dept.equipment || [])],
+    };
     setEditingDept(dept);
+    setOriginalDept(savedCopy);
     setName(dept.name);
     setFullName(dept.fullName);
     setHeadOfficer(dept.headOfficer);
     setContact(dept.contact);
     setEmail(dept.email);
     setPersonnelCount(dept.personnelCount);
-    setEquipmentInput(dept.equipment.join(', '));
+    setEquipmentInput((dept.equipment || []).join(', '));
     setStatus(dept.status);
     setShowModal(true);
   };
 
+  const handleCloseModal = async () => {
+    if (editingDept && originalDept) {
+      const current = getCurrentFormData();
+      const changes = detectFieldChanges(originalDept, current, {
+        labels: DEPARTMENT_FIELD_LABELS,
+        ignoreKeys: ['id', '_id', 'createdAt', 'updatedAt', 'color', 'bg', 'icon'],
+      });
+
+      // If unchanged -> close immediately
+      if (changes.length === 0) {
+        setShowModal(false);
+        setEditingDept(null);
+        setOriginalDept(null);
+        return;
+      }
+
+      // If changed -> show "Discard Changes?" modal
+      const shouldDiscard = await confirm({
+        type: 'discard',
+        title: 'Discard Changes?',
+        message: 'You have unsaved changes. Are you sure you want to leave? Your changes will be discarded.',
+        confirmText: 'Discard Changes',
+        cancelText: 'Keep Editing',
+      });
+
+      if (shouldDiscard) {
+        // Discard Changes -> reset form to original saved data and close
+        setName(originalDept.name);
+        setFullName(originalDept.fullName);
+        setHeadOfficer(originalDept.headOfficer);
+        setContact(originalDept.contact);
+        setEmail(originalDept.email);
+        setPersonnelCount(originalDept.personnelCount);
+        setEquipmentInput((originalDept.equipment || []).join(', '));
+        setStatus(originalDept.status);
+        setShowModal(false);
+        setEditingDept(null);
+        setOriginalDept(null);
+      }
+      // If "Keep Editing", do nothing!
+    } else if (!editingDept) {
+      const hasInput = !!(
+        name.trim() ||
+        fullName.trim() ||
+        headOfficer.trim() ||
+        contact.trim() ||
+        email.trim() ||
+        personnelCount > 0 ||
+        equipmentInput.trim()
+      );
+      if (hasInput) {
+        const shouldDiscard = await confirm({
+          type: 'discard',
+          title: 'Discard New Department?',
+          message: 'You have unsaved entries. Are you sure you want to discard this new department?',
+          confirmText: 'Discard Changes',
+          cancelText: 'Keep Editing',
+        });
+        if (!shouldDiscard) return;
+      }
+      setShowModal(false);
+      setEditingDept(null);
+      setOriginalDept(null);
+    } else {
+      setShowModal(false);
+      setEditingDept(null);
+      setOriginalDept(null);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
-      name: name.toUpperCase(),
-      fullName,
-      headOfficer,
-      contact,
-      email,
-      personnelCount: parseInt(personnelCount.toString()) || 0,
-      equipment: equipmentInput.split(',').map((eq) => eq.trim()).filter(Boolean),
-      status,
-    };
+    const payload = getCurrentFormData();
 
-    if (editingDept) {
+    if (editingDept && originalDept) {
+      // 1. Detect which fields were actually changed
+      const changes = detectFieldChanges(originalDept, payload, {
+        labels: DEPARTMENT_FIELD_LABELS,
+        ignoreKeys: ['id', '_id', 'createdAt', 'updatedAt', 'color', 'bg', 'icon'],
+      });
+
+      // If nothing changed -> do not unnecessarily submit/update
+      if (changes.length === 0) {
+        showToast({
+          type: 'danger',
+          message: 'No Changes Detected',
+          detail: 'No specifications were modified. The department data is already up to date.',
+        });
+        return;
+      }
+
+      // 2. Show ONLY the changed fields in the confirmation modal
       const isConfirmed = await confirm({
         type: 'update',
-        title: 'Confirm Department Update',
-        message: `Are you sure you want to update department '${editingDept.name}' (${payload.fullName})?`,
+        title: 'Confirm Changes',
+        message: changes.length === 1
+          ? `Are you sure you want to save this change to '${editingDept.name}' (${payload.fullName})?`
+          : `Are you sure you want to save these changes to '${editingDept.name}' (${payload.fullName})?`,
         detail: 'This will modify assigned responder counts, contact specifications, and equipment roster across the system.',
-        confirmText: 'Save Changes',
-        cancelText: 'Continue Editing',
+        confirmText: 'Confirm Changes',
+        cancelText: 'Cancel',
+        changes,
       });
       if (!isConfirmed) return;
     }
@@ -145,6 +256,8 @@ export default function Departments() {
     try {
       if (editingDept) {
         await updateDepartment(editingDept.id, payload);
+        // After successful save, new values become the new saved/original values
+        setOriginalDept({ ...editingDept, ...payload });
         showToast({
           type: 'danger',
           message: `Department Updated: ${payload.name}`,
@@ -159,6 +272,8 @@ export default function Departments() {
         });
       }
       setShowModal(false);
+      setEditingDept(null);
+      setOriginalDept(null);
       loadDepartments();
     } catch (err) {
       console.error('Failed to save department:', err);
@@ -540,26 +655,32 @@ export default function Departments() {
 
       {/* ── Add / Edit Modal Overlay ────────────────────────── */}
       {showModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15, 23, 42, 0.6)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 10000,
-          padding: 'clamp(12px, 3vw, 24px)',
-          overflowY: 'auto',
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: 16,
-            width: 'min(520px, calc(100vw - 24px))',
-            maxHeight: 'min(90vh, calc(100vh - 24px))',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
-            display: 'flex', flexDirection: 'column',
-            overflow: 'hidden',
-          }}>
+        <div
+          onClick={handleCloseModal}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10000,
+            padding: 'clamp(12px, 3vw, 24px)',
+            overflowY: 'auto',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: 16,
+              width: 'min(520px, calc(100vw - 24px))',
+              maxHeight: 'min(90vh, calc(100vh - 24px))',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
+              display: 'flex', flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
             {/* Modal Header */}
             <div style={{
               padding: '16px clamp(16px, 3vw, 24px)',
@@ -571,7 +692,8 @@ export default function Departments() {
                 {editingDept ? 'Edit Responding Department' : 'Add Responding Department'}
               </h3>
               <button 
-                onClick={() => setShowModal(false)}
+                type="button"
+                onClick={handleCloseModal}
                 style={{
                   background: 'none', border: 'none', color: 'var(--text-secondary)',
                   cursor: 'pointer', fontSize: 18, fontWeight: 'bold'
@@ -703,7 +825,7 @@ export default function Departments() {
                 <Button 
                   type="button" 
                   variant="outline"
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCloseModal}
                   style={{
                     padding: '10px 20px', borderRadius: 8,
                     color: 'var(--text-secondary)',

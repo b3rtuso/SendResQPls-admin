@@ -13,6 +13,7 @@ import {
   listAdmins, createAdmin, toggleAdminStatus
 } from '../api/client';
 import { useConfirm } from '../context/ConfirmContext';
+import { detectFieldChanges } from '../utils/changeDetector';
 import { FaBell, FaCog } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,12 @@ export default function SettingsPage() {
     phone: '',
     department: 'MDRRMO Main Office'
   });
+  const [originalProfile, setOriginalProfile] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    department: string;
+  } | null>(null);
   
   const [notifications, setNotifications] = useState({
     newIncident: true,
@@ -79,23 +86,27 @@ export default function SettingsPage() {
       try {
         const res = await getProfile(userId);
         const u = res.data;
-        setProfile({
+        const loadedProfile = {
           name: u.name || '',
           email: u.email || '',
           phone: u.phoneNumber || '',
           department: 'MDRRMO Main Office'
-        });
+        };
+        setProfile(loadedProfile);
+        setOriginalProfile({ ...loadedProfile });
         if (u.name) localStorage.setItem('userName', u.name);
         if (u.email) localStorage.setItem('userEmail', u.email);
         if (u.phoneNumber) localStorage.setItem('userPhone', u.phoneNumber);
       } catch (err: any) {
         console.error('Failed to load profile:', err);
-        setProfile({
+        const fallbackProfile = {
           name: localStorage.getItem('userName') || 'Admin User',
           email: localStorage.getItem('userEmail') || '',
           phone: localStorage.getItem('userPhone') || '',
           department: 'MDRRMO Main Office'
-        });
+        };
+        setProfile(fallbackProfile);
+        setOriginalProfile({ ...fallbackProfile });
         if (!navigator.onLine) {
           showToast('warning', 'Offline Mode', 'Loaded profile from cached session.');
         }
@@ -153,6 +164,26 @@ export default function SettingsPage() {
     }
   };
 
+  const handleToggleCreateAdmin = async () => {
+    if (showCreateAdmin) {
+      const hasInput = !!(newAdmin.name.trim() || newAdmin.email.trim() || newAdmin.password || newAdmin.phoneNumber.trim());
+      if (hasInput) {
+        const shouldDiscard = await confirm({
+          type: 'discard',
+          title: 'Discard New Administrator?',
+          message: 'You have entered unsaved account details. Are you sure you want to discard this new administrator?',
+          confirmText: 'Discard Changes',
+          cancelText: 'Keep Editing',
+        });
+        if (!shouldDiscard) return;
+      }
+      setNewAdmin({ name: '', email: '', password: '', phoneNumber: '' });
+      setShowCreateAdmin(false);
+    } else {
+      setShowCreateAdmin(true);
+    }
+  };
+
   const handleToggleAdmin = async (id: string, name: string) => {
     const currentUserId = localStorage.getItem('userId');
     if (id === currentUserId) {
@@ -196,36 +227,88 @@ export default function SettingsPage() {
       return;
     }
 
-    const isConfirmed = await confirm({
-      type: 'update',
-      title: 'Confirm Profile Update',
-      message: 'Update your official administrator account information?',
-      detail: 'Updated name, email, and contact number will be reflected across active dispatches and official records.',
-      confirmText: 'Save Profile',
-      cancelText: 'Cancel',
-    });
-    if (!isConfirmed) return;
+    if (originalProfile) {
+      // 1. Detect which fields were actually changed
+      const changes = detectFieldChanges(originalProfile, profile, {
+        labels: {
+          name: 'Full Name',
+          email: 'Email Address',
+          phone: 'Phone Number',
+        },
+        ignoreKeys: ['department'],
+      });
+
+      // If nothing changed -> save button should not unnecessarily submit/update
+      if (changes.length === 0) {
+        showToast('info', 'No Changes Detected', 'No modifications were made to your profile information.');
+        return;
+      }
+
+      // 2. Show ONLY the changed fields in the confirmation modal
+      const isConfirmed = await confirm({
+        type: 'update',
+        title: 'Confirm Changes',
+        message: changes.length === 1
+          ? 'Are you sure you want to save this change to your profile?'
+          : 'Are you sure you want to save these changes to your profile?',
+        detail: 'Updated name, email, and contact number will be reflected across active dispatches and official records.',
+        confirmText: 'Confirm Changes',
+        cancelText: 'Cancel',
+        changes,
+      });
+      if (!isConfirmed) return;
+    }
 
     setSavingProfile(true);
     try {
       await updateProfile({
-        name: profile.name,
-        email: profile.email,
-        phoneNumber: profile.phone
+        name: profile.name.trim(),
+        email: profile.email.trim(),
+        phoneNumber: profile.phone.trim()
       });
       
-      localStorage.setItem('userName', profile.name);
-      localStorage.setItem('userEmail', profile.email);
-      localStorage.setItem('userPhone', profile.phone);
+      const updated = {
+        name: profile.name.trim(),
+        email: profile.email.trim(),
+        phone: profile.phone.trim(),
+        department: profile.department
+      };
+      setProfile(updated);
+      setOriginalProfile(updated);
+
+      localStorage.setItem('userName', updated.name);
+      localStorage.setItem('userEmail', updated.email);
+      localStorage.setItem('userPhone', updated.phone);
       
       window.dispatchEvent(new Event('storage'));
       
-      showToast('danger', 'Profile Data Changed', 'Your administrator name, email, and phone have been updated.');
+      showToast('danger', 'Profile Saved', 'Your administrator information has been successfully updated.');
     } catch (err: any) {
       console.error('Failed to update profile:', err);
       showToast('error', 'Profile Update Failed', err.response?.data?.error || 'Server error occurred.');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleDiscardProfile = async () => {
+    if (!originalProfile) return;
+    const changes = detectFieldChanges(originalProfile, profile, {
+      labels: { name: 'Full Name', email: 'Email Address', phone: 'Phone Number' },
+      ignoreKeys: ['department'],
+    });
+    if (changes.length === 0) return;
+
+    const shouldDiscard = await confirm({
+      type: 'discard',
+      title: 'Discard Changes?',
+      message: 'You have unsaved profile changes. Are you sure you want to leave? Your changes will be discarded.',
+      confirmText: 'Discard Changes',
+      cancelText: 'Keep Editing',
+    });
+
+    if (shouldDiscard) {
+      setProfile({ ...originalProfile });
     }
   };
 
@@ -623,17 +706,41 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <button className="st-btn-primary" type="submit" disabled={savingProfile}>
-                  {savingProfile ? (
-                    <>
-                      <Loader2 size={15} className="spin" /> Saving Changes...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={15} /> Save Profile
-                    </>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <button className="st-btn-primary" type="submit" disabled={savingProfile}>
+                    {savingProfile ? (
+                      <>
+                        <Loader2 size={15} className="spin" /> Saving Changes...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={15} /> Save Profile
+                      </>
+                    )}
+                  </button>
+                  {originalProfile && detectFieldChanges(originalProfile, profile, {
+                    labels: { name: 'Full Name', email: 'Email Address', phone: 'Phone Number' },
+                    ignoreKeys: ['department'],
+                  }).length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleDiscardProfile}
+                      style={{
+                        padding: '9px 16px',
+                        borderRadius: 8,
+                        background: 'transparent',
+                        border: '1px solid #CBD5E1',
+                        color: '#64748B',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      Discard Changes
+                    </button>
                   )}
-                </button>
+                </div>
               </div>
             </form>
 
@@ -877,9 +984,10 @@ export default function SettingsPage() {
               </span>
             </div>
             <button
+              type="button"
               className="st-btn-primary"
               style={{ padding: '7px 14px', fontSize: 12.5, whiteSpace: 'nowrap' }}
-              onClick={() => setShowCreateAdmin(v => !v)}
+              onClick={handleToggleCreateAdmin}
             >
               {showCreateAdmin ? <><X size={14} /> Close Form</> : <><UserPlus size={14} /> Add Administrator</>}
             </button>

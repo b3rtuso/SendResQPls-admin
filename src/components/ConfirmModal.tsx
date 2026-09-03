@@ -1,15 +1,17 @@
 import { useEffect } from 'react';
 import { X, AlertTriangle, Trash2, Edit3, CheckCircle2, HelpCircle } from 'lucide-react';
+import type { FieldChange } from '../utils/changeDetector';
 
-export type ConfirmType = 'confirm' | 'modal' | 'delete' | 'update' | 'warning';
+export type ConfirmType = 'confirm' | 'modal' | 'delete' | 'update' | 'warning' | 'discard';
 
 export interface ConfirmOptions {
   type?: ConfirmType;
   title?: string;
-  message: string;
+  message?: string;
   detail?: string;
   confirmText?: string;
   cancelText?: string;
+  changes?: FieldChange[];
 }
 
 interface ConfirmModalProps {
@@ -31,7 +33,8 @@ export default function ConfirmModal({
     message,
     detail,
     confirmText,
-    cancelText = 'Cancel',
+    cancelText,
+    changes,
   } = options;
 
   useEffect(() => {
@@ -49,23 +52,39 @@ export default function ConfirmModal({
   const isDelete = type === 'delete';
   const isUpdate = type === 'update';
   const isWarning = type === 'warning';
+  const isDiscard = type === 'discard';
 
   const defaultTitle = isDelete
     ? 'Delete Confirmation'
+    : isDiscard
+    ? 'Discard Changes?'
     : isUpdate
-    ? 'Update Confirmation'
+    ? (changes && changes.length > 0 ? 'Confirm Changes' : 'Update Confirmation')
     : isWarning
     ? 'Warning: Action Required'
     : 'Confirmation Dialog';
 
+  const defaultMessage = isDiscard
+    ? 'You have unsaved changes. Are you sure you want to leave? Your changes will be discarded.'
+    : isUpdate && changes && changes.length > 0
+    ? (changes.length === 1 ? 'Are you sure you want to save this change?' : 'Are you sure you want to save these changes?')
+    : 'Are you sure you want to proceed?';
+
   const resolvedTitle = title || defaultTitle;
+  const resolvedMessage = message || defaultMessage;
+
   const defaultConfirmBtn = isDelete
     ? 'Delete'
+    : isDiscard
+    ? 'Discard Changes'
     : isUpdate
-    ? 'Update'
+    ? (changes && changes.length > 0 ? 'Confirm Changes' : 'Update')
     : isWarning
     ? 'Proceed'
     : 'Confirm';
+
+  const defaultCancelBtn = isDiscard ? 'Keep Editing' : 'Cancel';
+  const resolvedCancelBtn = cancelText || defaultCancelBtn;
   const resolvedConfirmBtn = confirmText || defaultConfirmBtn;
 
   // ── 1. Crimson Wine Theme for Delete (matches Screenshot 3) ──
@@ -216,10 +235,22 @@ export default function ConfirmModal({
     );
   }
 
-  // ── 2. Dark Navy Theme for Update, Warning, Confirm, Modal ──
-  const accentColor = isWarning ? '#F59E0B' : isUpdate ? '#3B82F6' : '#2563EB';
-  const accentBg = isWarning ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)';
-  const IconComponent = isWarning ? AlertTriangle : isUpdate ? Edit3 : isDelete ? Trash2 : HelpCircle;
+  // ── 2. Dark Navy Theme for Update, Warning, Discard, Confirm, Modal ──
+  const accentColor = isWarning
+    ? '#F59E0B'
+    : isDiscard
+    ? '#EF4444'
+    : isUpdate
+    ? '#2563EB'
+    : '#2563EB';
+
+  const accentBg = isWarning
+    ? 'rgba(245, 158, 11, 0.15)'
+    : isDiscard
+    ? 'rgba(239, 68, 68, 0.15)'
+    : 'rgba(37, 99, 235, 0.15)';
+
+  const IconComponent = isWarning || isDiscard ? AlertTriangle : isUpdate ? Edit3 : isDelete ? Trash2 : HelpCircle;
 
   return (
     <div
@@ -244,7 +275,7 @@ export default function ConfirmModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
-          maxWidth: 420,
+          maxWidth: 440,
           background: '#0B132B',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 18,
@@ -299,8 +330,68 @@ export default function ConfirmModal({
         </div>
 
         <div style={{ fontSize: 13.5, color: '#CBD5E1', lineHeight: 1.5 }}>
-          {message}
+          {resolvedMessage}
         </div>
+
+        {/* Changed fields list (Before -> After) */}
+        {changes && changes.length > 0 && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            maxHeight: 260,
+            overflowY: 'auto',
+            padding: '12px 14px',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: 12,
+            margin: '4px 0',
+          }}>
+            {changes.map((ch, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  padding: '6px 0',
+                  borderBottom: idx < changes.length - 1 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none',
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#94A3B8' }}>
+                  {ch.label}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, flexWrap: 'wrap' }}>
+                  <span style={{
+                    color: '#F87171',
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    textDecoration: 'line-through',
+                    wordBreak: 'break-all',
+                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                    fontSize: 12,
+                  }}>
+                    {ch.oldFormatted || '(empty)'}
+                  </span>
+                  <span style={{ color: '#38BDF8', fontWeight: 700, fontSize: 13 }}>→</span>
+                  <span style={{
+                    color: '#4ADE80',
+                    background: 'rgba(34, 197, 94, 0.12)',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    wordBreak: 'break-all',
+                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                    fontSize: 12,
+                  }}>
+                    {ch.newFormatted || '(empty)'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {detail && (
           <div style={{ fontSize: 12, color: '#94A3B8', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.06)', padding: '10px 12px', borderRadius: 10 }}>
@@ -339,7 +430,7 @@ export default function ConfirmModal({
               e.currentTarget.style.color = '#94A3B8';
             }}
           >
-            {cancelText}
+            {resolvedCancelBtn}
           </button>
           <button
             type="button"
@@ -362,7 +453,7 @@ export default function ConfirmModal({
             onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
-            {isUpdate ? <Edit3 size={14} /> : <CheckCircle2 size={14} />} {resolvedConfirmBtn}
+            {isUpdate ? <Edit3 size={14} /> : isDiscard ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />} {resolvedConfirmBtn}
           </button>
         </div>
       </div>
