@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText,
-  BarChart3, Building2, Settings, LogOut, X,
+  BarChart3, Building2, LogOut, X,
 } from 'lucide-react';
-import { FaPhoneSquareAlt } from 'react-icons/fa';
+import { FaPhoneSquareAlt, FaCogs } from 'react-icons/fa';
 import { useAdminNav } from '../context/AdminNavContext';
 
 const navItems = [
@@ -13,7 +13,7 @@ const navItems = [
   { to: '/call-logs',   icon: FaPhoneSquareAlt, label: 'Call Logs'   },
   { to: '/analytics',  icon: BarChart3,         label: 'Analytics'   },
   { to: '/departments', icon: Building2,        label: 'Departments' },
-  { to: '/settings',   icon: Settings,          label: 'Settings'    },
+  { to: '/settings',   icon: FaCogs,            label: 'Settings'    },
 ];
 
 export default function Sidebar() {
