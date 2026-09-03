@@ -705,39 +705,39 @@ export default function Departments() {
 
             {/* Modal Body / Form */}
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: 'clamp(16px, 3vw, 24px)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 
-                {/* Code & Full Name */}
-                <div className="form-grid-2">
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Dept Code</Label>
-                    <Input
-                      type="text"
-                      placeholder="e.g. PCG, BFP, PNP"
-                      required
-                      disabled={!!editingDept}
-                      value={name}
-                      onChange={e => setName(e.target.value.toUpperCase())}
-                      className="w-full text-sm"
-                      style={{ background: editingDept ? 'var(--border-light)' : 'white' }}
-                    />
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Full Agency Name</Label>
-                    <Input
-                      type="text"
-                      placeholder="e.g. Philippine Coast Guard - Balayan Sub-station"
-                      required
-                      value={fullName}
-                      onChange={e => setFullName(e.target.value)}
-                      className="w-full text-sm"
-                    />
-                  </div>
+                {/* Dept Code */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Dept Code</Label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. PCG, BFP, PNP"
+                    required
+                    disabled={!!editingDept}
+                    value={name}
+                    onChange={e => setName(e.target.value.toUpperCase())}
+                    className="w-full text-sm"
+                    style={{ background: editingDept ? 'var(--border-light)' : 'white' }}
+                  />
+                </div>
+
+                {/* Full Agency Name */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Full Agency Name</Label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. Philippine Coast Guard - Balayan Sub-station"
+                    required
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    className="w-full text-sm"
+                  />
                 </div>
 
                 {/* Head Officer */}
                 <div className="form-group" style={{ margin: 0 }}>
-                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Officer-In-Charge (Head)</Label>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Officer-In-Charge (Head)</Label>
                   <Input
                     type="text"
                     placeholder="e.g. CG Capt. Juan dela Cruz"
@@ -748,67 +748,67 @@ export default function Departments() {
                   />
                 </div>
 
-                {/* Contact & Email */}
-                <div className="form-grid-2">
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Contact Number</Label>
-                    <Input
-                      type="text"
-                      placeholder="e.g. (043) 211-1234 / 0917-123-4567"
-                      required
-                      value={contact}
-                      onChange={e => setContact(e.target.value)}
-                      className="w-full text-sm"
-                    />
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Email Address</Label>
-                    <Input
-                      type="email"
-                      placeholder="e.g. pcg.balayan@gov.ph"
-                      required
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      className="w-full text-sm"
-                    />
-                  </div>
+                {/* Contact Number */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Contact Number</Label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. (043) 211-1234 / 0917-123-4567"
+                    required
+                    value={contact}
+                    onChange={e => setContact(e.target.value)}
+                    className="w-full text-sm"
+                  />
                 </div>
 
-                {/* Personnel & Status */}
-                <div className="form-grid-2">
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Active Personnel Count</Label>
-                    <Input
-                      type="number"
-                      required
-                      min={0}
-                      placeholder="e.g. 24"
-                      value={personnelCount === 0 && !editingDept ? '' : personnelCount}
-                      onChange={e => setPersonnelCount(parseInt(e.target.value) || 0)}
-                      className="w-full text-sm"
-                    />
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Deployment Status</Label>
-                    <select
-                      value={status}
-                      onChange={e => setStatus(e.target.value)}
-                      style={{
-                        width: '100%', padding: '10px 12px', borderRadius: 8,
-                        border: '1px solid var(--border)', fontSize: 14, outline: 'none',
-                        background: 'white'
-                      }}
-                    >
-                      <option value="Available">Available (Online)</option>
-                      <option value="On Standby">On Standby</option>
-                      <option value="Deployed">Deployed (Busy)</option>
-                    </select>
-                  </div>
+                {/* Email Address */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Email Address</Label>
+                  <Input
+                    type="email"
+                    placeholder="e.g. pcg.balayan@gov.ph"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full text-sm"
+                  />
+                </div>
+
+                {/* Personnel Count */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Active Personnel Count</Label>
+                  <Input
+                    type="number"
+                    required
+                    min={0}
+                    placeholder="e.g. 24"
+                    value={personnelCount === 0 && !editingDept ? '' : personnelCount}
+                    onChange={e => setPersonnelCount(parseInt(e.target.value) || 0)}
+                    className="w-full text-sm"
+                  />
+                </div>
+
+                {/* Deployment Status */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Deployment Status</Label>
+                  <select
+                    value={status}
+                    onChange={e => setStatus(e.target.value)}
+                    style={{
+                      width: '100%', padding: '10px 12px', borderRadius: 8,
+                      border: '1px solid var(--border)', fontSize: 14, outline: 'none',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="Available">Available (Online)</option>
+                    <option value="On Standby">On Standby</option>
+                    <option value="Deployed">Deployed (Busy)</option>
+                  </select>
                 </div>
 
                 {/* Equipment Tags */}
                 <div className="form-group" style={{ margin: 0 }}>
-                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Assigned Equipment (Comma-separated)</Label>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Assigned Equipment (Comma-separated)</Label>
                   <Input
                     type="text"
                     placeholder="e.g. Patrol Boat, Life Vests, Rescue Rope, First Aid Kit"
