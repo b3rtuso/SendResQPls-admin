@@ -10,6 +10,7 @@ import SettingsPage from './pages/Settings';
 import AdminLogin from './pages/AdminLogin';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AdminNavProvider } from './context/AdminNavContext';
+import { ToastProvider } from './context/ToastContext';
 import { useEffect } from 'react';
 import './App.css';
 
@@ -57,23 +58,25 @@ function App() {
             path="*"
             element={
               <AdminRoute>
-                <AdminNavProvider>
-                  <div className="app-layout">
-                    <Sidebar />
-                    <main className="main-content">
-                      <Routes>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/requests" element={<Requests />} />
-                        <Route path="/requests/:id" element={<RequestDetails />} />
-                        <Route path="/call-logs" element={<CallLogs />} />
-                        <Route path="/analytics" element={<Analytics />} />
-                        <Route path="/departments" element={<Departments />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                      </Routes>
-                    </main>
-                  </div>
-                </AdminNavProvider>
+                <ToastProvider>
+                  <AdminNavProvider>
+                    <div className="app-layout">
+                      <Sidebar />
+                      <main className="main-content">
+                        <Routes>
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/requests" element={<Requests />} />
+                          <Route path="/requests/:id" element={<RequestDetails />} />
+                          <Route path="/call-logs" element={<CallLogs />} />
+                          <Route path="/analytics" element={<Analytics />} />
+                          <Route path="/departments" element={<Departments />} />
+                          <Route path="/settings" element={<SettingsPage />} />
+                          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                        </Routes>
+                      </main>
+                    </div>
+                  </AdminNavProvider>
+                </ToastProvider>
               </AdminRoute>
             }
           />

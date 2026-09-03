@@ -20,6 +20,7 @@ import {
   deleteDepartment,
   createCallLog,
 } from '../api/client';
+import { useToast } from '../context/ToastContext';
 
 const statusClass: Record<string, string> = {
   Available: 'available',
@@ -50,6 +51,7 @@ const getDeptTheme = (name: string) => {
 type FilterStatus = 'ALL' | 'Available' | 'On Standby' | 'Deployed';
 
 export default function Departments() {
+  const { showToast } = useToast();
   const [departments, setDepartments] = useState<DepartmentInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,14 +129,28 @@ export default function Departments() {
     try {
       if (editingDept) {
         await updateDepartment(editingDept.id, payload);
+        showToast({
+          type: 'danger',
+          message: `Department Updated: ${payload.name}`,
+          detail: `Specifications and responders for ${payload.name} were modified.`,
+        });
       } else {
         await createDepartment(payload);
+        showToast({
+          type: 'danger',
+          message: `Department Created: ${payload.name}`,
+          detail: `New emergency response unit ${payload.name} was successfully registered.`,
+        });
       }
       setShowModal(false);
       loadDepartments();
     } catch (err) {
       console.error('Failed to save department:', err);
-      alert('Failed to save department. Ensure department code is unique.');
+      showToast({
+        type: 'danger',
+        message: 'Failed to save department',
+        detail: 'Ensure department short code is unique and fields are valid.',
+      });
     } finally {
       setSaving(false);
     }
@@ -145,9 +161,18 @@ export default function Departments() {
       try {
         await deleteDepartment(id);
         loadDepartments();
+        showToast({
+          type: 'danger',
+          message: `Department Deleted: ${code}`,
+          detail: `Department ${code} has been permanently deleted from active dispatch.`,
+        });
       } catch (err) {
         console.error('Failed to delete department:', err);
-        alert('Failed to delete department.');
+        showToast({
+          type: 'danger',
+          message: 'Failed to delete department',
+          detail: 'A server error occurred while deleting the department.',
+        });
       }
     }
   };
@@ -167,6 +192,11 @@ export default function Departments() {
     } catch {
       /* non-blocking */
     }
+    showToast({
+      type: 'simple',
+      message: `Calling ${dept.name}`,
+      detail: `Connecting to ${dept.contact}...`,
+    });
     window.location.href = `tel:${cleaned}`;
   };
 
@@ -174,6 +204,11 @@ export default function Departments() {
     const textToCopy = `${dept.fullName}\nHead: ${dept.headOfficer}\nContact: ${dept.contact}\nEmail: ${dept.email}\nStatus: ${dept.status}`;
     navigator.clipboard.writeText(textToCopy).then(() => {
       setCopiedId(dept.id);
+      showToast({
+        type: 'success',
+        message: `${dept.name} Specs Copied`,
+        detail: 'Roster details copied to clipboard.',
+      });
       setTimeout(() => setCopiedId(null), 2000);
     });
   };

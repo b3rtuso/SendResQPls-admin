@@ -142,7 +142,7 @@ export default function SettingsPage() {
       setAdmins(prev => [...prev, res.data.admin]);
       setNewAdmin({ name: '', email: '', password: '', phoneNumber: '' });
       setShowCreateAdmin(false);
-      showToast('success', 'Admin Created', `${res.data.admin.name} can now log in to the admin panel.`);
+      showToast('danger', 'Admin Created', `${res.data.admin.name} can now log in to the admin panel.`);
     } catch (err: any) {
       showToast('error', 'Failed to Create Admin', err.response?.data?.error || 'Server error occurred.');
     } finally {
@@ -161,7 +161,7 @@ export default function SettingsPage() {
       const res = await toggleAdminStatus(id);
       setAdmins(prev => prev.map(a => a.id === id ? { ...a, isActive: res.data.admin.isActive } : a));
       const action = res.data.admin.isActive ? 'reactivated' : 'deactivated';
-      showToast('success', `Admin ${action.charAt(0).toUpperCase() + action.slice(1)}`, `${name}'s access has been ${action}.`);
+      showToast('danger', `Admin ${action.charAt(0).toUpperCase() + action.slice(1)}`, `${name}'s access has been ${action}.`);
     } catch (err: any) {
       showToast('error', 'Failed to Update Admin', err.response?.data?.error || 'Server error occurred.');
     } finally {
@@ -189,7 +189,7 @@ export default function SettingsPage() {
       
       window.dispatchEvent(new Event('storage'));
       
-      showToast('success', 'Profile Updated Successfully', 'Your administrator profile details have been saved.');
+      showToast('danger', 'Profile Data Changed', 'Your administrator name, email, and phone have been updated.');
     } catch (err: any) {
       console.error('Failed to update profile:', err);
       showToast('error', 'Profile Update Failed', err.response?.data?.error || 'Server error occurred.');
@@ -221,7 +221,7 @@ export default function SettingsPage() {
         newPassword
       });
       
-      showToast('success', 'Password Updated Successfully', 'Your administrator credentials have been changed.');
+      showToast('danger', 'Security Alert: Password Updated', 'Your administrator credentials have been changed.');
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
