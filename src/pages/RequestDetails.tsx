@@ -335,8 +335,37 @@ export default function RequestDetails() {
           />
         )}
 
-        <Button variant="outline" size="sm" onClick={() => navigate('/requests')} style={{ marginBottom: 20, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <ArrowLeft size={16} /> Back to Requests
+        <Button
+          variant="outline"
+          onClick={() => navigate('/requests')}
+          style={{
+            marginBottom: 20,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 16px',
+            height: 'auto',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 700,
+            color: '#1E293B',
+            background: '#FFFFFF',
+            border: '1.5px solid #E2E8F0',
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#F8FAFC';
+            e.currentTarget.style.borderColor = '#CBD5E1';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = '#FFFFFF';
+            e.currentTarget.style.borderColor = '#E2E8F0';
+          }}
+        >
+          <ArrowLeft size={16} style={{ flexShrink: 0 }} />
+          <span>Back to Requests</span>
         </Button>
 
         <div className="grid-3-1 fade-in">
@@ -372,11 +401,10 @@ export default function RequestDetails() {
                   </div>
                 </div>
                 <div style={{ gridColumn: 'span 2', marginTop: 4 }}>
-                  <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>SEVERITY & URGENCY RANKING</strong>
+                  <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>SEVERITY RANKING</strong>
                   <div style={{ fontSize: 14, fontWeight: 800, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     {(() => {
                       const sev = (incident.severity || 'MEDIUM').toUpperCase();
-                      const score = incident.urgencyScore ?? 50;
                       const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
                         CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
                         HIGH:     { bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3', dot: '#F43F5E' },
@@ -385,31 +413,26 @@ export default function RequestDetails() {
                       };
                       const s = sevColors[sev] || sevColors.MEDIUM;
                       return (
-                        <>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '4px 10px',
+                          borderRadius: 8,
+                          fontSize: 12.5,
+                          fontWeight: 800,
+                          background: s.bg,
+                          color: s.color,
+                          border: `1.5px solid ${s.border}`,
+                        }}>
                           <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            padding: '4px 10px',
-                            borderRadius: 8,
-                            fontSize: 12.5,
-                            fontWeight: 800,
-                            background: s.bg,
-                            color: s.color,
-                            border: `1.5px solid ${s.border}`,
-                          }}>
-                            <span style={{
-                              width: 7, height: 7, borderRadius: '50%',
-                              background: s.dot, display: 'inline-block',
-                              boxShadow: s.pulse ? `0 0 0 2px ${s.border}` : 'none',
-                              animation: s.pulse ? 'pulse-emergency 1.8s infinite' : 'none'
-                            }} />
-                            {sev} PRIORITY
-                          </span>
-                          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-secondary)' }}>
-                            Urgency Score: <strong style={{ color: 'var(--text-primary)' }}>{score}/100</strong>
-                          </span>
-                        </>
+                            width: 7, height: 7, borderRadius: '50%',
+                            background: s.dot, display: 'inline-block',
+                            boxShadow: s.pulse ? `0 0 0 2px ${s.border}` : 'none',
+                            animation: s.pulse ? 'pulse-emergency 1.8s infinite' : 'none'
+                          }} />
+                          {sev} PRIORITY
+                        </span>
                       );
                     })()}
                   </div>

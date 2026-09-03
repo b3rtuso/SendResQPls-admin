@@ -680,7 +680,7 @@ export default function Requests() {
                       </th>
                       <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          <span>Urgency</span>
+                          <span>Severity</span>
                           {sortKey === 'urgency' ? (
                             sortDir === 'asc' ? <ArrowUp size={13} color="#DC2626" /> : <ArrowDown size={13} color="#DC2626" />
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
@@ -806,7 +806,6 @@ export default function Requests() {
                           <td className="rq-td" style={{ padding: '14px 18px' }}>
                             {(() => {
                               const sev = (inc.severity || '').toUpperCase() || 'MEDIUM';
-                              const score = inc.urgencyScore ?? getIncidentUrgencyScore(inc);
                               const isTerminal = inc.status === 'RESOLVED' || inc.status === 'REJECTED';
                               const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
                                 CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
@@ -817,23 +816,18 @@ export default function Requests() {
                               const s = sevColors[sev] || sevColors.MEDIUM;
                               if (isTerminal) return <span style={{ fontSize: 11, color: '#94A3B8' }}>—</span>;
                               return (
-                                <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 3 }}>
-                                  <Badge style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                                    padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
-                                    background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
-                                    whiteSpace: 'nowrap',
-                                  }}>
-                                    <span style={{
-                                      width: 6, height: 6, borderRadius: '50%',
-                                      background: s.dot, display: 'inline-block',
-                                    }} />
-                                    <span>{sev}</span>
-                                  </Badge>
-                                  <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600 }}>
-                                    Score: {Math.min(score, 100)}
-                                  </span>
-                                </div>
+                                <Badge style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                                  padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 800,
+                                  background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
+                                  whiteSpace: 'nowrap',
+                                }}>
+                                  <span style={{
+                                    width: 6, height: 6, borderRadius: '50%',
+                                    background: s.dot, display: 'inline-block',
+                                  }} />
+                                  <span>{sev}</span>
+                                </Badge>
                               );
                             })()}
                           </td>
@@ -897,7 +891,6 @@ export default function Requests() {
                     ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                     : 'Balayan';
                   const sev = (inc.severity || '').toUpperCase() || 'MEDIUM';
-                  const score = inc.urgencyScore ?? getIncidentUrgencyScore(inc);
                   const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
                     CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
                     HIGH:     { bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3', dot: '#F43F5E' },
@@ -983,7 +976,6 @@ export default function Requests() {
                         }}>
                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot }} />
                           <span>{sev}</span>
-                          <span style={{ fontSize: 10, opacity: 0.75 }}>({Math.min(score, 100)})</span>
                         </Badge>
 
                         <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
