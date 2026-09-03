@@ -4,16 +4,17 @@ import {
   LayoutDashboard, FileText,
   BarChart3, Building2, LogOut, X,
 } from 'lucide-react';
-import { FaPhoneSquareAlt, FaCogs } from 'react-icons/fa';
+import { FaCog } from 'react-icons/fa';
+import { FiPhone } from 'react-icons/fi';
 import { useAdminNav } from '../context/AdminNavContext';
 
 const navItems = [
   { to: '/dashboard',   icon: LayoutDashboard,  label: 'Dashboard'   },
   { to: '/requests',    icon: FileText,         label: 'Requests'    },
-  { to: '/call-logs',   icon: FaPhoneSquareAlt, label: 'Call Logs'   },
+  { to: '/call-logs',   icon: FiPhone,          label: 'Call Logs'   },
   { to: '/analytics',  icon: BarChart3,         label: 'Analytics'   },
   { to: '/departments', icon: Building2,        label: 'Departments' },
-  { to: '/settings',   icon: FaCogs,            label: 'Settings'    },
+  { to: '/settings',   icon: FaCog,             label: 'Settings'    },
 ];
 
 export default function Sidebar() {

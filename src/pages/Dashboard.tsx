@@ -10,7 +10,8 @@ import {
 import { TbReport } from 'react-icons/tb';
 import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
 import { FaFileCircleCheck, FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
-import { FaBriefcaseMedical, FaPhoneSquareAlt } from 'react-icons/fa';
+import { FaBriefcaseMedical } from 'react-icons/fa';
+import { FiPhone } from 'react-icons/fi';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { GiPoliceOfficerHead } from 'react-icons/gi';
 import { IoBandage } from 'react-icons/io5';
@@ -44,7 +45,7 @@ const TYPE_ICON: Record<string, TypeIconEntry> = {
   'Fire':      { icon: FaFire,            color: '#DC2626' },
   'Flood':     { icon: FaHouseFloodWater, color: '#3B82F6' },
   'Medical':   { icon: FaBriefcaseMedical,color: '#22C55E' },
-  'Crime':     { icon: RiCriminalFill,    color: '#8B5CF6' },
+  'Crime':     { icon: RiCriminalFill,    color: '#000000' },
   'Typhoon':   { icon: RiTyphoonFill,     color: '#8B5CF6' },
   'Landslide': { icon: MdLandslide,       color: '#78716C' },
   'Trauma':    { icon: IoBandage,         color: '#F59E0B' },
@@ -59,7 +60,7 @@ const DONUT_COLORS: Record<string, string> = {
   'Trauma': '#F59E0B',
   'Typhoon': '#8B5CF6',
   'Landslide': '#78716C',
-  'Crime': '#8B5CF6',
+  'Crime': '#000000',
   'Other': '#94A3B8',
 };
 
@@ -1151,7 +1152,7 @@ export default function Dashboard() {
                     onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#2563EB'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#475569'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
                   >
-                    <FaPhoneSquareAlt size={13} /> Call
+                    <FiPhone size={13} /> Call
                   </Button>
                 </div>
               ))}

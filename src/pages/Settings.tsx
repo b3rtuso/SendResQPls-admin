@@ -4,7 +4,7 @@ import { SettingsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { 
   Save, Download, RefreshCw, Shield, Eye, EyeOff, 
-  Activity, Loader2, User, KeyRound, Bell,
+  Activity, Loader2, User, KeyRound,
   Users, UserPlus, UserCheck, UserX, X, Server
 } from 'lucide-react';
 import { 
@@ -13,6 +13,7 @@ import {
   listAdmins, createAdmin, toggleAdminStatus
 } from '../api/client';
 import { useConfirm } from '../context/ConfirmContext';
+import { FaBell, FaCog } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -743,7 +744,10 @@ export default function SettingsPage() {
             <div className="st-card">
               <div className="st-card-header">
                 <div className="st-card-title">
-                  <Bell size={17} style={{ color: '#2563EB' }} />
+                  <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, color: '#2563EB', marginRight: 2 }}>
+                    <FaBell size={16} />
+                    <FaCog size={9} style={{ position: 'absolute', top: -3, right: -4, color: '#2563EB', background: '#FAFBFC', borderRadius: '50%' }} />
+                  </span>
                   Dispatch Notification Rules
                 </div>
               </div>

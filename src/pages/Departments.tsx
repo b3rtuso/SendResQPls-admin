@@ -6,7 +6,8 @@ import {
   Plus, Edit2, Trash2,
 } from 'lucide-react';
 import { FaFire } from 'react-icons/fa6';
-import { FaBriefcaseMedical, FaPhoneSquareAlt, FaEnvelope } from 'react-icons/fa';
+import { FaBriefcaseMedical, FaEnvelope } from 'react-icons/fa';
+import { FiPhone } from 'react-icons/fi';
 import { MdEngineering, MdLocalShipping } from 'react-icons/md';
 import { GiPoliceOfficerHead } from 'react-icons/gi';
 import type { DepartmentInfo } from '../types';
@@ -430,7 +431,7 @@ export default function Departments() {
                       <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Head:</strong> {dept.headOfficer}</span>
                     </div>
                     <div className="dept-detail" style={{ margin: 0, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)' }}>
-                      <FaPhoneSquareAlt size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> 
+                      <FiPhone size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> 
                       <span><strong style={{ color: 'var(--text-primary)', fontWeight: 700 }}>Contact:</strong> {dept.contact}</span>
                     </div>
                     <div className="dept-detail" style={{ margin: 0, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)' }}>
@@ -483,7 +484,7 @@ export default function Departments() {
                       onMouseEnter={e => { e.currentTarget.style.background = theme.color; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'transparent'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-body)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
                     >
-                      <FaPhoneSquareAlt size={13} /> Call Unit
+                      <FiPhone size={13} /> Call Unit
                     </button>
                     
                     <button 

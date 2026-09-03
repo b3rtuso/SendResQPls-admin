@@ -44,7 +44,7 @@ const INCIDENT_TYPES_SVG = [
   { id: 'medical',   label: 'Medical',    icon: FaBriefcaseMedical,color: '#22C55E', desc: 'Medical emergencies & patient transport calls' },
   { id: 'trauma',    label: 'Trauma',     icon: IoBandage,         color: '#F59E0B', desc: 'Physical injuries & severe trauma dispatches' },
   { id: 'accident',  label: 'Accident',   icon: Car,               color: '#3B82F6', desc: 'Vehicular collisions & road traffic accidents' },
-  { id: 'crime',     label: 'Crime',      icon: RiCriminalFill,    color: '#8B5CF6', desc: 'Security, disturbance & assault incidents' },
+  { id: 'crime',     label: 'Crime',      icon: RiCriminalFill,    color: '#000000', desc: 'Security, disturbance & assault incidents' },
   { id: 'typhoon',   label: 'Typhoon',    icon: RiTyphoonFill,     color: '#8B5CF6', desc: 'Tropical storms & typhoon wind/rain damage' },
   { id: 'landslide', label: 'Landslide',  icon: MdLandslide,       color: '#78716C', desc: 'Ground movement, mudslides & slope erosion' },
 ];

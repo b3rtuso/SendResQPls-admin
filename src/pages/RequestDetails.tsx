@@ -5,7 +5,7 @@ import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2 } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
-import { FaPhoneSquareAlt } from 'react-icons/fa';
+import { FiPhone } from 'react-icons/fi';
 import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, createCallLog } from '../api/client';
 import type { Status, Incident, ResolutionForm } from '../types';
 import ResolutionFormModal from '../components/ResolutionFormModal';
@@ -558,7 +558,7 @@ export default function RequestDetails() {
                   </div>
                     {incident.reporter?.phoneNumber && (
                       <div className="dept-detail">
-                        <FaPhoneSquareAlt size={16} />
+                        <FiPhone size={16} />
                         <strong>Phone:</strong>
                         <a
                           href={`tel:${incident.reporter.phoneNumber}`}
@@ -660,7 +660,7 @@ export default function RequestDetails() {
                           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{dept.name}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                          <FaPhoneSquareAlt size={13} color="var(--text-secondary)" />
+                          <FiPhone size={13} color="var(--text-secondary)" />
                           <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{dept.contact}</span>
                         </div>
                         <div style={{ display: 'flex', gap: 6 }}>
@@ -677,7 +677,7 @@ export default function RequestDetails() {
                               textDecoration: 'none', fontFamily: 'var(--font)',
                             }}
                           >
-                            <FaPhoneSquareAlt size={13} /> Call
+                            <FiPhone size={13} /> Call
                           </a>
                           <Button
                             variant="outline"

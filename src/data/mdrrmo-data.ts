@@ -11,7 +11,7 @@ export const TYPE_COLORS: Record<string, string> = {
   Trauma:   '#F59E0B',
   Accident: '#3B82F6',
   Fire:     '#EF4444',
-  Crime:    '#8B5CF6',
+  Crime:    '#000000',
   Other:    '#94A3B8',
 };
 
