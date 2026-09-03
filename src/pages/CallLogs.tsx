@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { Search, RefreshCw, ExternalLink, Trash2, Radio, Building2, Layers } from 'lucide-react';
-import { FiPhone } from 'react-icons/fi';
+import { Search, RefreshCw, ExternalLink, Trash2, Building2 } from 'lucide-react';
+import { FiPhone, FiPhoneIncoming } from 'react-icons/fi';
+import { MdLocalShipping } from 'react-icons/md';
 import type { CallLog } from '../types';
 import { getCallLogs, deleteCallLog } from '../api/client';
 import { Button } from '@/components/ui/button';
@@ -179,8 +180,8 @@ export default function CallLogs() {
               <div className="cl-stat-label">Incident Dispatches</div>
               <div className="cl-stat-value">{metrics.incidentLinked}</div>
             </div>
-            <div className="cl-stat-icon" style={{ background: 'rgba(34, 197, 94, 0.08)', color: '#16A34A' }}>
-              <Radio size={20} />
+            <div className="cl-stat-icon" style={{ background: 'rgba(124, 58, 237, 0.08)', color: '#7C3AED' }}>
+              <MdLocalShipping size={20} />
             </div>
           </div>
 
@@ -190,7 +191,7 @@ export default function CallLogs() {
               <div className="cl-stat-value">{metrics.directDispatch}</div>
             </div>
             <div className="cl-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: '#D97706' }}>
-              <Layers size={20} />
+              <FiPhoneIncoming size={20} />
             </div>
           </div>
 

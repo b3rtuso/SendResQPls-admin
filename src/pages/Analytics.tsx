@@ -6,12 +6,13 @@ import {
   Cell,
 } from 'recharts';
 import {
-  TrendingUp, FileText, Download, BarChart3, Calendar, Loader2, CheckCircle2,
+  TrendingUp, FileText, Download, BarChart3, Loader2, CheckCircle2,
   Info, Car, AlertTriangle, X,
   CalendarDays, CalendarRange, CalendarCheck, History, Trash2, RotateCcw,
 } from 'lucide-react';
 import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
-import { FaBriefcaseMedical } from 'react-icons/fa';
+import { FaBriefcaseMedical, FaCalendarAlt } from 'react-icons/fa';
+import { AiFillDatabase } from 'react-icons/ai';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { MdLandslide } from 'react-icons/md';
 import { IoBandage } from 'react-icons/io5';
@@ -855,7 +856,7 @@ export default function Analytics() {
               <div className="stat-card"><div className="stat-info"><h3>YTD Total (2026)</h3><div className="stat-value">{yearlySummary.totalCurrentYear}</div><div className="stat-change up">Jan – May actual data</div></div><div className="stat-icon blue"><BarChart3 size={22} /></div></div>
               <div className="stat-card"><div className="stat-info"><h3>Peak Month</h3><div className="stat-value">{yearlySummary.peakMonth}</div><div className="stat-change up">{yearlySummary.peakMonthCount} incidents recorded</div></div><div className="stat-icon red"><TrendingUp size={22} /></div></div>
               <div className="stat-card"><div className="stat-info"><h3>Full Year Projected</h3><div className="stat-value">{yearlySummary.predictedTotal}</div><div className="stat-change down">↓ {Math.abs(yearlySummary.yoyGrowth)}% vs 2024</div></div><div className="stat-icon purple"><TrendingUp size={22} /></div></div>
-              <div className="stat-card"><div className="stat-info"><h3>Total Records</h3><div className="stat-value">1,260</div><div className="stat-change up">2023–2026 data</div></div><div className="stat-icon green"><Calendar size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Total Records</h3><div className="stat-value">1,260</div><div className="stat-change up">2023–2026 data</div></div><div className="stat-icon green"><AiFillDatabase size={22} /></div></div>
             </div>
 
             {/* Forecast + Requests Over Time */}
@@ -1054,7 +1055,7 @@ export default function Analytics() {
                   <div className="stat-value">2023–2026</div>
                   <div className="stat-change up">4 years of data</div>
                 </div>
-                <div className="stat-icon purple"><Calendar size={22} /></div>
+                <div className="stat-icon purple"><FaCalendarAlt size={22} /></div>
               </div>
               <div className="stat-card">
                 <div className="stat-info">
@@ -1062,7 +1063,7 @@ export default function Analytics() {
                   <div className="stat-value">1,260</div>
                   <div className="stat-change up">MDRRMO incident reports</div>
                 </div>
-                <div className="stat-icon green"><BarChart3 size={22} /></div>
+                <div className="stat-icon green"><AiFillDatabase size={22} /></div>
               </div>
             </div>
 
