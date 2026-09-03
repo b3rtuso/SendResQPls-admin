@@ -12,11 +12,13 @@ import {
   getIncidents, getDepartments,
   listAdmins, createAdmin, toggleAdminStatus
 } from '../api/client';
+import { useConfirm } from '../context/ConfirmContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 export default function SettingsPage() {
+  const { confirm } = useConfirm();
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -156,6 +158,23 @@ export default function SettingsPage() {
       showToast('error', 'Not Allowed', 'You cannot deactivate your own account.');
       return;
     }
+    const target = admins.find(a => a.id === id);
+    const willDeactivate = target?.isActive;
+
+    const isConfirmed = await confirm({
+      type: willDeactivate ? 'warning' : 'update',
+      title: willDeactivate ? 'Warning: Deactivate Admin' : 'Reactivate Admin Account',
+      message: willDeactivate
+        ? `Are you sure you want to deactivate administrative access for ${name}?`
+        : `Reactivate administrative privileges for ${name}?`,
+      detail: willDeactivate
+        ? 'This user will immediately lose access to all command center modules, live dispatch maps, and incident review tools.'
+        : 'This user will regain full access to administrative capabilities.',
+      confirmText: willDeactivate ? 'Deactivate Access' : 'Reactivate Access',
+      cancelText: 'Cancel',
+    });
+    if (!isConfirmed) return;
+
     setTogglingAdmin(id);
     try {
       const res = await toggleAdminStatus(id);
@@ -175,6 +194,17 @@ export default function SettingsPage() {
       showToast('error', 'Validation Error', 'Full Name and Email Address are required.');
       return;
     }
+
+    const isConfirmed = await confirm({
+      type: 'update',
+      title: 'Confirm Profile Update',
+      message: 'Update your official administrator account information?',
+      detail: 'Updated name, email, and contact number will be reflected across active dispatches and official records.',
+      confirmText: 'Save Profile',
+      cancelText: 'Cancel',
+    });
+    if (!isConfirmed) return;
+
     setSavingProfile(true);
     try {
       await updateProfile({
@@ -213,6 +243,16 @@ export default function SettingsPage() {
       showToast('error', 'Validation Error', 'New passwords do not match.');
       return;
     }
+
+    const isConfirmed = await confirm({
+      type: 'update',
+      title: 'Confirm Password Change',
+      message: 'Are you sure you want to update your administrator credentials?',
+      detail: 'You will need to use your new password next time you log into the MDRRMO command center.',
+      confirmText: 'Update Password',
+      cancelText: 'Cancel',
+    });
+    if (!isConfirmed) return;
     
     setUpdatingPassword(true);
     try {

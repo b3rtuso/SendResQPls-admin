@@ -22,6 +22,7 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './analytics-map.css';
+import { useConfirm } from '../context/ConfirmContext';
 import {
   BALAYAN_CENTER, BALAYAN_BOUNDS, BARANGAYS,
   type Barangay,
@@ -305,6 +306,7 @@ function getRiskExplanation(type: string, riskTier: 'ALL' | 'HIGH' | 'MEDIUM' | 
 }
 
 export default function Analytics() {
+  const { confirm } = useConfirm();
   const [tab, setTab] = useState<'map' | 'forecast' | 'reports'>('map');
   const [selectedType, setSelectedType] = useState('fire');
   const [selectedBarangay, setSelectedBarangay] = useState<Barangay | null>(null);
@@ -471,8 +473,16 @@ export default function Analytics() {
     }
   };
 
-  const handleClearHistory = () => {
-    if (window.confirm('Are you sure you want to clear your report download history?')) {
+  const handleClearHistory = async () => {
+    const isConfirmed = await confirm({
+      type: 'delete',
+      title: 'Clear Report Download History',
+      message: 'Are you sure you want to clear your report download history?',
+      detail: 'This will purge all downloaded document tracking records from your local storage. This action cannot be undone.',
+      confirmText: 'Clear History',
+      cancelText: 'Keep History',
+    });
+    if (isConfirmed) {
       setDownloadHistory([]);
       try { localStorage.removeItem('sendresq_download_history'); } catch {}
     }

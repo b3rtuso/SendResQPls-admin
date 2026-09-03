@@ -21,6 +21,7 @@ import {
   createCallLog,
 } from '../api/client';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 const statusClass: Record<string, string> = {
   Available: 'available',
@@ -52,6 +53,7 @@ type FilterStatus = 'ALL' | 'Available' | 'On Standby' | 'Deployed';
 
 export default function Departments() {
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const [departments, setDepartments] = useState<DepartmentInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -115,7 +117,6 @@ export default function Departments() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     const payload = {
       name: name.toUpperCase(),
       fullName,
@@ -126,6 +127,20 @@ export default function Departments() {
       equipment: equipmentInput.split(',').map((eq) => eq.trim()).filter(Boolean),
       status,
     };
+
+    if (editingDept) {
+      const isConfirmed = await confirm({
+        type: 'update',
+        title: 'Confirm Department Update',
+        message: `Are you sure you want to update department '${editingDept.name}' (${payload.fullName})?`,
+        detail: 'This will modify assigned responder counts, contact specifications, and equipment roster across the system.',
+        confirmText: 'Save Changes',
+        cancelText: 'Continue Editing',
+      });
+      if (!isConfirmed) return;
+    }
+
+    setSaving(true);
     try {
       if (editingDept) {
         await updateDepartment(editingDept.id, payload);
@@ -157,23 +172,31 @@ export default function Departments() {
   };
 
   const handleDelete = async (id: string, code: string) => {
-    if (window.confirm(`Are you sure you want to delete department '${code}'? This cannot be undone.`)) {
-      try {
-        await deleteDepartment(id);
-        loadDepartments();
-        showToast({
-          type: 'danger',
-          message: `Department Deleted: ${code}`,
-          detail: `Department ${code} has been permanently deleted from active dispatch.`,
-        });
-      } catch (err) {
-        console.error('Failed to delete department:', err);
-        showToast({
-          type: 'danger',
-          message: 'Failed to delete department',
-          detail: 'A server error occurred while deleting the department.',
-        });
-      }
+    const isConfirmed = await confirm({
+      type: 'delete',
+      title: 'Delete Department Confirmation',
+      message: `Are you sure you want to permanently delete department '${code}'?`,
+      detail: 'This unit will be permanently unlinked from active incident dispatches and responder rosters. This action cannot be undone.',
+      confirmText: 'Delete Department',
+      cancelText: 'Keep Department',
+    });
+    if (!isConfirmed) return;
+
+    try {
+      await deleteDepartment(id);
+      loadDepartments();
+      showToast({
+        type: 'danger',
+        message: `Department Deleted: ${code}`,
+        detail: `Department ${code} has been permanently deleted from active dispatch.`,
+      });
+    } catch (err) {
+      console.error('Failed to delete department:', err);
+      showToast({
+        type: 'danger',
+        message: 'Failed to delete department',
+        detail: 'A server error occurred while deleting the department.',
+      });
     }
   };
 

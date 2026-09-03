@@ -7,9 +7,13 @@ import type { CallLog } from '../types';
 import { getCallLogs, deleteCallLog } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function CallLogs() {
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
+  const { showToast } = useToast();
   const [logs, setLogs] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,12 +48,31 @@ export default function CallLogs() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this call log record?')) return;
+    const isConfirmed = await confirm({
+      type: 'delete',
+      title: 'Delete Call Log Confirmation',
+      message: 'Are you sure you want to delete this call log record?',
+      detail: 'This emergency dispatch call record will be permanently deleted from the MDRRMO call logs index.',
+      confirmText: 'Delete Record',
+      cancelText: 'Cancel',
+    });
+    if (!isConfirmed) return;
+
     try {
       await deleteCallLog(id);
       loadLogs();
+      showToast({
+        type: 'danger',
+        message: 'Call Log Record Deleted',
+        detail: `Call log record ${id.slice(0, 8)} was permanently removed.`,
+      });
     } catch (err) {
       console.error('Failed to delete call log:', err);
+      showToast({
+        type: 'danger',
+        message: 'Failed to delete call log',
+        detail: 'An error occurred while deleting the call log record.',
+      });
     }
   };
 
