@@ -5,11 +5,11 @@ import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Anchor,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info, MapPin, Clock,
+  Info, Clock,
 } from 'lucide-react';
 import { TbReport } from 'react-icons/tb';
 import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
-import { FaFileCircleCheck, FaFire, FaHouseFloodWater } from 'react-icons/fa6';
+import { FaFileCircleCheck, FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { GiPoliceOfficerHead } from 'react-icons/gi';
@@ -814,7 +814,7 @@ export default function Dashboard() {
           <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 34, height: 34, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', flexShrink: 0 }}>
-                <MapPin size={18} />
+                <FaLocationDot size={18} />
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Top Incident Locations</h3>
@@ -1077,7 +1077,10 @@ export default function Dashboard() {
                           <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo(inc.createdAt)}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: '#64748B' }}>
-                          <span>📍 {brgy}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <FaLocationDot size={12} color="#EF4444" style={{ flexShrink: 0 }} />
+                            <span>{brgy}</span>
+                          </span>
                           <Button
                             size="sm"
                             variant="outline"

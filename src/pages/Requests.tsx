@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
 import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { FaFire, FaHouseFloodWater } from 'react-icons/fa6';
+import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { MdLandslide } from 'react-icons/md';
@@ -770,9 +770,12 @@ export default function Requests() {
                               padding: '3px 8px',
                               borderRadius: 6,
                               fontSize: 12,
-                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
                             }}>
-                              📍 {brgyName}
+                              <FaLocationDot size={11} color="#EF4444" style={{ flexShrink: 0 }} />
+                              <span>{brgyName}</span>
                             </span>
                           </td>
 
@@ -960,7 +963,10 @@ export default function Requests() {
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.aiDetectedType || 'Emergency'}</span>
                           </div>
                           <div style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span>📍 {brgyName}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <FaLocationDot size={11} color="#EF4444" style={{ flexShrink: 0 }} />
+                              <span>{brgyName}</span>
+                            </span>
                             <span style={{ color: '#CBD5E1' }}>•</span>
                             <span>{inc.aiRecommendedDept || 'MDRRMO'}</span>
                           </div>

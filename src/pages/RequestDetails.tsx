@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
+import { FaLocationDot } from 'react-icons/fa6';
 import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, createCallLog } from '../api/client';
 import type { Status, Incident, ResolutionForm } from '../types';
 import ResolutionFormModal from '../components/ResolutionFormModal';
@@ -514,7 +515,7 @@ export default function RequestDetails() {
               <div className="card-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div className="dept-detail" style={{ alignItems: 'flex-start' }}>
-                    <MapPin size={16} style={{ marginTop: 3, flexShrink: 0 }} />
+                    <FaLocationDot size={15} style={{ marginTop: 3, flexShrink: 0, color: '#2563EB' }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <div>
                         <strong>Location:</strong>{' '}
@@ -584,7 +585,7 @@ export default function RequestDetails() {
             {/* Map Card */}
             <div className="card" style={{ overflow: 'hidden' }}>
               <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3><MapPin size={18} style={{ marginRight: 6, verticalAlign: -3, display: 'inline-block' }} /> Incident Location Map</h3>
+                <h3><FaLocationDot size={16} style={{ marginRight: 6, verticalAlign: -2, display: 'inline-block', color: '#2563EB' }} /> Incident Location Map</h3>
                 <button
                   onClick={openLocation}
                   className="btn btn-sm btn-outline"

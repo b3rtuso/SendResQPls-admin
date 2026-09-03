@@ -6,11 +6,11 @@ import {
   Cell,
 } from 'recharts';
 import {
-  TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
+  TrendingUp, FileText, Download, BarChart3, Calendar, Loader2, CheckCircle2,
   Activity, Info, Car, AlertTriangle, X,
   CalendarDays, CalendarRange, CalendarCheck, History, Trash2, RotateCcw,
 } from 'lucide-react';
-import { FaFire, FaHouseFloodWater } from 'react-icons/fa6';
+import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { MdLandslide } from 'react-icons/md';
@@ -491,7 +491,7 @@ export default function Analytics() {
             onClick={() => setTab('map')}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexDirection: 'row' }}
           >
-            <MapPin size={16} style={{ flexShrink: 0 }} /> 
+            <FaLocationDot size={15} style={{ flexShrink: 0 }} /> 
             <span>Incident Map</span>
           </button>
           <button 
@@ -781,7 +781,7 @@ export default function Analytics() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#2196F3', flexShrink: 0,
                 }}>
-                  <MapPin size={22} />
+                  <FaLocationDot size={20} />
                 </div>
                 <div>
                   <div className="stat-number" style={{ fontSize: 24, fontWeight: 800, color: currentIncident?.color || '#3B82F6', lineHeight: 1, marginBottom: 4 }}>
