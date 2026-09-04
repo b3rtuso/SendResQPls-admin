@@ -27,7 +27,7 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* ---- Top Filter Bar ---- */
+/* ---- Top Filter Bar (White Holder) ---- */
 .map-filter-bar {
   position: relative;
   display: flex;
@@ -35,55 +35,55 @@
   gap: 8px;
   padding: 10px 14px;
   margin-bottom: 14px;
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  background: #FFFFFF;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.02);
   flex-wrap: wrap;
   z-index: 10;
 }
 
 .map-filter-bar .filter-label {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1.2px;
-  color: rgba(255, 255, 255, 0.45);
+  color: #64748B;
   white-space: nowrap;
 }
 
-/* ---- Incident Type Pills (Samsung One UI Squircle Tiles) ---- */
+/* ---- Incident Type Pills (Light Theme on White Container) ---- */
 .incident-pill {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 15px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.75);
+  padding: 7px 14px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #334155;
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .incident-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+  color: #0F172A;
   transform: translateY(-1px);
 }
 
 .incident-pill.active {
-  color: white;
-  border-color: var(--pill-color, #3B82F6);
-  background: color-mix(in srgb, var(--pill-color, #3B82F6) 24%, rgba(15, 23, 42, 0.8));
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--pill-color, #3B82F6) 30%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  color: var(--pill-color, #2563EB);
+  border-color: var(--pill-color, #2563EB);
+  background: color-mix(in srgb, var(--pill-color, #2563EB) 10%, #FFFFFF);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--pill-color, #2563EB) 22%, transparent);
+  font-weight: 700;
 }
 
 .incident-pill .pill-emoji {

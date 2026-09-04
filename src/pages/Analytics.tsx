@@ -538,7 +538,7 @@ export default function Analytics() {
                     style={{ '--pill-color': t.color } as React.CSSProperties}
                     onClick={() => { setSelectedType(t.id); setRiskFilter('ALL'); }}
                   >
-                    <Icon size={14} style={{ marginRight: 4 }} />
+                    <Icon size={15} style={{ color: t.color, marginRight: 5, flexShrink: 0 }} />
                     {t.label}
                   </button>
                 );
