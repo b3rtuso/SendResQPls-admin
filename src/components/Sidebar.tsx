@@ -64,7 +64,7 @@ export default function Sidebar() {
             top: 0;
             bottom: 0;
             width: 260px;
-            background: linear-gradient(180deg, #0F2942 0%, #153454 50%, #1B3C62 100%);
+            background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
             display: flex;
             flex-direction: column;
             z-index: 1001;

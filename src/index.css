@@ -91,8 +91,8 @@
   --bg-body:        #F1F5F9;
   --bg-card:        #FFFFFF;
   --bg-card-hover:  #FAFBFF;
-  --bg-sidebar:     #0F2942;          /* Logo Deep Navy */
-  --bg-sidebar-end: #1E3A5F;          /* Logo Body Blue */
+  --bg-sidebar:     #0F1F38;          /* Mobile header base deep navy */
+  --bg-sidebar-end: #2563EB;          /* Mobile header royal blue */
   --bg-sidebar-hover:  rgba(255, 255, 255, 0.08);
   --bg-sidebar-active: rgba(245, 158, 11, 0.14); /* Gold tint for active item */
   --bg-subtle:      #F8FAFC;
