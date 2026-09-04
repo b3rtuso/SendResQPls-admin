@@ -1737,3 +1737,36 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
     animation: none !important;
   }
 }
+
+/* ============================================================
+   UNIVERSAL FOCUS RING RESET (NO DUAL FOCUS RINGS ON ANY PLACEHOLDER)
+   ============================================================ */
+input,
+textarea,
+select {
+  outline: none;
+}
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+  --tw-ring-color: transparent !important;
+}
+
+.input-wrapper input:focus,
+.input-wrapper input:focus-visible,
+.field-wrapper input:focus,
+.field-wrapper input:focus-visible,
+[class*="input-wrapper"] input:focus,
+[class*="input-wrapper"] input:focus-visible {
+  box-shadow: none !important;
+  border-color: transparent !important;
+  outline: none !important;
+}
+
