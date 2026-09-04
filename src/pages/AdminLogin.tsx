@@ -48,7 +48,13 @@ export default function AdminLogin() {
       localStorage.setItem('userRole', role);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Incorrect email or password. Please try again.');
+      if (!err.response) {
+        setError('Unable to reach the server. The backend may be waking up (Render cold start) or experiencing connection issues. Please wait a moment and try again.');
+      } else if (err.response.status === 401 || err.response.status === 400) {
+        setError(err.response.data?.error || 'Incorrect email or password. Please try again.');
+      } else {
+        setError(err.response.data?.error || 'Server error. Please try again in a few moments.');
+      }
     } finally {
       setLoading(false);
     }
