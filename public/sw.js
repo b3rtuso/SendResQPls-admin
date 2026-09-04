@@ -9,7 +9,7 @@ const PRECACHE_URLS = [
   '/icon-512.png',
 ];
 
-// Install: cache core mobile app shell
+// Install: cache core mobile app shelldasda
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
