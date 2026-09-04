@@ -31,12 +31,6 @@ const statusClass: Record<string, string> = {
   Deployed: 'deployed',
 };
 
-const statusColors: Record<string, string> = {
-  Available: '#22C55E',
-  'On Standby': '#F59E0B',
-  Deployed: '#EF4444',
-};
-
 const DEPT_THEME: Record<string, { icon: any; color: string; bg: string }> = {
   BFP: { icon: FaFire, color: '#EF4444', bg: '#FEF2F2' },
   PNP: { icon: GiPoliceOfficerHead, color: '#3B82F6', bg: '#EFF6FF' },
@@ -437,14 +431,15 @@ export default function Departments() {
           </div>
           
           <div style={{ display: 'flex', gap: 12, flex: '1 1 320px', justifyContent: 'flex-end', flexWrap: 'wrap', minWidth: 0 }}>
-            <div className="dept-search-box" style={{ flex: '1 1 200px', minWidth: '180px' }}>
-              <Search size={18} className="dept-search-icon" />
-              <input
+            <div style={{ flex: '1 1 240px', minWidth: '180px', position: 'relative' }}>
+              <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', zIndex: 1, pointerEvents: 'none' }} />
+              <Input
                 type="text"
                 placeholder="Search units by name, head, or equipment..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="dept-search-input"
+                className="bg-[#F8FAFC] text-sm h-[42px] border-[#E2E8F0]"
+                style={{ paddingLeft: 38 }}
               />
             </div>
             
@@ -468,7 +463,6 @@ export default function Departments() {
             {filteredDepartments.map((dept) => {
               const theme = getDeptTheme(dept.name);
               const IconComponent = theme.icon;
-              const statusColor = statusColors[dept.status] || '#94A3B8';
               
               return (
                 <div 
@@ -497,10 +491,6 @@ export default function Departments() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
                           <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{dept.name}</h4>
                           <span className={`badge ${statusClass[dept.status] || 'available'}`} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', height: '22px', fontSize: 11, padding: '2px 8px' }}>
-                            <span 
-                              className="status-pulse-dot" 
-                              style={{ '--pulse-color': statusColor, background: statusColor, width: 6, height: 6, marginRight: 6 } as any} 
-                            />
                             {dept.status}
                           </span>
                         </div>
