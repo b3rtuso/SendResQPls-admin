@@ -19,7 +19,7 @@ import { IoBandage } from 'react-icons/io5';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip as LeafletTooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './analytics-map.css';
@@ -639,7 +639,23 @@ export default function Analytics() {
                           setSelectedBarangay(brgy);
                         },
                       }}
-                    />
+                    >
+                      <LeafletTooltip direction="top" offset={L.point(0, -8)} opacity={1} className="brgy-map-tooltip">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontWeight: 800, fontSize: 12 }}>{brgy.name}</span>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: '1px 5px',
+                            borderRadius: 4,
+                            background: risk.riskLevel === 'HIGH' ? '#EF4444' : risk.riskLevel === 'MEDIUM' ? '#F59E0B' : '#22C55E',
+                            color: '#FFFFFF'
+                          }}>
+                            {risk.riskLevel}
+                          </span>
+                        </div>
+                      </LeafletTooltip>
+                    </Marker>
                   );
                 })}
               </MapContainer>
