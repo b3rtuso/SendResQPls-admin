@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import { DepartmentsSkeleton } from '../components/PageLoader';
 import {
-  Users, Search, Anchor, Copy, Check, Info, ShieldAlert,
+  Users, Search, Anchor, Copy, Check, Info,
   Plus, Edit2, Trash2,
 } from 'lucide-react';
 import { FaFire } from 'react-icons/fa6';
-import { FaBriefcaseMedical, FaEnvelope } from 'react-icons/fa';
+import { FaBriefcaseMedical, FaEnvelope, FaBuilding, FaUsers, FaUserCheck } from 'react-icons/fa';
 import { FiPhone } from 'react-icons/fi';
 import { MdEngineering, MdLocalShipping } from 'react-icons/md';
 import { GiPoliceOfficerHead } from 'react-icons/gi';
@@ -386,7 +386,7 @@ export default function Departments() {
         <div className="dept-stats-banner fade-in">
           <div className="dept-stat-item">
             <div className="dept-stat-icon-wrapper" style={{ background: 'rgba(59, 130, 246, 0.08)', color: '#2563EB' }}>
-              <ShieldAlert size={20} />
+              <FaBuilding size={20} />
             </div>
             <div className="dept-stat-info">
               <span className="dept-stat-value">{loading ? '—' : stats.totalUnits}</span>
@@ -395,7 +395,7 @@ export default function Departments() {
           </div>
           <div className="dept-stat-item">
             <div className="dept-stat-icon-wrapper" style={{ background: 'rgba(34, 197, 94, 0.08)', color: '#22C55E' }}>
-              <Users size={20} />
+              <FaUsers size={20} />
             </div>
             <div className="dept-stat-info">
               <span className="dept-stat-value">{loading ? '—' : stats.totalPersonnel}</span>
@@ -404,7 +404,7 @@ export default function Departments() {
           </div>
           <div className="dept-stat-item">
             <div className="dept-stat-icon-wrapper" style={{ background: 'rgba(139, 92, 246, 0.08)', color: '#8B5CF6' }}>
-              <Users size={20} />
+              <FaUserCheck size={20} />
             </div>
             <div className="dept-stat-info">
               <span className="dept-stat-value">{loading ? '—' : stats.availablePersonnel}</span>
