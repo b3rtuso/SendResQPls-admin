@@ -1,4 +1,4 @@
-import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu } from 'lucide-react';
+import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIncidents, updateIncidentStatus } from '../api/client';
@@ -220,6 +220,16 @@ export default function Header({ title, subtitle }: HeaderProps) {
     }
   };
 
+  useEffect(() => {
+    if (unrecognizedModal) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [unrecognizedModal]);
+
   return (
     <>
       <style>{`
@@ -358,82 +368,172 @@ export default function Header({ title, subtitle }: HeaderProps) {
       {unrecognizedModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 10000,
-          background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)',
+          background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 'clamp(12px, 3vw, 24px)',
           overflowY: 'auto',
         }}>
           <div style={{
-            background: 'white', borderRadius: 20,
-            width: 'min(480px, calc(100vw - 32px))',
+            background: 'white', borderRadius: 24,
+            width: 'min(500px, calc(100vw - 32px))',
             maxHeight: 'calc(100vh - 32px)',
-            boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+            boxShadow: '0 25px 60px -12px rgba(0,0,0,0.35)',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             animation: 'slideDown 0.3s cubic-bezier(0.16,1,0.3,1)',
           }}>
+            {/* Header with warm orange gradient & glowing warning badge */}
             <div style={{
-              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-              padding: '20px 24px',
-              display: 'flex', alignItems: 'center', gap: 12,
+              background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #EA580C 100%)',
+              padding: '22px 26px',
+              display: 'flex', alignItems: 'center', gap: 14,
+              position: 'relative',
+              overflow: 'hidden',
             }}>
+              {/* Background decorative watermark */}
               <div style={{
-                width: 44, height: 44, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.2)',
+                position: 'absolute', right: -12, top: -8,
+                opacity: 0.14, pointerEvents: 'none',
+              }}>
+                <AlertTriangle size={120} color="white" strokeWidth={1.5} />
+              </div>
+
+              {/* Glowing Badge with solid white triangle */}
+              <div style={{
+                width: 54, height: 54, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.22)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
+                boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+                zIndex: 1,
               }}>
-                <AlertTriangle size={24} color="white" />
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2.5L1.5 21h21L12 2.5z" fill="#ffffff" />
+                  <path d="M12 9v5" stroke="#EA580C" strokeWidth="2.5" strokeLinecap="round" />
+                  <circle cx="12" cy="17.2" r="1.3" fill="#EA580C" />
+                </svg>
               </div>
-              <div>
-                <h3 style={{ color: 'white', margin: 0, fontSize: 17, fontWeight: 800 }}>
+
+              <div style={{ zIndex: 1 }}>
+                <h3 style={{ color: 'white', margin: 0, fontSize: 18.5, fontWeight: 800, letterSpacing: '-0.3px', lineHeight: 1.25 }}>
                   Unrecognized Incident Reported
                 </h3>
-                <p style={{ color: 'rgba(255,255,255,0.85)', margin: '2px 0 0', fontSize: 12.5 }}>
-                  AI Confidence: {unrecognizedModal.confidence}
-                </p>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '3px 10px', marginTop: 7,
+                  background: 'rgba(255,255,255,0.18)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: 9999,
+                  color: 'white', fontSize: 12, fontWeight: 600,
+                }}>
+                  <Bot size={13} />
+                  <span>AI Confidence: {unrecognizedModal.confidence || 'low'}</span>
+                </div>
               </div>
             </div>
 
-            <div style={{ padding: '20px 24px' }}>
-              <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.5, margin: '0 0 20px' }}>
-                A report was submitted that could not be confidently identified by the AI system. Please review and decide whether to keep or reject this report.
+            {/* Modal Body */}
+            <div style={{ padding: '22px 26px 26px' }}>
+              <p style={{ fontSize: 14.5, color: '#334155', lineHeight: 1.55, margin: '0 0 16px' }}>
+                A report was submitted that could not be confidently identified by the AI system. Please review the details and decide whether to keep or reject this report.
               </p>
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              {/* Light Blue Info Box */}
+              <div style={{
+                background: '#EFF6FF',
+                border: '1px solid #DBEAFE',
+                borderRadius: 14,
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                marginBottom: 20,
+              }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: '50%', background: '#2563EB',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <Info size={15} color="white" strokeWidth={2.4} />
+                </div>
+                <p style={{ margin: 0, fontSize: 13, color: '#1E40AF', lineHeight: 1.45, fontWeight: 500 }}>
+                  This may be a valid report that the AI could not classify. Your review helps improve accuracy.
+                </p>
+              </div>
+
+              {/* Dual-Line Action Buttons */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <button
                   onClick={() => handleDecision('reject')}
                   disabled={decidingIncident}
                   style={{
-                    flex: 1, padding: '12px', borderRadius: 10,
-                    background: '#FEE2E2', color: '#DC2626',
-                    border: '1px solid #FCA5A5', fontWeight: 700, fontSize: 13,
+                    padding: '12px 16px',
+                    borderRadius: 14,
+                    background: '#FEF2F2',
+                    border: '1.5px solid #FCA5A5',
                     cursor: decidingIncident ? 'not-allowed' : 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    textAlign: 'left',
+                    transition: 'all 0.18s ease',
                     fontFamily: 'inherit',
                   }}
                 >
-                  <XCircle size={16} />
-                  {decidingIncident ? 'Processing...' : 'Reject Report'}
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, color: '#DC2626',
+                  }}>
+                    <XCircle size={24} strokeWidth={2.2} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#DC2626', lineHeight: 1.2 }}>
+                      {decidingIncident ? 'Processing...' : 'Reject Report'}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#EF4444', marginTop: 2, fontWeight: 500 }}>
+                      Mark as invalid and archive
+                    </span>
+                  </div>
                 </button>
+
                 <button
                   onClick={() => handleDecision('keep')}
                   disabled={decidingIncident}
                   style={{
-                    flex: 1, padding: '12px', borderRadius: 10,
+                    padding: '12px 16px',
+                    borderRadius: 14,
                     background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-                    color: 'white', border: 'none',
-                    fontWeight: 700, fontSize: 13,
+                    border: 'none',
                     cursor: decidingIncident ? 'not-allowed' : 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    boxShadow: '0 4px 14px rgba(37,99,235,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    textAlign: 'left',
+                    boxShadow: '0 6px 18px rgba(37,99,235,0.28)',
+                    transition: 'all 0.18s ease',
                     fontFamily: 'inherit',
                   }}
                 >
-                  <CheckCircle size={16} />
-                  {decidingIncident ? 'Processing...' : 'Keep for Review'}
+                  <div style={{
+                    width: 30, height: 30, borderRadius: '50%',
+                    background: 'white',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <CheckCircle size={22} color="#2563EB" strokeWidth={2.4} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', lineHeight: 1.2 }}>
+                      {decidingIncident ? 'Processing...' : 'Keep for Review'}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', marginTop: 2, fontWeight: 500 }}>
+                      Add to review queue
+                    </span>
+                  </div>
                 </button>
               </div>
             </div>
