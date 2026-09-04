@@ -87,17 +87,16 @@ const CustomAnalyticsTooltip = ({ active, payload, label }: any) => {
 
 function createMarkerIcon(riskLevel: string): L.DivIcon {
   const riskClass = `risk-${riskLevel.toLowerCase()}`;
-  const initial = riskLevel[0];
   return L.divIcon({
     className: '',
     html: `<div class="brgy-marker ${riskClass}" style="background: ${
       riskLevel === 'HIGH' ? 'linear-gradient(135deg, #EF4444, #DC2626)' :
       riskLevel === 'MEDIUM' ? 'linear-gradient(135deg, #F59E0B, #D97706)' :
       'linear-gradient(135deg, #22C55E, #16A34A)'
-    }">${initial}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -20],
+    };"></div>`,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+    popupAnchor: [0, -8],
   });
 }
 
@@ -527,24 +526,26 @@ export default function Analytics() {
         {/* ============ MAP TAB ============ */}
         {tab === 'map' && (
           <div className="fade-in">
+            {/* Filter Bar on Top of the Map */}
+            <div className="map-filter-bar">
+              <span className="filter-label">Filter by</span>
+              {INCIDENT_TYPES_SVG.map(t => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.id}
+                    className={`incident-pill ${selectedType === t.id ? 'active' : ''}`}
+                    style={{ '--pill-color': t.color } as React.CSSProperties}
+                    onClick={() => { setSelectedType(t.id); setRiskFilter('ALL'); }}
+                  >
+                    <Icon size={14} style={{ marginRight: 4 }} />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="analytics-map-wrapper">
-              <div className="map-filter-bar">
-                <span className="filter-label">Filter by</span>
-                {INCIDENT_TYPES_SVG.map(t => {
-                  const Icon = t.icon;
-                  return (
-                    <button
-                      key={t.id}
-                      className={`incident-pill ${selectedType === t.id ? 'active' : ''}`}
-                      style={{ '--pill-color': t.color } as React.CSSProperties}
-                      onClick={() => { setSelectedType(t.id); setRiskFilter('ALL'); }}
-                    >
-                      <Icon size={14} style={{ marginRight: 4 }} />
-                      {t.label}
-                    </button>
-                  );
-                })}
-              </div>
 
               {/* Vertically-centered Risk Assessment Card (left-docked, re-animates on change) */}
               {selectedBarangay && (() => {
