@@ -5,7 +5,7 @@ import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, RefreshCw, ArrowRight, Ambulance, Car, HelpCircle,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info, Clock, ChevronLeft, ChevronRight,
+  Info, Clock, ChevronLeft, ChevronRight, CalendarDays, Target,
 } from 'lucide-react';
 import { TbReport } from 'react-icons/tb';
 import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
@@ -405,11 +405,11 @@ export default function Dashboard() {
     const avgFire = Math.round(((hist2024.Fire || 0) + (hist2025.Fire || 0)) / 2);
 
     const projectedCategories = [
-      { name: 'Trauma', count: avgTrauma, percentage: ((avgTrauma / predictedCount) * 100).toFixed(1), dept: 'Medical EMS / Trauma Unit', emoji: '🩹', color: '#F59E0B' },
-      { name: 'Medical', count: avgMedical, percentage: ((avgMedical / predictedCount) * 100).toFixed(1), dept: 'EMS / Health Services', emoji: '🏥', color: '#22C55E' },
-      ...(avgAccident > 0 ? [{ name: 'Accident', count: avgAccident, percentage: ((avgAccident / predictedCount) * 100).toFixed(1), dept: 'Traffic / PNP', emoji: '🚗', color: '#3B82F6' }] : []),
-      ...(avgCrime > 0 ? [{ name: 'Crime', count: avgCrime, percentage: ((avgCrime / predictedCount) * 100).toFixed(1), dept: 'PNP Police', emoji: '🚨', color: '#8B5CF6' }] : []),
-      ...(avgFire > 0 ? [{ name: 'Fire', count: avgFire, percentage: ((avgFire / predictedCount) * 100).toFixed(1), dept: 'BFP Fire Protection', emoji: '🔥', color: '#EF4444' }] : []),
+      { name: 'Trauma', count: avgTrauma, percentage: ((avgTrauma / predictedCount) * 100).toFixed(1), dept: 'Medical EMS / Trauma Unit', icon: IoBandage, color: '#F59E0B' },
+      { name: 'Medical', count: avgMedical, percentage: ((avgMedical / predictedCount) * 100).toFixed(1), dept: 'EMS / Health Services', icon: FaBriefcaseMedical, color: '#22C55E' },
+      ...(avgAccident > 0 ? [{ name: 'Accident', count: avgAccident, percentage: ((avgAccident / predictedCount) * 100).toFixed(1), dept: 'Traffic / PNP', icon: Car, color: '#3B82F6' }] : []),
+      ...(avgCrime > 0 ? [{ name: 'Crime', count: avgCrime, percentage: ((avgCrime / predictedCount) * 100).toFixed(1), dept: 'PNP Police', icon: RiCriminalFill, color: '#8B5CF6' }] : []),
+      ...(avgFire > 0 ? [{ name: 'Fire', count: avgFire, percentage: ((avgFire / predictedCount) * 100).toFixed(1), dept: 'BFP Fire Protection', icon: FaFire, color: '#EF4444' }] : []),
     ].sort((a, b) => b.count - a.count);
 
     // 2. Current Month Live Incidents Logged to Date in Database
@@ -1715,34 +1715,35 @@ export default function Dashboard() {
             {/* Modal Body (Scrollable) */}
             <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
 
-              {/* Total Forecast Projection Formula Card */}
+              {/* Total Forecast Projection Formula Card (Clean White Theme) */}
               <div style={{
-                background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
-                color: 'white',
+                background: '#FFFFFF',
+                color: '#0F172A',
                 borderRadius: 18,
                 padding: '20px 24px',
                 marginBottom: 20,
-                boxShadow: '0 8px 24px rgba(15,41,66,0.2)',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.06)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                   <div>
-                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#93C5FD', fontWeight: 700 }}>
+                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#2563EB', fontWeight: 700 }}>
                       MDRRMO Projected Monthly Baseline
                     </div>
-                    <div style={{ fontSize: 32, fontWeight: 900, marginTop: 4, letterSpacing: '-0.5px' }}>
-                      {computationAnalysis.predictedCount} <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Projected Incidents for {computationAnalysis.currentMonthLong}</span>
+                    <div style={{ fontSize: 32, fontWeight: 900, marginTop: 4, letterSpacing: '-0.5px', color: '#0F172A' }}>
+                      {computationAnalysis.predictedCount} <span style={{ fontSize: 15, fontWeight: 600, color: '#64748B' }}>Projected Incidents for {computationAnalysis.currentMonthLong}</span>
                     </div>
                   </div>
 
                   <div style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.18)',
+                    background: '#FFFBEB',
+                    border: '1px solid #FDE68A',
                     borderRadius: 12,
                     padding: '8px 14px',
                     textAlign: 'right',
                   }}>
-                    <div style={{ fontSize: 11, color: '#FCD34D', fontWeight: 700 }}>Peak Risk Category</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>
+                    <div style={{ fontSize: 11, color: '#D97706', fontWeight: 700 }}>Peak Risk Category</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#92400E' }}>
                       {computationAnalysis.forecast?.type || 'Trauma'} Emergency
                     </div>
                   </div>
@@ -1755,22 +1756,31 @@ export default function Dashboard() {
                   gap: 10,
                   marginTop: 16,
                 }}>
-                  <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <div style={{ fontSize: 10.5, color: '#93C5FD', fontWeight: 700 }}>📅 {computationAnalysis.currentMonthLong} 2024 Actual</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{computationAnalysis.hist2024Total} incidents</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{computationAnalysis.hist2024.Medical || 0} Med · {computationAnalysis.hist2024.Trauma || 0} Trauma</div>
+                  <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 11, color: '#2563EB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <CalendarDays size={13} color="#2563EB" />
+                      <span>{computationAnalysis.currentMonthLong} 2024 Actual</span>
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4, color: '#0F172A' }}>{computationAnalysis.hist2024Total} incidents</div>
+                    <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{computationAnalysis.hist2024.Medical || 0} Med · {computationAnalysis.hist2024.Trauma || 0} Trauma</div>
                   </div>
 
-                  <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <div style={{ fontSize: 10.5, color: '#93C5FD', fontWeight: 700 }}>📅 {computationAnalysis.currentMonthLong} 2025 Actual</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{computationAnalysis.hist2025Total} incidents</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{computationAnalysis.hist2025.Medical || 0} Med · {computationAnalysis.hist2025.Trauma || 0} Trauma</div>
+                  <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 11, color: '#2563EB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <CalendarDays size={13} color="#2563EB" />
+                      <span>{computationAnalysis.currentMonthLong} 2025 Actual</span>
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4, color: '#0F172A' }}>{computationAnalysis.hist2025Total} incidents</div>
+                    <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{computationAnalysis.hist2025.Medical || 0} Med · {computationAnalysis.hist2025.Trauma || 0} Trauma</div>
                   </div>
 
-                  <div style={{ background: 'rgba(37,99,235,0.25)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(147,197,253,0.3)' }}>
-                    <div style={{ fontSize: 10.5, color: '#FCD34D', fontWeight: 700 }}>🎯 {computationAnalysis.currentMonthLong} 2026 Forecast</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{computationAnalysis.predictedCount} projected</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>Formula: ({computationAnalysis.hist2024Total} + {computationAnalysis.hist2025Total}) / 2</div>
+                  <div style={{ background: '#EFF6FF', borderRadius: 10, padding: '10px 12px', border: '1px solid #BFDBFE' }}>
+                    <div style={{ fontSize: 11, color: '#1D4ED8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Target size={13} color="#1D4ED8" />
+                      <span>{computationAnalysis.currentMonthLong} 2026 Forecast</span>
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4, color: '#1E3A8A' }}>{computationAnalysis.predictedCount} projected</div>
+                    <div style={{ fontSize: 11, color: '#3B82F6', marginTop: 2 }}>Formula: ({computationAnalysis.hist2024Total} + {computationAnalysis.hist2025Total}) / 2</div>
                   </div>
                 </div>
               </div>
@@ -1781,46 +1791,63 @@ export default function Dashboard() {
               </h4>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                {computationAnalysis.projectedCategories.map(cat => (
-                  <div
-                    key={cat.name}
-                    style={{
-                      background: '#F8FAFC',
-                      borderRadius: 14,
-                      padding: '12px 16px',
-                      border: '1px solid #E2E8F0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 12,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
-                      <span style={{ fontSize: 20 }}>{cat.emoji}</span>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{cat.name} Emergency</div>
-                        <div style={{ fontSize: 11, color: '#64748B' }}>Primary Unit: {cat.dept}</div>
+                {computationAnalysis.projectedCategories.map(cat => {
+                  const CatIcon = cat.icon;
+                  return (
+                    <div
+                      key={cat.name}
+                      style={{
+                        background: '#F8FAFC',
+                        borderRadius: 14,
+                        padding: '12px 16px',
+                        border: '1px solid #E2E8F0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
+                        <div
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 10,
+                            background: `${cat.color}18`,
+                            color: cat.color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <CatIcon size={18} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{cat.name} Emergency</div>
+                          <div style={{ fontSize: 11, color: '#64748B' }}>Primary Unit: {cat.dept}</div>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Progress bar */}
-                    <div style={{ flex: 1, margin: '0 12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
-                        <span>{cat.count} of {computationAnalysis.predictedCount} projected</span>
-                        <span>{cat.percentage}% share</span>
-                      </div>
-                      <div style={{ height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{
-                          width: `${cat.percentage}%`,
-                          height: '100%',
-                          background: cat.color,
-                          borderRadius: 3,
-                          transition: 'width 0.3s ease',
-                        }} />
+                      {/* Progress bar */}
+                      <div style={{ flex: 1, margin: '0 12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                          <span>{cat.count} of {computationAnalysis.predictedCount} projected</span>
+                          <span>{cat.percentage}% share</span>
+                        </div>
+                        <div style={{ height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${cat.percentage}%`,
+                            height: '100%',
+                            background: cat.color,
+                            borderRadius: 3,
+                            transition: 'width 0.3s ease',
+                          }} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Live 2026 Actual Tracking Card */}

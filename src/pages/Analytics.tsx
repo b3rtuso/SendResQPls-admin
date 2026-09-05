@@ -64,22 +64,21 @@ const CustomAnalyticsTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div style={{
-        background: 'rgba(15, 23, 42, 0.94)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
+        background: '#FFFFFF',
+        border: '1px solid #E2E8F0',
         borderRadius: 12,
         padding: '10px 14px',
-        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
-        color: 'white',
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.08)',
+        color: '#0F172A',
         fontFamily: 'var(--font)',
         minWidth: 140,
       }}>
-        {label && <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: 13, color: '#F1F5F9' }}>{label}</p>}
+        {label && <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: 13, color: '#0F172A' }}>{label}</p>}
         {payload.map((p: any) => (
-          <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'rgba(255,255,255,0.85)', padding: '2px 0' }}>
+          <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#475569', padding: '2px 0' }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.fill || p.color || '#2563EB', flexShrink: 0 }} />
             <span style={{ textTransform: 'capitalize' }}>{p.name}:</span>
-            <strong style={{ marginLeft: 'auto', color: 'white', fontWeight: 800 }}>{p.value}</strong>
+            <strong style={{ marginLeft: 'auto', color: '#0F172A', fontWeight: 800 }}>{p.value}</strong>
           </div>
         ))}
       </div>
@@ -605,8 +604,8 @@ export default function Analytics() {
                           {incType ? <incType.icon size={18} /> : null}
                         </div>
                         <div>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{selectedBarangay.name}</div>
-                          <div style={{ fontSize: 10.5, color: 'rgba(255, 255, 255, 0.6)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>{selectedBarangay.name}</div>
+                          <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 2 }}>
                             {incType?.label || selectedType} Risk Assessment
                           </div>
                         </div>
@@ -614,7 +613,7 @@ export default function Analytics() {
                       <button
                         onClick={() => setSelectedBarangay(null)}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.1)',
+                          background: '#F1F5F9',
                           border: 'none',
                           borderRadius: '50%',
                           width: 24,
@@ -622,26 +621,33 @@ export default function Analytics() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: 'rgba(255, 255, 255, 0.7)',
+                          color: '#64748B',
                           cursor: 'pointer',
                           padding: 0,
                           flexShrink: 0,
+                          transition: 'all 0.15s ease',
                         }}
                       >
                         <X size={14} />
                       </button>
                     </div>
 
-                    <div className={`risk-badge ${riskClass}`} style={{ marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>
-                      {riskClass === 'high' ? '🔴' : riskClass === 'medium' ? '🟡' : '🟢'}
+                    <div className={`risk-badge ${riskClass}`} style={{ marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>
+                      <span style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: riskClass === 'high' ? '#EF4444' : riskClass === 'medium' ? '#F59E0B' : '#22C55E',
+                        flexShrink: 0,
+                      }} />
                       {risk.riskLevel} RISK
                     </div>
 
-                    <div className="prescription-box" style={{ background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: 12 }}>
-                      <div className="prescription-label" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.45)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div className="prescription-box" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12 }}>
+                      <div className="prescription-label" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748B', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                         <FileText size={11} /> RECOMMENDED ACTION
                       </div>
-                      <div className="prescription-text" style={{ fontSize: 12, lineHeight: 1.55, color: 'rgba(255, 255, 255, 0.9)' }}>
+                      <div className="prescription-text" style={{ fontSize: 12, lineHeight: 1.55, color: '#334155' }}>
                         {risk.prescription}
                       </div>
                     </div>
