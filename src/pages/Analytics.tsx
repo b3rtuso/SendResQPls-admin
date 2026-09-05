@@ -1380,25 +1380,25 @@ export default function Analytics() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: 'clamp(12px, 3vw, 24px)',
-          background: 'rgba(10, 14, 26, 0.75)',
-          backdropFilter: 'blur(16px) saturate(1.8)',
-          WebkitBackdropFilter: 'blur(16px) saturate(1.8)',
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           animation: 'fadeIn 0.2s ease-out',
           overflowY: 'auto',
         }}>
           <div style={{
             width: 'min(460px, calc(100vw - 32px))',
             maxHeight: 'calc(100vh - 32px)',
-            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
+            background: '#FFFFFF',
             borderRadius: 24,
             padding: 8,
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.15)',
             display: 'flex',
             flexDirection: 'column',
           }}>
             <div style={{
-              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)',
+              background: '#FFFFFF',
               borderRadius: 'calc(24px - 8px)',
               padding: '28px 24px',
               textAlign: 'center',
@@ -1411,16 +1411,16 @@ export default function Analytics() {
                 width: 52,
                 height: 52,
                 borderRadius: 16,
-                background: 'rgba(239, 68, 68, 0.18)',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
-                color: '#EF4444',
+                background: '#FEE2E2',
+                border: '1px solid #FECACA',
+                color: '#DC2626',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 0 24px rgba(239, 68, 68, 0.3)',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.15)',
                 marginBottom: 16,
               }}>
-                <AlertTriangle size={26} color="#EF4444" />
+                <AlertTriangle size={26} color="#DC2626" />
               </div>
 
               {/* Red Micro Eyebrow */}
@@ -1429,11 +1429,11 @@ export default function Analytics() {
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.18em',
-                color: '#EF4444',
-                background: 'rgba(239, 68, 68, 0.12)',
+                color: '#DC2626',
+                background: '#FEE2E2',
                 padding: '4px 12px',
                 borderRadius: 20,
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                border: '1px solid #FECACA',
                 marginBottom: 10,
               }}>
                 REPORT DATA WARNING
@@ -1443,7 +1443,7 @@ export default function Analytics() {
               <h3 style={{
                 fontSize: 18,
                 fontWeight: 800,
-                color: 'white',
+                color: '#0F172A',
                 margin: '0 0 8px',
                 letterSpacing: '-0.2px',
               }}>
@@ -1454,10 +1454,10 @@ export default function Analytics() {
               <p style={{
                 fontSize: 13,
                 lineHeight: 1.6,
-                color: '#94A3B8',
+                color: '#64748B',
                 margin: '0 0 20px',
               }}>
-                There are no resolved emergency incidents for the selected <strong style={{ color: '#E2E8F0' }}>{emptyModal.periodName}</strong>. Official MDRRMO compliance reports require verified, resolved incident data.
+                There are no resolved emergency incidents for the selected <strong style={{ color: '#0F172A' }}>{emptyModal.periodName}</strong>. Official MDRRMO compliance reports require verified, resolved incident data.
               </p>
 
               {/* Red Action Button */}
@@ -1471,8 +1471,8 @@ export default function Analytics() {
                   color: 'white',
                   fontWeight: 700,
                   fontSize: 13,
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  boxShadow: '0 4px 16px rgba(239, 68, 68, 0.35)',
+                  border: 'none',
+                  boxShadow: '0 4px 16px rgba(239, 68, 68, 0.25)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { X, AlertTriangle, Trash2, Edit3, CheckCircle2 } from 'lucide-react';
+import { X, AlertTriangle, Trash2, CheckCircle2 } from 'lucide-react';
 import type { FieldChange } from '../utils/changeDetector';
 
 export type ConfirmType = 'confirm' | 'modal' | 'delete' | 'update' | 'warning' | 'discard';
@@ -261,7 +261,7 @@ export default function ConfirmModal({
     ? '#FEE2E2'
     : '#DBEAFE';
 
-  const IconComponent = isWarning || isDiscard ? AlertTriangle : isUpdate ? Edit3 : CheckCircle2;
+  const IconComponent = isWarning || isDiscard ? AlertTriangle : CheckCircle2;
 
   return (
     <div
@@ -467,7 +467,7 @@ export default function ConfirmModal({
             onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
-            {isUpdate ? <Edit3 size={14} /> : isDiscard ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />} {resolvedConfirmBtn}
+            {isDiscard ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />} {resolvedConfirmBtn}
           </button>
         </div>
       </div>

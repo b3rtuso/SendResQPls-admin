@@ -1123,8 +1123,8 @@ export default function Requests() {
           transform: 'translateX(-50%)',
           width: 'min(640px, calc(100% - 24px))',
           zIndex: 1000,
-          background: '#0F172A',
-          color: 'white',
+          background: '#FFFFFF',
+          color: '#0F172A',
           borderRadius: 18,
           padding: '12px 18px',
           display: 'flex',
@@ -1132,13 +1132,14 @@ export default function Requests() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 12,
-          boxShadow: '0 12px 40px rgba(15,23,42,0.4)',
-          border: '1px solid rgba(255,255,255,0.15)',
+          boxShadow: '0 12px 40px rgba(15,23,42,0.12)',
+          border: '1px solid #E2E8F0',
           animation: 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1) both',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{
               background: '#2563EB',
+              color: 'white',
               padding: '2px 8px',
               borderRadius: 8,
               fontSize: 12,
@@ -1146,24 +1147,24 @@ export default function Requests() {
             }}>
               {selectedIds.size}
             </span>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
               Incident{selectedIds.size > 1 ? 's' : ''} Selected
             </span>
           </div>
 
-          <div style={{ height: 20, width: 1, background: 'rgba(255,255,255,0.2)' }} />
+          <div style={{ height: 20, width: 1, background: '#E2E8F0' }} />
 
           {/* Quick Assign Unit Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>Assign to:</span>
+            <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Assign to:</span>
             <select
               onChange={e => { if (e.target.value) handleBatchAssign(e.target.value); }}
               defaultValue=""
               disabled={batchLoading}
               style={{
-                background: '#1E293B',
-                color: 'white',
-                border: '1px solid #334155',
+                background: '#F8FAFC',
+                color: '#0F172A',
+                border: '1px solid #CBD5E1',
                 borderRadius: 8,
                 padding: '6px 12px',
                 fontSize: 12,
@@ -1173,11 +1174,11 @@ export default function Requests() {
               }}
             >
               <option value="" disabled>Choose Department…</option>
-              <option value="BFP">🚒 BFP Fire Rescue</option>
-              <option value="PNP">🚓 PNP Police</option>
-              <option value="MEDICAL">🚑 Medical EMS</option>
-              <option value="ENGINEERING">🚧 Engineering</option>
-              <option value="RESCUE">⚓ MDRRMO Rescue</option>
+              <option value="BFP">BFP Fire Rescue</option>
+              <option value="PNP">PNP Police</option>
+              <option value="MEDICAL">Medical EMS</option>
+              <option value="ENGINEERING">Engineering</option>
+              <option value="RESCUE">MDRRMO Rescue</option>
             </select>
           </div>
 
@@ -1187,9 +1188,9 @@ export default function Requests() {
               onClick={() => handleBatchStatus('REVIEWING')}
               disabled={batchLoading}
               style={{
-                background: '#334155',
-                color: 'white',
-                border: 'none',
+                background: '#F1F5F9',
+                color: '#0F172A',
+                border: '1px solid #CBD5E1',
                 borderRadius: 8,
                 padding: '6px 12px',
                 fontSize: 12,
@@ -1215,6 +1216,7 @@ export default function Requests() {
                 fontSize: 12,
                 fontWeight: 800,
                 cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
               }}
             >
               <span>{batchLoading ? 'Dispatching…' : 'Dispatch All'}</span>
@@ -1224,7 +1226,7 @@ export default function Requests() {
               onClick={() => setSelectedIds(new Set())}
               style={{
                 background: 'transparent',
-                color: '#94A3B8',
+                color: '#64748B',
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: 12,
