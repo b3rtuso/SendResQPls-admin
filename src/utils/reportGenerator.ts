@@ -285,7 +285,8 @@ export function getMonthlyRange(monthIso?: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function downloadDailyReport(incidents: Incident[], dateIso?: string) {
-  const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const resolved = incidents.filter(i => i.status === 'RESOLVED');
+  const sorted = [...resolved].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const { label } = getDailyRange(dateIso);
 
   const reportDate = formatDisplayDate(dateIso || new Date().toLocaleDateString('en-CA'));
@@ -298,23 +299,25 @@ export async function downloadDailyReport(incidents: Incident[], dateIso?: strin
     const incTypeStr = describeType(inc);
     const locStr     = resolveLocation(inc);
 
-    const patientName    = rf?.patientName || (inc.reporter?.name ? inc.reporter.name : 'Unidentified Patient');
-    const patientSex     = (rf?.patientSex || 'Male').toLowerCase();
-    const patientAge     = rf?.patientAge || '17';
+    const patientName    = rf?.patientName || (inc.reporter?.name ? inc.reporter.name : 'Citizen Reporter / Patient');
+    const patientSex     = rf?.patientSex ? rf.patientSex.toLowerCase() : 'unspecified';
+    const patientAge     = rf?.patientAge || 'N/A';
     const patientAddress = cleanLocation(rf?.patientAddress || locStr);
 
-    const intoxicationDetail = rf?.intoxicationSuspected?.toLowerCase() === 'yes' ? 'was alcohol intoxicated, ' : '';
-    const mechanismDetail    = rf?.mechanismOfInjury ? `crashed / suffered ${rf.mechanismOfInjury.toLowerCase()}, ` : '';
-    const injuriesObserved   = rf?.injuriesObserved ? rf.injuriesObserved.toLowerCase() : 'minor injuries';
+    const intoxicationDetail = rf?.intoxicationSuspected?.toLowerCase() === 'yes' ? 'suspected alcohol intoxication, ' : '';
+    const mechanismDetail    = rf?.mechanismOfInjury ? `incident caused by ${rf.mechanismOfInjury.toLowerCase()}, ` : '';
+    const injuriesObserved   = rf?.injuriesObserved ? rf.injuriesObserved.toLowerCase() : (rf ? 'none reported' : 'on-scene assessment conducted');
 
-    const responders     = rf?.responderNames || 'Rigor Natividad, Bryan Lopez, and Jamvel Ramos';
-    const interventions  = rf?.treatmentInterventions ? `${rf.treatmentInterventions.toLowerCase()}, ` : 'proper positioning, wound cleaning/disinfecting, ';
+    const responders     = rf?.responderNames || (inc.assignedDepartment ? `${inc.assignedDepartment} On-Duty Team` : 'MDRRMO Response Team');
+    const interventions  = rf?.treatmentInterventions ? `${rf.treatmentInterventions.toLowerCase()}, ` : 'standard on-scene triage and support rendered, ';
 
-    const vitalsDetail   = `an SaO₂ of ${rf?.oxygenSaturation || '98%'}, pulse rate of ${rf?.pulseRate || '80 bpm'}, blood pressure of ${rf?.bloodPressure || '120/80 mmHg'}, and a GCS of ${rf?.gcsScore || '15'}`;
+    const vitalsDetail   = (rf?.oxygenSaturation || rf?.pulseRate || rf?.bloodPressure || rf?.gcsScore)
+      ? `SaO₂: ${rf?.oxygenSaturation || '—'}, Pulse: ${rf?.pulseRate || '—'}, BP: ${rf?.bloodPressure || '—'}, GCS: ${rf?.gcsScore || '—'}`
+      : 'Vitals logged on scene by field response unit';
 
     const dispositionDetail = rf?.destinationFacility
-      ? `immediately transported to ${rf.destinationFacility} for further hospital treatment`
-      : 'managed and rendered appropriate care on scene';
+      ? `immediately transported to ${rf.destinationFacility} for further evaluation`
+      : (rf?.dispositionStatus ? `Status: ${rf.dispositionStatus}` : 'managed and rendered appropriate care on scene');
 
     return {
       incident_no:          idx + 1,
@@ -470,7 +473,8 @@ function processDynamicWeeklyGroups(incidents: Incident[]) {
 }
 
 export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: string) {
-  const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const resolved = incidents.filter(i => i.status === 'RESOLVED');
+  const sorted = [...resolved].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const range = getWeeklyRange(anyDateIso);
   const { label, dateRangeStr } = range;
 
@@ -499,22 +503,14 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
 // MONTHLY REPORT (Full Narrative Sentences, 0 Bullets, Dynamic Active Categories Only)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function downloadMonthlyReport(incidents: Incident[], monthIso?: string) {
-  const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  const range = getMonthlyRange(monthIso);
-  const { label, monthName } = range;
-
-  const total = sorted.length;
-
-  // Dynamic incident type grouping
+export function buildMonthlyNarrative(incidents: Incident[]): { includedTypesSentence: string; paragraphs: string[] } {
   const groups = new Map<string, Incident[]>();
-  sorted.forEach(inc => {
+  incidents.forEach(inc => {
     const typeName = describeType(inc);
     if (!groups.has(typeName)) groups.set(typeName, []);
     groups.get(typeName)!.push(inc);
   });
 
-  // 1. Build dynamic "These included..." sentence
   const typeCountStrings: string[] = [];
   groups.forEach((groupIncs, typeName) => {
     if (groupIncs.length > 0) {
@@ -534,11 +530,9 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
     includedTypesSentence = `${typeCountStrings.join(', ')}, and ${last}`;
   }
 
-  // 2. Build dynamic narrative paragraphs for each active incident type (Full sentences)
   const paragraphs: string[] = [];
-
   groups.forEach((groupIncs, typeName) => {
-    if (groupIncs.length === 0) return; // Omit zero-occurrence categories (Rule 7)
+    if (groupIncs.length === 0) return;
 
     const causesSet = new Set<string>();
     const injuriesSet = new Set<string>();
@@ -568,7 +562,6 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
     const interventionsText = interventionsSet.size > 0 ? Array.from(interventionsSet).join(', ') : 'immediate care management and vital sign monitoring';
     const facilitiesText = facilitiesSet.size > 0 ? `hospitals such as ${Array.from(facilitiesSet).join(', ')}` : 'medical facilities';
 
-    // Disposition sentence
     let dispositionSentence = '';
     if (deadCount > 0) {
       dispositionSentence += `${countWithWords(deadCount)} patients were reported dead on the spot, `;
@@ -587,10 +580,21 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
 
     const intoxicationText = intoxicatedCount > 0 ? `, while ${countWithWords(intoxicatedCount)} patient(s) were under alcohol intoxication` : '';
 
-    // Construct full narrative paragraph per incident type
     const paragraph = `Most ${typeName.toLowerCase()} cases involved ${causesText} resulting in ${injuriesText}${intoxicationText}. Emergency responders performed ${interventionsText}. ${dispositionSentence}`;
     paragraphs.push(paragraph);
   });
+
+  return { includedTypesSentence, paragraphs };
+}
+
+export async function downloadMonthlyReport(incidents: Incident[], monthIso?: string) {
+  const resolved = incidents.filter(i => i.status === 'RESOLVED');
+  const sorted = [...resolved].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const range = getMonthlyRange(monthIso);
+  const { label, monthName } = range;
+
+  const total = sorted.length;
+  const { includedTypesSentence, paragraphs } = buildMonthlyNarrative(sorted);
 
   const monthlyNarrativeParagraphs = paragraphs.length > 0
     ? paragraphs.join('\n\n\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 ')
@@ -603,3 +607,133 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
     monthly_narrative_paragraphs:   monthlyNarrativeParagraphs,
   }, label);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPORT PREVIEW GENERATOR
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ReportPreviewRow {
+  no: number;
+  time: string;
+  date: string;
+  type: string;
+  location: string;
+  patient: string;
+  responders: string;
+  disposition: string;
+}
+
+export interface ReportPreviewData {
+  reportType: 'daily' | 'weekly' | 'monthly';
+  reportTitle: string;
+  periodLabel: string;
+  totalResolved: number;
+  typeBreakdown: { type: string; count: number }[];
+  barangayBreakdown: { barangay: string; count: number }[];
+  rows: ReportPreviewRow[];
+  narrativeParagraphs: string[];
+}
+
+export function generateReportPreview(
+  reportType: 'daily' | 'weekly' | 'monthly',
+  allIncidents: Incident[],
+  dateParam?: string,
+): ReportPreviewData {
+  const resolved = allIncidents.filter(i => i.status === 'RESOLVED');
+  const sorted = [...resolved].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  let reportTitle = 'MDRRMO Daily Incident Operational Report';
+  let periodLabel = formatDisplayDate(dateParam || new Date().toLocaleDateString('en-CA'));
+
+  if (reportType === 'weekly') {
+    const range = getWeeklyRange(dateParam);
+    reportTitle = 'MDRRMO Weekly Incident Operational Report';
+    periodLabel = range.dateRangeStr;
+  } else if (reportType === 'monthly') {
+    const range = getMonthlyRange(dateParam);
+    reportTitle = 'MDRRMO Monthly Incident Operational Report';
+    periodLabel = range.period;
+  }
+
+  // Type Breakdown
+  const typeMap = new Map<string, number>();
+  const brgyMap = new Map<string, number>();
+
+  const rows: ReportPreviewRow[] = sorted.map((inc, idx) => {
+    const rf = inc.resolutionForm;
+    const typeStr = describeType(inc);
+    const locStr = resolveLocation(inc);
+
+    typeMap.set(typeStr, (typeMap.get(typeStr) || 0) + 1);
+
+    // Extract barangay name from locStr
+    const brgyMatch = locStr.match(/Brgy\.?\s+([^,]+)/i);
+    const brgyName = brgyMatch ? `Brgy. ${brgyMatch[1].trim()}` : locStr.split(',')[0].trim();
+    brgyMap.set(brgyName, (brgyMap.get(brgyName) || 0) + 1);
+
+    const incTimeStr = rf?.incidentTime ? rf.incidentTime : militaryTime(inc.createdAt);
+    const incDateStr = rf?.incidentDate ? formatDisplayDate(rf.incidentDate) : formatDisplayDate(inc.createdAt);
+    const patientName = rf?.patientName || (inc.reporter?.name ? inc.reporter.name : 'Citizen Reporter');
+    const responders = rf?.responderNames || (inc.assignedDepartment ? `${inc.assignedDepartment} On-Duty Team` : 'MDRRMO Response Team');
+    const disposition = rf?.destinationFacility
+      ? `Transported to ${rf.destinationFacility}`
+      : (rf?.dispositionStatus ? rf.dispositionStatus.replace(/_/g, ' ') : 'Care managed on scene');
+
+    return {
+      no: idx + 1,
+      time: incTimeStr,
+      date: incDateStr,
+      type: typeStr,
+      location: locStr,
+      patient: patientName,
+      responders,
+      disposition,
+    };
+  });
+
+  const typeBreakdown = Array.from(typeMap.entries()).map(([type, count]) => ({ type, count }));
+  const barangayBreakdown = Array.from(brgyMap.entries()).map(([barangay, count]) => ({ barangay, count }));
+
+  // Build Narrative Paragraphs
+  const narrativeParagraphs: string[] = [];
+
+  if (sorted.length === 0) {
+    narrativeParagraphs.push(`Zero (0) resolved emergency incidents were logged during the specified reporting period (${periodLabel}).`);
+  } else if (reportType === 'daily') {
+    narrativeParagraphs.push(
+      `During this 24-hour operational shift on ${periodLabel}, a total of ${countWithWords(sorted.length)} emergency incidents were successfully responded to, treated, and resolved by MDRRMO Balayan response teams and partner departments across Balayan, Batangas.`
+    );
+    narrativeParagraphs.push(
+      `Field personnel provided continuous on-scene patient evaluation, vital sign checking, and emergency stabilization. All cases were logged into the dispatch command register with complete operational documentation.`
+    );
+  } else if (reportType === 'weekly') {
+    const { type_summaries } = processDynamicWeeklyGroups(sorted);
+    narrativeParagraphs.push(
+      `For the operational week of ${periodLabel}, MDRRMO Balayan emergency responders effectively handled and closed ${countWithWords(sorted.length)} resolved incidents.`
+    );
+    type_summaries.forEach(ts => {
+      narrativeParagraphs.push(
+        `${ts.count} ${ts.type_name} incidents were documented. Primary causes included ${ts.common_causes}, resulting in ${ts.common_injuries_conditions}. Field interventions comprised ${ts.responder_actions}, resulting in ${ts.outcomes}.`
+      );
+    });
+  } else {
+    const { paragraphs } = buildMonthlyNarrative(sorted);
+    if (paragraphs.length > 0) {
+      narrativeParagraphs.push(...paragraphs);
+    } else {
+      narrativeParagraphs.push('No active emergency incidents were recorded for this monthly reporting period.');
+    }
+  }
+
+  return {
+    reportType,
+    reportTitle,
+    periodLabel,
+    totalResolved: sorted.length,
+    typeBreakdown,
+    barangayBreakdown,
+    rows,
+    narrativeParagraphs,
+  };
+}
+

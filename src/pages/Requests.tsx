@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
-import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Truck } from 'lucide-react';
+import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Car, HelpCircle } from 'lucide-react';
 import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
@@ -25,14 +25,16 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string; border: string }
 
 type TypeIconEntry = { icon: React.ElementType | null; emoji?: string; color: string };
 const TYPE_ICON: Record<string, TypeIconEntry> = {
-  Fire:      { icon: FaFire,            color: '#DC2626' },
-  Flood:     { icon: FaHouseFloodWater, color: '#3B82F6' },
-  Medical:   { icon: FaBriefcaseMedical,color: '#22C55E' },
-  Crime:     { icon: RiCriminalFill,    color: '#000000' },
-  Typhoon:   { icon: RiTyphoonFill,     color: '#8B5CF6' },
-  Landslide: { icon: MdLandslide,       color: '#78716C' },
-  Trauma:    { icon: IoBandage,         color: '#F59E0B' },
-  Accident:  { icon: null, emoji: '🚗', color: '#3B82F6' },
+  Fire:         { icon: FaFire,            color: '#DC2626' },
+  Flood:        { icon: FaHouseFloodWater, color: '#3B82F6' },
+  Medical:      { icon: FaBriefcaseMedical,color: '#22C55E' },
+  Crime:        { icon: RiCriminalFill,    color: '#000000' },
+  Typhoon:      { icon: RiTyphoonFill,     color: '#8B5CF6' },
+  Landslide:    { icon: MdLandslide,       color: '#78716C' },
+  Trauma:       { icon: IoBandage,         color: '#F59E0B' },
+  Accident:     { icon: Car,               color: '#3B82F6' },
+  Unrecognized: { icon: HelpCircle,        color: '#64748B' },
+  Unknown:      { icon: HelpCircle,        color: '#64748B' },
 };
 
 const TAB_THEMES: Record<string, {
@@ -482,19 +484,15 @@ export default function Requests() {
                   boxShadow: isActive ? `0 2px 10px ${theme.activeGlow}` : 'none',
                 }}
               >
-                {tab === 'DISPATCHED' ? (
-                  <Truck size={13} style={{ color: isActive ? '#FFFFFF' : theme.dotColor, flexShrink: 0 }} />
-                ) : (
-                  <span
-                    style={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: '50%',
-                      background: isActive ? '#FFFFFF' : theme.dotColor,
-                      display: 'inline-block',
-                    }}
-                  />
-                )}
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: isActive ? '#FFFFFF' : theme.dotColor,
+                    display: 'inline-block',
+                  }}
+                />
                 <span>{tab === 'ALL' ? 'All Incidents' : tab}</span>
                 <span
                   className="rq-tab-count"
@@ -698,7 +696,7 @@ export default function Requests() {
                     {paged.map((inc) => {
                       const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                       const normalized = normalizeIncidentType(inc.aiDetectedType);
-                      const ti = TYPE_ICON[normalized] || { icon: null, emoji: '⚠️', color: '#64748B' };
+                      const ti = TYPE_ICON[normalized] || { icon: HelpCircle, color: '#64748B' };
                       const brgyName = inc.latitude && inc.longitude
                         ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                         : 'Balayan';
@@ -800,11 +798,7 @@ export default function Requests() {
                               fontSize: 11,
                               fontWeight: 800,
                               letterSpacing: '0.04em',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
                             }}>
-                              {inc.status === 'DISPATCHED' && <Truck size={12} style={{ flexShrink: 0 }} />}
                               <span>{inc.status}</span>
                             </Badge>
                           </td>
@@ -898,7 +892,7 @@ export default function Requests() {
                 {paged.map((inc) => {
                   const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                   const normalized = normalizeIncidentType(inc.aiDetectedType);
-                  const ti = TYPE_ICON[normalized] || { icon: null, emoji: '⚠️', color: '#64748B' };
+                  const ti = TYPE_ICON[normalized] || { icon: HelpCircle, color: '#64748B' };
                   const brgyName = inc.latitude && inc.longitude
                     ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                     : 'Balayan';
@@ -938,11 +932,7 @@ export default function Requests() {
                             padding: '3px 9px', borderRadius: 999,
                             background: ss.bg, color: ss.color, border: `1px solid ${ss.border}`,
                             fontSize: 10.5, fontWeight: 800,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
                           }}>
-                            {inc.status === 'DISPATCHED' && <Truck size={10} style={{ flexShrink: 0 }} />}
                             <span>{inc.status}</span>
                           </Badge>
                           <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo(inc.createdAt)}</span>
@@ -1225,12 +1215,8 @@ export default function Requests() {
                 fontSize: 12,
                 fontWeight: 800,
                 cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
               }}
             >
-              <Truck size={14} />
               <span>{batchLoading ? 'Dispatching…' : 'Dispatch All'}</span>
             </button>
 

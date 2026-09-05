@@ -1,5 +1,5 @@
-import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Truck } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Building2, FileText, PhoneCall, LayoutDashboard, Settings as SettingsIcon } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIncidents, updateIncidentStatus } from '../api/client';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
@@ -33,6 +33,23 @@ interface UnrecognizedIncident {
 const SEEN_KEY = 'admin_seen_incident_ids';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+const QUICK_PAGES = [
+  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Incident Requests', path: '/requests', icon: FileText },
+  { label: 'Analytics & Reports', path: '/analytics', icon: FileText },
+  { label: 'Emergency Call Logs', path: '/call-logs', icon: PhoneCall },
+  { label: 'Department Fleet', path: '/departments', icon: Building2 },
+  { label: 'System Settings', path: '/settings', icon: SettingsIcon },
+];
+
+const DEPARTMENTS_LIST = [
+  { name: 'BFP (Bureau of Fire Protection)', code: 'BFP', path: '/departments' },
+  { name: 'PNP (Philippine National Police)', code: 'PNP', path: '/departments' },
+  { name: 'Medical / Red Cross / Ambulance', code: 'MEDICAL', path: '/departments' },
+  { name: 'Engineering / DPWH', code: 'ENGINEERING', path: '/departments' },
+  { name: 'MDRRMO Rescue Team', code: 'RESCUE', path: '/departments' },
+];
+
 export default function Header({ title, subtitle }: HeaderProps) {
   const navigate = useNavigate();
   const { toggleSidebar } = useAdminNav();
@@ -46,6 +63,12 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sseRef = useRef<AbortController | null>(null);
+
+  // Global search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [incidentsList, setIncidentsList] = useState<any[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -230,6 +253,89 @@ export default function Header({ title, subtitle }: HeaderProps) {
     }
   };
 
+  const handleReclassifyFromHeader = async (type: string) => {
+    if (!currentUnrecognized) return;
+    const targetIncident = currentUnrecognized;
+    const deptMap: Record<string, string> = {
+      'Fire': 'BFP',
+      'Flood': 'RESCUE',
+      'Medical': 'MEDICAL',
+      'Vehicular Accident': 'RESCUE',
+      'Trauma': 'MEDICAL',
+      'Crime': 'PNP',
+      'Typhoon': 'RESCUE',
+      'Landslide': 'ENGINEERING',
+    };
+    const dept = deptMap[type] || 'RESCUE';
+    setDecidingIncident(true);
+    try {
+      await updateIncidentStatus(targetIncident.id, {
+        aiDetectedType: type,
+        assignedDepartment: dept,
+        adminNotes: `Reclassified by admin as ${type} and assigned to ${dept}.`,
+      });
+      const remaining = unrecognizedQueue.slice(1);
+      setUnrecognizedQueue(remaining);
+      if (remaining.length === 0) {
+        navigate(`/requests/${targetIncident.id}`);
+      }
+    } catch (e) {
+      console.error('Failed to reclassify incident:', e);
+    } finally {
+      setDecidingIncident(false);
+    }
+  };
+
+  // Preload incident data for instant global search
+  useEffect(() => {
+    getIncidents().then(res => {
+      if (res?.data) {
+        setIncidentsList(Array.isArray(res.data) ? res.data : res.data.incidents || []);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filter search results across pages, departments, and incidents
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return { pages: [], depts: [], incidents: [] };
+
+    const pages = QUICK_PAGES.filter(p => p.label.toLowerCase().includes(q));
+    const depts = DEPARTMENTS_LIST.filter(d => d.name.toLowerCase().includes(q) || d.code.toLowerCase().includes(q));
+    const incidents = incidentsList.filter(inc => {
+      const id = (inc.id || '').toLowerCase();
+      const type = (inc.aiDetectedType || '').toLowerCase();
+      const status = (inc.status || '').toLowerCase();
+      const dept = (inc.assignedDepartment || '').toLowerCase();
+      const reporter = (inc.reporter?.name || '').toLowerCase();
+      return id.includes(q) || type.includes(q) || status.includes(q) || dept.includes(q) || reporter.includes(q);
+    }).slice(0, 6);
+
+    return { pages, depts, incidents };
+  }, [searchQuery, incidentsList]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (searchQuery.trim()) {
+        setSearchOpen(false);
+        navigate(`/requests?search=${encodeURIComponent(searchQuery.trim())}`);
+      }
+    } else if (e.key === 'Escape') {
+      setSearchOpen(false);
+    }
+  };
+
   const handleDismissQueue = () => {
     setUnrecognizedQueue([]);
   };
@@ -399,9 +505,9 @@ export default function Header({ title, subtitle }: HeaderProps) {
             animation: 'slideDown 0.3s cubic-bezier(0.16,1,0.3,1)',
             position: 'relative',
           }}>
-            {/* Header with warm orange gradient & glowing warning badge */}
+            {/* Header with high-urgency 911 emergency red gradient */}
             <div style={{
-              background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #EA580C 100%)',
+              background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #B91C1C 100%)',
               padding: '22px 26px',
               display: 'flex', alignItems: 'center', gap: 14,
               position: 'relative',
@@ -448,8 +554,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
               }}>
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
                   <path d="M12 2.5L1.5 21h21L12 2.5z" fill="#ffffff" />
-                  <path d="M12 9v5" stroke="#EA580C" strokeWidth="2.5" strokeLinecap="round" />
-                  <circle cx="12" cy="17.2" r="1.3" fill="#EA580C" />
+                  <path d="M12 9v5" stroke="#DC2626" strokeWidth="2.5" strokeLinecap="round" />
+                  <circle cx="12" cy="17.2" r="1.3" fill="#DC2626" />
                 </svg>
               </div>
 
@@ -626,6 +732,41 @@ export default function Header({ title, subtitle }: HeaderProps) {
                 </button>
               </div>
 
+              {/* Direct Reclassify Choices for Admin */}
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>
+                    Or classify incident manually:
+                  </span>
+                  <span style={{ fontSize: 11, color: '#64748B' }}>Auto-assigns department</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {['Fire', 'Flood', 'Medical', 'Vehicular Accident', 'Trauma', 'Crime', 'Typhoon', 'Landslide'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleReclassifyFromHeader(t)}
+                      disabled={decidingIncident}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        border: '1px solid #CBD5E1',
+                        background: '#F8FAFC',
+                        color: '#0F172A',
+                        cursor: decidingIncident ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#EFF6FF'; e.currentTarget.style.borderColor = '#2563EB'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#CBD5E1'; }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Dismiss Option */}
               {unrecognizedQueue.length > 1 && (
                 <div style={{ textAlign: 'center', marginTop: 14 }}>
@@ -721,13 +862,161 @@ export default function Header({ title, subtitle }: HeaderProps) {
         </div>
 
         <div className="header-actions">
-          <div className="header-search-wrap">
+          <div className="header-search-wrap" ref={searchRef} style={{ position: 'relative' }}>
             <Search size={15} color="#94A3B8" />
             <input
               type="text"
               placeholder="Search reports or incidents..."
               className="header-search-input"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSearchOpen(true);
+              }}
+              onFocus={() => setSearchOpen(true)}
+              onKeyDown={handleSearchKeyDown}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setSearchOpen(false); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', color: '#94A3B8' }}
+              >
+                <X size={13} />
+              </button>
+            )}
+
+            {/* General Search Dropdown Overlay */}
+            {searchOpen && searchQuery.trim().length > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                left: 0,
+                width: 'min(380px, 92vw)',
+                background: '#FFFFFF',
+                borderRadius: 12,
+                boxShadow: '0 16px 36px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(0, 0, 0, 0.04)',
+                border: '1px solid #E2E8F0',
+                zIndex: 300,
+                overflow: 'hidden',
+                maxHeight: 380,
+                display: 'flex',
+                flexDirection: 'column',
+              }}>
+                <div style={{ padding: '8px 12px', background: '#F8FAFC', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Quick Search Results
+                  </span>
+                  <span style={{ fontSize: 11, color: '#94A3B8' }}>Press Enter to view all</span>
+                </div>
+
+                <div style={{ overflowY: 'auto', flex: 1, padding: '6px 0' }}>
+                  {/* Pages */}
+                  {searchResults.pages.length > 0 && (
+                    <div>
+                      <div style={{ padding: '4px 12px', fontSize: 10.5, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                        System Pages
+                      </div>
+                      {searchResults.pages.map(p => (
+                        <div
+                          key={p.path}
+                          onClick={() => { setSearchOpen(false); navigate(p.path); }}
+                          style={{
+                            padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10,
+                            cursor: 'pointer', transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <p.icon size={15} color="#2563EB" />
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1E293B' }}>{p.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Departments */}
+                  {searchResults.depts.length > 0 && (
+                    <div style={{ marginTop: searchResults.pages.length > 0 ? 6 : 0 }}>
+                      <div style={{ padding: '4px 12px', fontSize: 10.5, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                        Department Units
+                      </div>
+                      {searchResults.depts.map(d => (
+                        <div
+                          key={d.code}
+                          onClick={() => { setSearchOpen(false); navigate(d.path); }}
+                          style={{
+                            padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10,
+                            cursor: 'pointer', transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <Building2 size={15} color="#7C3AED" />
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1E293B' }}>{d.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Incidents */}
+                  {searchResults.incidents.length > 0 && (
+                    <div style={{ marginTop: (searchResults.pages.length > 0 || searchResults.depts.length > 0) ? 6 : 0 }}>
+                      <div style={{ padding: '4px 12px', fontSize: 10.5, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                        Matching Incidents
+                      </div>
+                      {searchResults.incidents.map(inc => (
+                        <div
+                          key={inc.id}
+                          onClick={() => { setSearchOpen(false); navigate(`/requests/${inc.id}`); }}
+                          style={{
+                            padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            cursor: 'pointer', transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                            <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#2563EB' }}>
+                              #{inc.id.slice(0, 8).toUpperCase()}
+                            </span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {inc.aiDetectedType || 'Emergency'}
+                            </span>
+                          </div>
+                          <span style={{
+                            fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 4,
+                            background: inc.status === 'RESOLVED' ? '#DCFCE7' : inc.status === 'PENDING' ? '#FEF3C7' : '#F1F5F9',
+                            color: inc.status === 'RESOLVED' ? '#166534' : inc.status === 'PENDING' ? '#92400E' : '#475569',
+                          }}>
+                            {inc.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchResults.pages.length === 0 && searchResults.depts.length === 0 && searchResults.incidents.length === 0 && (
+                    <div style={{ padding: '20px 16px', textAlign: 'center', color: '#94A3B8', fontSize: 12.5 }}>
+                      No matching records found for "{searchQuery}".
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  onClick={() => {
+                    setSearchOpen(false);
+                    navigate(`/requests?search=${encodeURIComponent(searchQuery.trim())}`);
+                  }}
+                  style={{
+                    padding: '9px 14px', background: '#F8FAFC', borderTop: '1px solid #F1F5F9',
+                    textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#2563EB', cursor: 'pointer',
+                  }}
+                >
+                  View all results in Requests →
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Notification Bell */}
@@ -808,11 +1097,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(37,99,235,0.06)')}
                         onMouseLeave={e => (e.currentTarget.style.background = n.isNew ? 'rgba(37,99,235,0.04)' : 'transparent')}
                       >
-                        {n.status === 'DISPATCHED' ? (
-                          <Truck size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
-                        ) : (
-                          <AlertCircle size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
-                        )}
+                        <AlertCircle size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {n.type}
@@ -825,7 +1110,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(n.status), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                              {n.status === 'DISPATCHED' && <Truck size={11} />}
                               {statusLabel(n.status)}
                             </span>
                             <span style={{ fontSize: 11, color: '#94A3B8' }}>• {n.time}</span>

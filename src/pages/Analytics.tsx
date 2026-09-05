@@ -6,9 +6,10 @@ import {
   Cell,
 } from 'recharts';
 import {
-  TrendingUp, FileText, Download, BarChart3, Loader2, CheckCircle2,
+  TrendingUp, FileText, BarChart3, Loader2, CheckCircle2,
   Info, Car, AlertTriangle, X,
   CalendarDays, CalendarRange, CalendarCheck, History, Trash2, RotateCcw,
+  Eye,
 } from 'lucide-react';
 import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical, FaCalendarAlt } from 'react-icons/fa';
@@ -34,7 +35,9 @@ import {
 } from '../data/mdrrmo-data';
 import {
   downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
+  generateReportPreview, type ReportPreviewData,
 } from '../utils/reportGenerator';
+import ReportPreviewModal from '../components/ReportPreviewModal';
 import { getIncidentsByRange } from '../api/client';
 import type { Incident } from '../types';
 
@@ -319,6 +322,13 @@ export default function Analytics() {
   const [downloadDone, setDownloadDone] = useState<RangeKey | null>(null);
   const [emptyModal, setEmptyModal] = useState<{ open: boolean; periodName: string } | null>(null);
 
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<ReportPreviewData | null>(null);
+  const [previewIncs, setPreviewIncs] = useState<Incident[]>([]);
+  const [previewKey, setPreviewKey] = useState<RangeKey>('daily');
+  const [previewDateParam, setPreviewDateParam] = useState<string>('');
+  const [loadingPreview, setLoadingPreview] = useState<RangeKey | null>(null);
+
   interface DownloadHistoryItem {
     id: string;
     title: string;
@@ -396,38 +406,45 @@ export default function Analytics() {
     return getRiskExplanation(selectedType, riskFilter);
   }, [selectedType, riskFilter]);
 
-  const handleDownload = async (key: RangeKey, customDate?: string) => {
+  const getRangeParameters = (key: RangeKey, customDate?: string) => {
     const activeDay = (key === 'daily' && customDate) ? customDate : selectedDay;
     const activeWeek = (key === 'weekly' && customDate) ? customDate : selectedWeek;
     const activeMonth = (key === 'monthly' && customDate) ? customDate : selectedMonth;
 
-    setDownloading(key);
-    try {
-      let fromStr = activeDay, toStr = activeDay;
-      let periodLabel = activeDay;
-      let dateParam = activeDay;
+    let fromStr = activeDay, toStr = activeDay;
+    let periodLabel = activeDay;
+    let dateParam = activeDay;
 
-      if (key === 'weekly') {
-        const wd = new Date(activeWeek + 'T00:00:00');
-        const day = wd.getDay();
-        const mon = new Date(wd); mon.setDate(wd.getDate() - (day === 0 ? 6 : day - 1));
-        const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-        fromStr = getLocalIsoDate(mon);
-        toStr   = getLocalIsoDate(sun);
-        periodLabel = `${fromStr} to ${toStr}`;
-        dateParam = activeWeek;
-      } else if (key === 'monthly') {
-        const [y, m] = activeMonth.split('-').map(Number);
-        fromStr = getLocalIsoDate(new Date(y, m - 1, 1));
-        toStr   = getLocalIsoDate(new Date(y, m, 0));
-        periodLabel = activeMonth;
-        dateParam = activeMonth;
-      }
+    if (key === 'weekly') {
+      const wd = new Date(activeWeek + 'T00:00:00');
+      const day = wd.getDay();
+      const mon = new Date(wd); mon.setDate(wd.getDate() - (day === 0 ? 6 : day - 1));
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      fromStr = getLocalIsoDate(mon);
+      toStr   = getLocalIsoDate(sun);
+      periodLabel = `${fromStr} to ${toStr}`;
+      dateParam = activeWeek;
+    } else if (key === 'monthly') {
+      const [y, m] = activeMonth.split('-').map(Number);
+      fromStr = getLocalIsoDate(new Date(y, m - 1, 1));
+      toStr   = getLocalIsoDate(new Date(y, m, 0));
+      periodLabel = activeMonth;
+      dateParam = activeMonth;
+    }
+
+    return { fromStr, toStr, periodLabel, dateParam, activeDay, activeWeek, activeMonth };
+  };
+
+  const handleOpenPreview = async (key: RangeKey, customDate?: string) => {
+    setLoadingPreview(key);
+    try {
+      const { fromStr, toStr, dateParam, activeDay, activeMonth } = getRangeParameters(key, customDate);
 
       const res = await getIncidentsByRange(fromStr, toStr);
       const incs: Incident[] = res.data || [];
+      const resolved = incs.filter(i => i.status === 'RESOLVED');
 
-      if (incs.length === 0) {
+      if (resolved.length === 0) {
         const periodName = key === 'daily'
           ? `date (${activeDay})`
           : key === 'weekly'
@@ -437,22 +454,39 @@ export default function Analytics() {
         return;
       }
 
-      if (key === 'daily')   await downloadDailyReport(incs, activeDay);
-      if (key === 'weekly')  await downloadWeeklyReport(incs, activeWeek);
-      if (key === 'monthly') await downloadMonthlyReport(incs, activeMonth);
+      const prev = generateReportPreview(key, incs, dateParam);
+      setPreviewData(prev);
+      setPreviewIncs(incs);
+      setPreviewKey(key);
+      setPreviewDateParam(dateParam);
+      setPreviewModalOpen(true);
+    } catch (err) {
+      console.error('Error preparing report preview:', err);
+    } finally {
+      setLoadingPreview(null);
+    }
+  };
+
+  const handleExecuteDownload = async (key: RangeKey, incs: Incident[], dateParam: string) => {
+    setDownloading(key);
+    try {
+      if (key === 'daily')   await downloadDailyReport(incs, dateParam);
+      if (key === 'weekly')  await downloadWeeklyReport(incs, dateParam);
+      if (key === 'monthly') await downloadMonthlyReport(incs, dateParam);
 
       // Record to download history
       const typeLabel = key === 'daily' ? 'Daily' : key === 'weekly' ? 'Weekly' : 'Monthly';
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
       const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const resolvedCount = incs.filter(i => i.status === 'RESOLVED').length;
       const newItem: DownloadHistoryItem = {
         id: `REP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`,
         title: `${typeLabel} Incident Operational Summary`,
         type: typeLabel,
-        period: periodLabel,
+        period: dateParam,
         downloadedAt: `${dateStr} • ${timeStr}`,
-        incidentCount: incs.length,
+        incidentCount: resolvedCount,
         format: 'Microsoft Word (.docx)',
         rangeKey: key,
         dateParam: dateParam,
@@ -471,6 +505,10 @@ export default function Analytics() {
     } finally {
       setDownloading(null);
     }
+  };
+
+  const handleDownload = async (key: RangeKey, customDate?: string) => {
+    await handleOpenPreview(key, customDate);
   };
 
   const handleClearHistory = async () => {
@@ -1128,10 +1166,10 @@ export default function Analytics() {
                   <Button
                     className="btn btn-primary"
                     style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'daily' ? 'var(--success)' : undefined, transition: 'all 0.2s', borderRadius: 8, fontWeight: 700 }}
-                    onClick={() => handleDownload('daily')}
-                    disabled={downloading === 'daily'}
+                    onClick={() => handleOpenPreview('daily')}
+                    disabled={loadingPreview === 'daily' || downloading === 'daily'}
                   >
-                    {downloading === 'daily' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'daily' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                    {loadingPreview === 'daily' ? <><Loader2 size={15} className="spin" /> Loading Preview…</> : downloadDone === 'daily' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Eye size={15} /> Preview & Download</>}
                   </Button>
                   <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '0.02em' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </CardContent>
@@ -1169,10 +1207,10 @@ export default function Analytics() {
                   <Button
                     className="btn btn-primary"
                     style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'weekly' ? 'var(--success)' : undefined, transition: 'all 0.2s', borderRadius: 8, fontWeight: 700 }}
-                    onClick={() => handleDownload('weekly')}
-                    disabled={downloading === 'weekly'}
+                    onClick={() => handleOpenPreview('weekly')}
+                    disabled={loadingPreview === 'weekly' || downloading === 'weekly'}
                   >
-                    {downloading === 'weekly' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'weekly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                    {loadingPreview === 'weekly' ? <><Loader2 size={15} className="spin" /> Loading Preview…</> : downloadDone === 'weekly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Eye size={15} /> Preview & Download</>}
                   </Button>
                   <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '0.02em' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </CardContent>
@@ -1210,10 +1248,10 @@ export default function Analytics() {
                   <Button
                     className="btn btn-primary"
                     style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'monthly' ? 'var(--success)' : undefined, transition: 'all 0.2s', borderRadius: 8, fontWeight: 700 }}
-                    onClick={() => handleDownload('monthly')}
-                    disabled={downloading === 'monthly'}
+                    onClick={() => handleOpenPreview('monthly')}
+                    disabled={loadingPreview === 'monthly' || downloading === 'monthly'}
                   >
-                    {downloading === 'monthly' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'monthly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                    {loadingPreview === 'monthly' ? <><Loader2 size={15} className="spin" /> Loading Preview…</> : downloadDone === 'monthly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Eye size={15} /> Preview & Download</>}
                   </Button>
                   <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', letterSpacing: '0.02em' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </CardContent>
@@ -1413,7 +1451,7 @@ export default function Analytics() {
                 color: '#94A3B8',
                 margin: '0 0 20px',
               }}>
-                There are no logged emergency incidents for the selected <strong style={{ color: '#E2E8F0' }}>{emptyModal.periodName}</strong>. Official report generation has been safely cancelled.
+                There are no resolved emergency incidents for the selected <strong style={{ color: '#E2E8F0' }}>{emptyModal.periodName}</strong>. Official MDRRMO compliance reports require verified, resolved incident data.
               </p>
 
               {/* Red Action Button */}
@@ -1439,6 +1477,15 @@ export default function Analytics() {
           </div>
         </div>
       )}
+
+      {/* ── Official Document Preview Modal ── */}
+      <ReportPreviewModal
+        isOpen={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        data={previewData}
+        onDownload={() => handleExecuteDownload(previewKey, previewIncs, previewDateParam)}
+        isDownloading={downloading === previewKey}
+      />
     </>
   );
 }

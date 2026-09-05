@@ -50,7 +50,7 @@ export default function Toast({
 
   const isVisible = phase === "visible";
 
-  // ── Variant 1: Crimson Danger Alert Card (Screenshot 3) ──
+  // ── Variant 1: White Card Danger / Error Alert ──
   if (isDanger) {
     const displayTitle = detail ? message : "Whoops! Something went wrong";
     const displayBody = detail ? detail : message;
@@ -69,10 +69,10 @@ export default function Toast({
           width: "100%",
           maxWidth: 400,
           padding: "18px 20px",
-          background: "#2B0710",
+          background: "#FFFFFF",
           borderRadius: 16,
-          border: "1px solid #9F1239",
-          boxShadow: "0 14px 36px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(159, 18, 57, 0.3)",
+          border: "1px solid #FECDD3",
+          boxShadow: "0 14px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(225, 29, 72, 0.08)",
           boxSizing: "border-box",
           fontFamily: "var(--font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
           display: "flex",
@@ -81,8 +81,27 @@ export default function Toast({
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#FDA4AF", lineHeight: 1.3 }}>
-            {displayTitle}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: "#FEE2E2",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#DC2626",
+                flexShrink: 0,
+              }}
+            >
+              <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              </svg>
+            </div>
+            <div style={{ fontSize: 14.5, fontWeight: 700, color: "#991B1B", lineHeight: 1.3 }}>
+              {displayTitle}
+            </div>
           </div>
           <button
             type="button"
@@ -91,8 +110,7 @@ export default function Toast({
             style={{
               background: "transparent",
               border: "none",
-              color: "#FDA4AF",
-              opacity: 0.7,
+              color: "#94A3B8",
               cursor: "pointer",
               padding: 0,
               display: "flex",
@@ -101,10 +119,10 @@ export default function Toast({
               width: 22,
               height: 22,
               flexShrink: 0,
-              transition: "opacity 0.15s",
+              transition: "color 0.15s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#0F172A")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#94A3B8")}
           >
             <svg style={{ width: 15, height: 15 }} fill="none" viewBox="0 0 24 24">
               <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M6 18 17.94 6M18 18 6.06 6" />
@@ -112,12 +130,12 @@ export default function Toast({
           </button>
         </div>
 
-        <div style={{ fontSize: 13, color: "#FCA5A5", lineHeight: 1.45 }}>
+        <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.45, paddingLeft: 36 }}>
           {displayBody}
         </div>
 
-        {/* Optional Action Pills */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+        {/* Action Buttons */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, paddingLeft: 36 }}>
           {actionLabel && onAction && (
             <button
               type="button"
@@ -130,7 +148,7 @@ export default function Toast({
                 alignItems: "center",
                 gap: 6,
                 padding: "6px 14px",
-                background: "#E11D48",
+                background: "#DC2626",
                 color: "#FFFFFF",
                 border: "none",
                 borderRadius: 9999,
@@ -139,8 +157,8 @@ export default function Toast({
                 cursor: "pointer",
                 transition: "background 0.15s",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#BE123C")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#E11D48")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#B91C1C")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#DC2626")}
             >
               {actionLabel}
             </button>
@@ -150,22 +168,22 @@ export default function Toast({
             onClick={dismiss}
             style={{
               padding: "6px 14px",
-              background: "transparent",
-              color: "#FDA4AF",
-              border: "1px solid #9F1239",
+              background: "#F8FAFC",
+              color: "#64748B",
+              border: "1px solid #E2E8F0",
               borderRadius: 9999,
               fontSize: 12.5,
               fontWeight: 600,
               cursor: "pointer",
-              transition: "border-color 0.15s, background 0.15s",
+              transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(159, 18, 57, 0.2)";
-              e.currentTarget.style.borderColor = "#E11D48";
+              e.currentTarget.style.background = "#F1F5F9";
+              e.currentTarget.style.color = "#0F172A";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "#9F1239";
+              e.currentTarget.style.background = "#F8FAFC";
+              e.currentTarget.style.color = "#64748B";
             }}
           >
             Close
@@ -175,7 +193,7 @@ export default function Toast({
     );
   }
 
-  // ── Variant 2: Dark Navy Simple / Success Toast (Screenshots 1 & 2) ──
+  // ── Variant 2: White Card Simple / Success / Warning / Info Toast ──
   return (
     <div
       role="alert"
@@ -192,63 +210,101 @@ export default function Toast({
         width: "100%",
         maxWidth: 380,
         padding: "14px 18px",
-        background: "#0B132B",
+        background: "#FFFFFF",
         borderRadius: 14,
-        border: "1px solid rgba(255, 255, 255, 0.08)",
-        boxShadow: "0 14px 34px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2)",
+        border: "1px solid #E2E8F0",
+        boxShadow: "0 12px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04)",
         boxSizing: "border-box",
         fontFamily: "var(--font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
       }}
     >
       {/* Brand Icon */}
       {isSuccess ? (
-        <svg
-          style={{ width: 20, height: 20, color: "#34D399", flexShrink: 0 }}
-          aria-hidden="true"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            background: "#DCFCE7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
         >
-          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M5 11.917 9.724 16.5 19 7.5" />
-        </svg>
+          <svg
+            style={{ width: 17, height: 17, color: "#16A34A" }}
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M5 11.917 9.724 16.5 19 7.5" />
+          </svg>
+        </div>
       ) : isWarning ? (
-        <svg
-          style={{ width: 20, height: 20, color: "#FBBF24", flexShrink: 0 }}
-          aria-hidden="true"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            background: "#FEF3C7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
         >
-          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-        </svg>
+          <svg
+            style={{ width: 17, height: 17, color: "#D97706" }}
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+          </svg>
+        </div>
       ) : (
-        /* Flowbite Blue Navigation Arrow */
-        <svg
-          style={{ width: 20, height: 20, color: "#3B82F6", flexShrink: 0 }}
-          aria-hidden="true"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            background: "#DBEAFE",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
         >
-          <path
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="m12 18-7 3 7-18 7 18-7-3Zm0 0v-5"
-          />
-        </svg>
+          <svg
+            style={{ width: 17, height: 17, color: "#2563EB" }}
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="m12 18-7 3 7-18 7 18-7-3Zm0 0v-5"
+            />
+          </svg>
+        </div>
       )}
 
       {/* Message with vertical divider bar */}
       <div
         style={{
           marginLeft: 12,
-          paddingLeft: 14,
-          borderLeft: "1px solid rgba(255, 255, 255, 0.14)",
+          paddingLeft: 12,
+          borderLeft: "1px solid #E2E8F0",
           fontSize: 13.5,
-          fontWeight: 500,
-          color: isSuccess ? "#A7F3D0" : isWarning ? "#FDE68A" : "#93C5FD",
+          fontWeight: 600,
+          color: "#0F172A",
           flex: 1,
           minWidth: 0,
           lineHeight: 1.35,
@@ -256,7 +312,7 @@ export default function Toast({
       >
         <div>{message}</div>
         {detail && (
-          <div style={{ fontSize: 12, fontWeight: 400, color: "rgba(255, 255, 255, 0.6)", marginTop: 2 }}>
+          <div style={{ fontSize: 12, fontWeight: 400, color: "#64748B", marginTop: 2 }}>
             {detail}
           </div>
         )}
@@ -272,7 +328,7 @@ export default function Toast({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#64748B",
+          color: "#94A3B8",
           background: "transparent",
           border: "none",
           borderRadius: 8,
@@ -284,8 +340,8 @@ export default function Toast({
           flexShrink: 0,
           transition: "color 0.15s",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "#FFFFFF")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "#64748B")}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "#0F172A")}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "#94A3B8")}
       >
         <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
           Close

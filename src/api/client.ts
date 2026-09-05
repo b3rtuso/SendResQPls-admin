@@ -101,7 +101,7 @@ export const reportIncident = (formData: FormData) =>
     return res;
   });
 
-export const updateIncidentStatus = (id: string, data: { status?: string; adminNotes?: string; assignedDepartment?: string; resolutionForm?: ResolutionForm }) =>
+export const updateIncidentStatus = (id: string, data: { status?: string; adminNotes?: string; assignedDepartment?: string; resolutionForm?: ResolutionForm; aiDetectedType?: string; severity?: string }) =>
   api.patch(`/incidents/${id}/status`, data).then(res => {
     invalidateCache('incidents');
     return res;

@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, Truck } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
 import { FiPhone } from 'react-icons/fi';
 import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, createCallLog } from '../api/client';
-import type { Status, Incident, ResolutionForm } from '../types';
+import type { Status, Incident, ResolutionForm, Department } from '../types';
 import ResolutionFormModal from '../components/ResolutionFormModal';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '../context/ConfirmContext';
@@ -79,6 +79,18 @@ const departments = [
   { key: 'ENGINEERING', name: 'Engineering / DPWH', abbr: 'ENG', contact: '(043) 740-3456', color: '#F59E0B' },
   { key: 'RESCUE', name: 'MDRRMO Rescue Team', abbr: 'RSQ', contact: '(043) 740-7890', color: '#8B5CF6' },
 ];
+
+const OFFICIAL_TYPES = ['Fire', 'Flood', 'Medical', 'Vehicular Accident', 'Trauma', 'Crime', 'Typhoon', 'Landslide'];
+const TYPE_DEPT_MAP: Record<string, Department> = {
+  'Fire': 'BFP',
+  'Flood': 'RESCUE',
+  'Medical': 'MEDICAL',
+  'Vehicular Accident': 'RESCUE',
+  'Trauma': 'MEDICAL',
+  'Crime': 'PNP',
+  'Typhoon': 'RESCUE',
+  'Landslide': 'ENGINEERING',
+};
 
 interface ToastState {
   show: boolean;
@@ -310,6 +322,25 @@ export default function RequestDetails() {
     }
   };
 
+  const handleReclassify = async (newType: string) => {
+    if (!id || !incident) return;
+    const targetDept = (TYPE_DEPT_MAP[newType] || 'RESCUE') as Department;
+    const prevType = incident.aiDetectedType;
+    const prevDept = incident.assignedDepartment;
+    setSaving(true);
+    setIncident(prev => prev ? ({ ...prev, aiDetectedType: newType, assignedDepartment: targetDept }) : prev);
+    try {
+      await updateIncidentStatus(id, { aiDetectedType: newType, assignedDepartment: targetDept });
+      showToast('success', `Hazard Reclassified: ${newType}`, `Assigned to ${deptNames[targetDept] || targetDept}.`);
+      loadIncident(false);
+    } catch {
+      setIncident(prev => prev ? ({ ...prev, aiDetectedType: prevType, assignedDepartment: prevDept }) : prev);
+      showToast('error', 'Failed to reclassify', 'Server error while updating hazard type.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleCallDept = (_e: React.MouseEvent, dept: any) => {
     const adminName = localStorage.getItem('userName') || 'MDRRMO Dispatcher';
     createCallLog({
@@ -429,8 +460,11 @@ export default function RequestDetails() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>DETECTED TYPE</strong>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
-                    {incident.aiDetectedType || 'Pending Analysis'}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {(!incident.aiDetectedType || incident.aiDetectedType.toLowerCase().includes('unrecognized') || incident.aiDetectedType.toLowerCase().includes('unknown') || incident.aiDetectedType.toLowerCase().includes('pending')) && (
+                      <HelpCircle size={18} style={{ color: '#DC2626', flexShrink: 0 }} />
+                    )}
+                    <span>{incident.aiDetectedType || 'Pending Analysis'}</span>
                   </div>
                 </div>
                 <div>
@@ -448,8 +482,7 @@ export default function RequestDetails() {
                 <div>
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>STATUS</strong>
                   <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
-                    <Badge className={`badge ${currentStatus.toLowerCase()}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      {currentStatus === 'DISPATCHED' && <Truck size={14} />}
+                    <Badge className={`badge ${currentStatus.toLowerCase()}`}>
                       <span>{currentStatus}</span>
                     </Badge>
                   </div>
@@ -491,6 +524,35 @@ export default function RequestDetails() {
                     })()}
                   </div>
                 </div>
+
+                <div style={{ gridColumn: 'span 2', marginTop: 8, paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>RECLASSIFY HAZARD TYPE</strong>
+                    <span style={{ fontSize: 11, color: '#94A3B8' }}>Click to assign type & department</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {OFFICIAL_TYPES.map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => handleReclassify(t)}
+                        disabled={saving}
+                        style={{
+                          padding: '3px 8px',
+                          fontSize: 11,
+                          fontWeight: incident.aiDetectedType === t ? 800 : 500,
+                          borderRadius: 6,
+                          border: incident.aiDetectedType === t ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
+                          background: incident.aiDetectedType === t ? '#EFF6FF' : '#FFFFFF',
+                          color: incident.aiDetectedType === t ? '#1D4ED8' : '#475569',
+                          cursor: saving ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* ── Reject Suggestion Banner (shown when AI cannot recognise the incident) ── */}
@@ -519,43 +581,66 @@ export default function RequestDetails() {
                       background: 'rgba(239,68,68,0.12)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                      </svg>
+                      <HelpCircle size={20} color="#DC2626" />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 700, color: '#DC2626', marginBottom: 4 }}>
-                        AI Suggestion: Reject this report
+                        AI Alert: Unrecognized Incident
                       </div>
                       <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                         The AI could not identify a valid emergency incident in the submitted photo.
-                        This may be a test submission, an unrelated image, or a false alarm.
-                        Review the photo carefully — if it is not a genuine emergency, consider rejecting it.
+                        Review the photo — reject if it is a false alarm, or select the correct hazard type below.
                       </div>
-                      {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (
-                        <button
-                          onClick={() => handleStatusUpdate('REJECTED')}
-                          disabled={saving}
-                          style={{
-                            marginTop: 10,
-                            padding: '7px 16px',
-                            borderRadius: 8,
-                            background: '#EF4444',
-                            color: 'white',
-                            border: 'none',
-                            fontWeight: 700,
-                            fontSize: 12.5,
-                            cursor: saving ? 'not-allowed' : 'pointer',
-                            fontFamily: 'var(--font)',
-                            opacity: saving ? 0.6 : 1,
-                            transition: 'opacity 0.15s',
-                          }}
-                        >
-                          {saving ? 'Rejecting...' : 'Reject Report'}
-                        </button>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                        {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (
+                          <button
+                            onClick={() => handleStatusUpdate('REJECTED')}
+                            disabled={saving}
+                            style={{
+                              padding: '7px 16px',
+                              borderRadius: 8,
+                              background: '#EF4444',
+                              color: 'white',
+                              border: 'none',
+                              fontWeight: 700,
+                              fontSize: 12.5,
+                              cursor: saving ? 'not-allowed' : 'pointer',
+                              fontFamily: 'var(--font)',
+                              opacity: saving ? 0.6 : 1,
+                              transition: 'opacity 0.15s',
+                            }}
+                          >
+                            {saving ? 'Rejecting...' : 'Reject Report'}
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(239,68,68,0.2)' }}>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>
+                          Or reclassify as genuine emergency:
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                          {OFFICIAL_TYPES.map(t => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => handleReclassify(t)}
+                              disabled={saving}
+                              style={{
+                                padding: '3px 8px',
+                                fontSize: 11,
+                                fontWeight: incident.aiDetectedType === t ? 800 : 600,
+                                borderRadius: 6,
+                                border: '1px solid #CBD5E1',
+                                background: '#FFFFFF',
+                                color: '#1E293B',
+                                cursor: saving ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -798,9 +883,6 @@ export default function RequestDetails() {
                         {isCurrent && (
                           <span style={{ marginRight: 4, fontSize: 11 }}>●</span>
                         )}
-                        {s === 'DISPATCHED' && (
-                          <Truck size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
-                        )}
                         {s}
                       </button>
                     );
@@ -903,10 +985,7 @@ export default function RequestDetails() {
                         <span style={{ color: '#2563EB', fontSize: 14 }}>●</span>
                         <span>{formatTimelineDate(item.createdAt)}</span>
                       </div>
-                      <div className="tl-text" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-                        {item.title?.toLowerCase().includes('dispatch') && (
-                          <Truck size={14} color="#8B5CF6" style={{ flexShrink: 0 }} />
-                        )}
+                      <div className="tl-text" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 600 }}>
                         <span>{item.title}</span>
                       </div>
                       {item.description && (

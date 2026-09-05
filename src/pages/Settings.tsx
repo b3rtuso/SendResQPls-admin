@@ -1053,7 +1053,7 @@ export default function SettingsPage() {
                 <div className="st-form-row" style={{ margin: 0 }}>
                   <div className="st-form-group" style={{ margin: 0 }}>
                     <label className="st-label">Password * (minimum 8 characters)</label>
-                    <input className="st-input" type="password" placeholder="••••••••" value={newAdmin.password}
+                    <input className="st-input" type="password" placeholder="" value={newAdmin.password}
                       onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })} />
                   </div>
                   <div className="st-form-group" style={{ margin: 0 }}>

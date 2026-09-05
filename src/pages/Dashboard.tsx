@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
-  AlertTriangle, RefreshCw, ArrowRight, Ambulance, Truck,
+  AlertTriangle, RefreshCw, ArrowRight, Ambulance, Car, HelpCircle,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
   Info, Clock, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { TbReport } from 'react-icons/tb';
-import { MdPendingActions, MdLandslide, MdEngineering } from 'react-icons/md';
+import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
 import { FaFileCircleCheck, FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { FiPhone } from 'react-icons/fi';
@@ -42,14 +42,16 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }>
 
 type TypeIconEntry = { icon: React.ElementType | null; emoji?: string; color: string };
 const TYPE_ICON: Record<string, TypeIconEntry> = {
-  'Fire':      { icon: FaFire,            color: '#DC2626' },
-  'Flood':     { icon: FaHouseFloodWater, color: '#3B82F6' },
-  'Medical':   { icon: FaBriefcaseMedical,color: '#22C55E' },
-  'Crime':     { icon: RiCriminalFill,    color: '#000000' },
-  'Typhoon':   { icon: RiTyphoonFill,     color: '#8B5CF6' },
-  'Landslide': { icon: MdLandslide,       color: '#78716C' },
-  'Trauma':    { icon: IoBandage,         color: '#F59E0B' },
-  'Accident':  { icon: null, emoji: '🚗', color: '#3B82F6' },
+  'Fire':         { icon: FaFire,            color: '#DC2626' },
+  'Flood':        { icon: FaHouseFloodWater, color: '#3B82F6' },
+  'Medical':      { icon: FaBriefcaseMedical,color: '#22C55E' },
+  'Crime':        { icon: RiCriminalFill,    color: '#000000' },
+  'Typhoon':      { icon: RiTyphoonFill,     color: '#8B5CF6' },
+  'Landslide':    { icon: MdLandslide,       color: '#78716C' },
+  'Trauma':       { icon: IoBandage,         color: '#F59E0B' },
+  'Accident':     { icon: Car,               color: '#3B82F6' },
+  'Unrecognized': { icon: HelpCircle,        color: '#64748B' },
+  'Unknown':      { icon: HelpCircle,        color: '#64748B' },
 };
 
 const DONUT_COLORS: Record<string, string> = {
@@ -437,7 +439,7 @@ export default function Dashboard() {
   const STAT_CARDS = [
     { label: 'Total Reports',  value: stats.total,      accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: TbReport,          activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
     { label: 'Pending',        value: stats.pending,    accent: '#D97706', chipBg: '#FFFBEB', chipBorder: '#FDE68A', icon: MdPendingActions,   activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
-    { label: 'Dispatched',     value: stats.dispatched, accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: Truck,             activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
+    { label: 'Dispatched',     value: stats.dispatched, accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: MdLocalShipping, activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
     { label: 'Resolved Today', value: stats.resolved,   accent: '#059669', chipBg: '#ECFDF5', chipBorder: '#D1FAE5', icon: FaFileCircleCheck,  activeGlow: 'rgba(34, 197, 94, 0.3)',  filter: 'RESOLVED' },
   ];
 
@@ -1435,7 +1437,7 @@ export default function Dashboard() {
                       {filteredIncidents.slice(0, 8).map((inc) => {
                         const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                         const normalized = normalizeIncidentType(inc.aiDetectedType);
-                        const ti = TYPE_ICON[normalized] || { icon: null, emoji: '⚠️', color: '#64748B' };
+                        const ti = TYPE_ICON[normalized] || { icon: HelpCircle, color: '#64748B' };
                         return (
                           <tr
                             key={inc.id}
@@ -1468,11 +1470,7 @@ export default function Dashboard() {
                                 fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
                                 textTransform: 'uppercase',
                                 border: 'none',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
                               }}>
-                                {inc.status === 'DISPATCHED' && <Truck size={11} style={{ flexShrink: 0 }} />}
                                 <span>{ss.label}</span>
                               </Badge>
                             </td>
@@ -1508,7 +1506,7 @@ export default function Dashboard() {
                   {filteredIncidents.slice(0, 8).map((inc) => {
                     const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                     const normalized = normalizeIncidentType(inc.aiDetectedType);
-                    const ti = TYPE_ICON[normalized] || { icon: null, emoji: '⚠️', color: '#64748B' };
+                    const ti = TYPE_ICON[normalized] || { icon: HelpCircle, color: '#64748B' };
                     const brgy = inc.latitude && inc.longitude
                       ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                       : 'Balayan';
@@ -1536,11 +1534,7 @@ export default function Dashboard() {
                             background: ss.bg, color: ss.color,
                             fontSize: 10, fontWeight: 800,
                             border: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
                           }}>
-                            {inc.status === 'DISPATCHED' && <Truck size={10} style={{ flexShrink: 0 }} />}
                             <span>{ss.label}</span>
                           </Badge>
                         </div>
