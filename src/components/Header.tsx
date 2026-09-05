@@ -1,4 +1,4 @@
-import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers } from 'lucide-react';
+import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Truck } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIncidents, updateIncidentStatus } from '../api/client';
@@ -808,7 +808,11 @@ export default function Header({ title, subtitle }: HeaderProps) {
                         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(37,99,235,0.06)')}
                         onMouseLeave={e => (e.currentTarget.style.background = n.isNew ? 'rgba(37,99,235,0.04)' : 'transparent')}
                       >
-                        <AlertCircle size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
+                        {n.status === 'DISPATCHED' ? (
+                          <Truck size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
+                        ) : (
+                          <AlertCircle size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
+                        )}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {n.type}
@@ -820,7 +824,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
                             )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(n.status) }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(n.status), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              {n.status === 'DISPATCHED' && <Truck size={11} />}
                               {statusLabel(n.status)}
                             </span>
                             <span style={{ fontSize: 11, color: '#94A3B8' }}>• {n.time}</span>

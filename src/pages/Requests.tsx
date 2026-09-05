@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
-import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Truck } from 'lucide-react';
 import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
@@ -482,15 +482,19 @@ export default function Requests() {
                   boxShadow: isActive ? `0 2px 10px ${theme.activeGlow}` : 'none',
                 }}
               >
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: isActive ? '#FFFFFF' : theme.dotColor,
-                    display: 'inline-block',
-                  }}
-                />
+                {tab === 'DISPATCHED' ? (
+                  <Truck size={13} style={{ color: isActive ? '#FFFFFF' : theme.dotColor, flexShrink: 0 }} />
+                ) : (
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: isActive ? '#FFFFFF' : theme.dotColor,
+                      display: 'inline-block',
+                    }}
+                  />
+                )}
                 <span>{tab === 'ALL' ? 'All Incidents' : tab}</span>
                 <span
                   className="rq-tab-count"
@@ -796,8 +800,12 @@ export default function Requests() {
                               fontSize: 11,
                               fontWeight: 800,
                               letterSpacing: '0.04em',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
                             }}>
-                              {inc.status}
+                              {inc.status === 'DISPATCHED' && <Truck size={12} style={{ flexShrink: 0 }} />}
+                              <span>{inc.status}</span>
                             </Badge>
                           </td>
 
@@ -930,8 +938,12 @@ export default function Requests() {
                             padding: '3px 9px', borderRadius: 999,
                             background: ss.bg, color: ss.color, border: `1px solid ${ss.border}`,
                             fontSize: 10.5, fontWeight: 800,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
                           }}>
-                            {inc.status}
+                            {inc.status === 'DISPATCHED' && <Truck size={10} style={{ flexShrink: 0 }} />}
+                            <span>{inc.status}</span>
                           </Badge>
                           <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo(inc.createdAt)}</span>
                         </div>
@@ -1213,9 +1225,13 @@ export default function Requests() {
                 fontSize: 12,
                 fontWeight: 800,
                 cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
-              {batchLoading ? 'Dispatching…' : 'Dispatch All'}
+              <Truck size={14} />
+              <span>{batchLoading ? 'Dispatching…' : 'Dispatch All'}</span>
             </button>
 
             <button

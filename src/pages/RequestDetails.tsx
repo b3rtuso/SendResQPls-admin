@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, Truck } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
 import { FiPhone } from 'react-icons/fi';
 import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, createCallLog } from '../api/client';
@@ -448,7 +448,10 @@ export default function RequestDetails() {
                 <div>
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>STATUS</strong>
                   <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
-                    <Badge className={`badge ${currentStatus.toLowerCase()}`}>{currentStatus}</Badge>
+                    <Badge className={`badge ${currentStatus.toLowerCase()}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      {currentStatus === 'DISPATCHED' && <Truck size={14} />}
+                      <span>{currentStatus}</span>
+                    </Badge>
                   </div>
                 </div>
                 <div style={{ gridColumn: 'span 2', marginTop: 4 }}>
@@ -795,6 +798,9 @@ export default function RequestDetails() {
                         {isCurrent && (
                           <span style={{ marginRight: 4, fontSize: 11 }}>●</span>
                         )}
+                        {s === 'DISPATCHED' && (
+                          <Truck size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+                        )}
                         {s}
                       </button>
                     );
@@ -897,8 +903,11 @@ export default function RequestDetails() {
                         <span style={{ color: '#2563EB', fontSize: 14 }}>●</span>
                         <span>{formatTimelineDate(item.createdAt)}</span>
                       </div>
-                      <div className="tl-text" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 600 }}>
-                        {item.title}
+                      <div className="tl-text" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        {item.title?.toLowerCase().includes('dispatch') && (
+                          <Truck size={14} color="#8B5CF6" style={{ flexShrink: 0 }} />
+                        )}
+                        <span>{item.title}</span>
                       </div>
                       {item.description && (
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, fontStyle: 'italic' }}>
