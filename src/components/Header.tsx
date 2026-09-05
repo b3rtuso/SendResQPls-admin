@@ -1,4 +1,4 @@
-import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info } from 'lucide-react';
+import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIncidents, updateIncidentStatus } from '../api/client';
@@ -40,7 +40,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [unseenCount, setUnseenCount] = useState(0);
   const [newReportBanner, setNewReportBanner] = useState<NewReportBanner | null>(null);
-  const [unrecognizedModal, setUnrecognizedModal] = useState<UnrecognizedIncident | null>(null);
+  const [unrecognizedQueue, setUnrecognizedQueue] = useState<UnrecognizedIncident[]>([]);
+  const currentUnrecognized = unrecognizedQueue[0] || null;
   const [decidingIncident, setDecidingIncident] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -116,10 +117,13 @@ export default function Header({ title, subtitle }: HeaderProps) {
           if (event.event === 'unrecognized_incident') {
             try {
               const data = JSON.parse(event.data);
-              setUnrecognizedModal({
-                id: data.id,
-                type: data.aiDetectedType || 'Unknown',
-                confidence: data.aiConfidence || 'low',
+              setUnrecognizedQueue(prev => {
+                if (prev.some(item => item.id === data.id)) return prev;
+                return [...prev, {
+                  id: data.id,
+                  type: data.aiDetectedType || 'Unknown',
+                  confidence: data.aiConfidence || 'low',
+                }];
               });
               const newItem: NotifItem = {
                 id: data.id,
@@ -198,37 +202,47 @@ export default function Header({ title, subtitle }: HeaderProps) {
   };
 
   const handleDecision = async (action: 'reject' | 'keep') => {
-    if (!unrecognizedModal) return;
+    if (!currentUnrecognized) return;
+    const targetIncident = currentUnrecognized;
     setDecidingIncident(true);
     try {
       if (action === 'reject') {
-        await updateIncidentStatus(unrecognizedModal.id, {
+        await updateIncidentStatus(targetIncident.id, {
           status: 'REJECTED',
           adminNotes: 'Rejected by admin — AI could not recognize the incident and admin determined it is not a valid emergency.'
         });
       } else {
-        await updateIncidentStatus(unrecognizedModal.id, {
+        await updateIncidentStatus(targetIncident.id, {
           adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.'
         });
-        window.location.href = `/requests/${unrecognizedModal.id}`;
+      }
+
+      const remaining = unrecognizedQueue.slice(1);
+      setUnrecognizedQueue(remaining);
+
+      if (action === 'keep' && remaining.length === 0) {
+        navigate(`/requests/${targetIncident.id}`);
       }
     } catch (e) {
       console.error('Failed to process decision:', e);
     } finally {
       setDecidingIncident(false);
-      setUnrecognizedModal(null);
     }
   };
 
+  const handleDismissQueue = () => {
+    setUnrecognizedQueue([]);
+  };
+
   useEffect(() => {
-    if (unrecognizedModal) {
+    if (currentUnrecognized) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = originalOverflow;
       };
     }
-  }, [unrecognizedModal]);
+  }, [currentUnrecognized]);
 
   return (
     <>
@@ -364,8 +378,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
         }
       `}</style>
 
-      {/* Unrecognized Incident Modal */}
-      {unrecognizedModal && (
+      {/* Unrecognized Incident Modal (Stackable Review Queue) */}
+      {currentUnrecognized && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 10000,
           background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(6px)',
@@ -376,13 +390,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
         }}>
           <div style={{
             background: 'white', borderRadius: 24,
-            width: 'min(500px, calc(100vw - 32px))',
+            width: 'min(520px, calc(100vw - 32px))',
             maxHeight: 'calc(100vh - 32px)',
             boxShadow: '0 25px 60px -12px rgba(0,0,0,0.35)',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             animation: 'slideDown 0.3s cubic-bezier(0.16,1,0.3,1)',
+            position: 'relative',
           }}>
             {/* Header with warm orange gradient & glowing warning badge */}
             <div style={{
@@ -392,6 +407,26 @@ export default function Header({ title, subtitle }: HeaderProps) {
               position: 'relative',
               overflow: 'hidden',
             }}>
+              {/* Close / Dismiss Button */}
+              <button
+                onClick={handleDismissQueue}
+                style={{
+                  position: 'absolute', right: 14, top: 14,
+                  background: 'rgba(255,255,255,0.22)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 30, height: 30,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white',
+                  cursor: 'pointer',
+                  zIndex: 2,
+                  transition: 'background 0.15s ease',
+                }}
+                title="Dismiss modal (items remain saved in notifications)"
+              >
+                <X size={16} strokeWidth={2.4} />
+              </button>
+
               {/* Background decorative watermark */}
               <div style={{
                 position: 'absolute', right: -12, top: -8,
@@ -418,29 +453,83 @@ export default function Header({ title, subtitle }: HeaderProps) {
                 </svg>
               </div>
 
-              <div style={{ zIndex: 1 }}>
+              <div style={{ zIndex: 1, paddingRight: 28 }}>
                 <h3 style={{ color: 'white', margin: 0, fontSize: 18.5, fontWeight: 800, letterSpacing: '-0.3px', lineHeight: 1.25 }}>
                   Unrecognized Incident Reported
                 </h3>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '3px 10px', marginTop: 7,
-                  background: 'rgba(255,255,255,0.18)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: 9999,
-                  color: 'white', fontSize: 12, fontWeight: 600,
-                }}>
-                  <Bot size={13} />
-                  <span>AI Confidence: {unrecognizedModal.confidence || 'low'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7, flexWrap: 'wrap' }}>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '3px 10px',
+                    background: 'rgba(255,255,255,0.18)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: 9999,
+                    color: 'white', fontSize: 12, fontWeight: 600,
+                  }}>
+                    <Bot size={13} />
+                    <span>AI Confidence: {currentUnrecognized.confidence || 'low'}</span>
+                  </div>
+
+                  {unrecognizedQueue.length > 1 && (
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '3px 10px',
+                      background: 'rgba(0,0,0,0.25)',
+                      border: '1px solid rgba(255,255,255,0.35)',
+                      borderRadius: 9999,
+                      color: '#FEF3C7', fontSize: 11, fontWeight: 800,
+                      letterSpacing: 0.3,
+                    }}>
+                      <Layers size={12} />
+                      <span>Review Stack: 1 of {unrecognizedQueue.length}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Modal Body */}
             <div style={{ padding: '22px 26px 26px' }}>
-              <p style={{ fontSize: 14.5, color: '#334155', lineHeight: 1.55, margin: '0 0 16px' }}>
+              <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.5, margin: '0 0 16px' }}>
                 A report was submitted that could not be confidently identified by the AI system. Please review the details and decide whether to keep or reject this report.
               </p>
+
+              {/* Current Incident Meta Box */}
+              <div style={{
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: 14,
+                padding: '12px 16px',
+                marginBottom: 14,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Incident Flag
+                  </div>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+                    {currentUnrecognized.type || 'Unspecified Incident'}
+                  </div>
+                </div>
+                {unrecognizedQueue.length > 1 ? (
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, color: '#D97706',
+                    background: '#FEF3C7', padding: '4px 10px', borderRadius: 999,
+                    display: 'inline-flex', alignItems: 'center', gap: 4
+                  }}>
+                    <Layers size={11} /> +{unrecognizedQueue.length - 1} queued
+                  </span>
+                ) : (
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, color: '#64748B',
+                    background: '#E2E8F0', padding: '3px 8px', borderRadius: 6
+                  }}>
+                    ID: {currentUnrecognized.id.slice(0, 8)}
+                  </span>
+                )}
+              </div>
 
               {/* Light Blue Info Box */}
               <div style={{
@@ -495,7 +584,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                       {decidingIncident ? 'Processing...' : 'Reject Report'}
                     </span>
                     <span style={{ fontSize: 11, color: '#EF4444', marginTop: 2, fontWeight: 500 }}>
-                      Mark as invalid and archive
+                      {unrecognizedQueue.length > 1 ? `Reject & next (${unrecognizedQueue.length - 1} left)` : 'Mark as invalid & archive'}
                     </span>
                   </div>
                 </button>
@@ -531,11 +620,33 @@ export default function Header({ title, subtitle }: HeaderProps) {
                       {decidingIncident ? 'Processing...' : 'Keep for Review'}
                     </span>
                     <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', marginTop: 2, fontWeight: 500 }}>
-                      Add to review queue
+                      {unrecognizedQueue.length > 1 ? `Keep & next (${unrecognizedQueue.length - 1} left)` : 'Add to queue & open'}
                     </span>
                   </div>
                 </button>
               </div>
+
+              {/* Dismiss Option */}
+              {unrecognizedQueue.length > 1 && (
+                <div style={{ textAlign: 'center', marginTop: 14 }}>
+                  <button
+                    onClick={handleDismissQueue}
+                    disabled={decidingIncident}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748B',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Dismiss Queue (Review remaining in Requests table)
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

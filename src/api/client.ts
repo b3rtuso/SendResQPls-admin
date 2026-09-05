@@ -144,6 +144,8 @@ export const createAdmin = (data: { name: string; email: string; password: strin
   api.post('/auth/admin/create', data);
 export const toggleAdminStatus = (id: string) =>
   api.patch(`/auth/admin/${id}/deactivate`);
+export const deleteAdmin = (id: string) =>
+  api.delete(`/auth/admin/${id}`);
 
 // === CALL LOGS ===
 export const getCallLogs = (status?: string, search?: string) => {

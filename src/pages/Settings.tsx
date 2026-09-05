@@ -5,12 +5,12 @@ import Toast, { type ToastType } from '../components/Toast';
 import { 
   Save, Download, RefreshCw, Shield, Eye, EyeOff, 
   Activity, Loader2, User, KeyRound,
-  Users, UserPlus, UserCheck, UserX, X, Server
+  Users, UserPlus, UserCheck, UserX, X, Server, Trash2
 } from 'lucide-react';
 import { 
   getProfile, updateProfile, changePassword, 
   getIncidents, getDepartments,
-  listAdmins, createAdmin, toggleAdminStatus
+  listAdmins, createAdmin, toggleAdminStatus, deleteAdmin
 } from '../api/client';
 import { useConfirm } from '../context/ConfirmContext';
 import { detectFieldChanges } from '../utils/changeDetector';
@@ -63,6 +63,7 @@ export default function SettingsPage() {
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [creatingAdmin, setCreatingAdmin] = useState(false);
   const [togglingAdmin, setTogglingAdmin] = useState<string | null>(null);
+  const [deletingAdmin, setDeletingAdmin] = useState<string | null>(null);
   const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', phoneNumber: '' });
   
   const [toast, setToast] = useState<{ show: boolean; message: string; detail?: string; type: ToastType }>({
@@ -217,6 +218,34 @@ export default function SettingsPage() {
       showToast('error', 'Failed to Update Admin', err.response?.data?.error || 'Server error occurred.');
     } finally {
       setTogglingAdmin(null);
+    }
+  };
+
+  const handleDeleteAdmin = async (id: string, name: string) => {
+    if (id === localStorage.getItem('userId')) {
+      showToast('error', 'Not Allowed', 'You cannot delete your own account.');
+      return;
+    }
+
+    const isConfirmed = await confirm({
+      type: 'delete',
+      title: 'Delete Administrator',
+      message: `Are you sure you want to permanently delete the administrator account for ${name}?`,
+      detail: 'This will completely remove their credentials, contact information, and administrative privileges from the database. This action cannot be undone.',
+      confirmText: 'Delete Administrator',
+      cancelText: 'Cancel',
+    });
+    if (!isConfirmed) return;
+
+    setDeletingAdmin(id);
+    try {
+      await deleteAdmin(id);
+      setAdmins(prev => prev.filter(a => a.id !== id));
+      showToast('danger', 'Admin Deleted', `${name}'s administrator account and credentials have been permanently removed.`);
+    } catch (err: any) {
+      showToast('error', 'Failed to Delete Admin', err.response?.data?.error || 'Server error occurred.');
+    } finally {
+      setDeletingAdmin(null);
     }
   };
 
@@ -1099,27 +1128,49 @@ export default function SettingsPage() {
                           </td>
                           <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                             {!isSelf && (
-                              <button
-                                onClick={() => handleToggleAdmin(admin.id, admin.name)}
-                                disabled={togglingAdmin === admin.id}
-                                style={{
-                                  fontSize: 12, fontWeight: 700, padding: '5px 12px',
-                                  border: `1px solid ${admin.isActive ? '#FCA5A5' : '#BFDBFE'}`,
-                                  borderRadius: 7, cursor: 'pointer',
-                                  background: admin.isActive ? '#FEF2F2' : '#EFF6FF',
-                                  color: admin.isActive ? '#DC2626' : '#2563EB',
-                                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                                  fontFamily: 'inherit',
-                                }}
-                              >
-                                {togglingAdmin === admin.id ? (
-                                  <Loader2 size={12} className="spin" />
-                                ) : admin.isActive ? (
-                                  <><UserX size={12} /> Deactivate</>
-                                ) : (
-                                  <><UserCheck size={12} /> Reactivate</>
-                                )}
-                              </button>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                                <button
+                                  onClick={() => handleToggleAdmin(admin.id, admin.name)}
+                                  disabled={togglingAdmin === admin.id || deletingAdmin === admin.id}
+                                  style={{
+                                    fontSize: 12, fontWeight: 700, padding: '5px 12px',
+                                    border: `1px solid ${admin.isActive ? '#FCA5A5' : '#BFDBFE'}`,
+                                    borderRadius: 7, cursor: (togglingAdmin === admin.id || deletingAdmin === admin.id) ? 'not-allowed' : 'pointer',
+                                    background: admin.isActive ? '#FEF2F2' : '#EFF6FF',
+                                    color: admin.isActive ? '#DC2626' : '#2563EB',
+                                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                                    fontFamily: 'inherit',
+                                  }}
+                                >
+                                  {togglingAdmin === admin.id ? (
+                                    <Loader2 size={12} className="spin" />
+                                  ) : admin.isActive ? (
+                                    <><UserX size={12} /> Deactivate</>
+                                  ) : (
+                                    <><UserCheck size={12} /> Reactivate</>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteAdmin(admin.id, admin.name)}
+                                  disabled={togglingAdmin === admin.id || deletingAdmin === admin.id}
+                                  style={{
+                                    fontSize: 12, fontWeight: 700, padding: '5px 10px',
+                                    border: '1px solid #FECACA',
+                                    borderRadius: 7, cursor: (togglingAdmin === admin.id || deletingAdmin === admin.id) ? 'not-allowed' : 'pointer',
+                                    background: '#FEF2F2',
+                                    color: '#DC2626',
+                                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                                    fontFamily: 'inherit',
+                                  }}
+                                  title={`Permanently delete ${admin.name}`}
+                                >
+                                  {deletingAdmin === admin.id ? (
+                                    <Loader2 size={12} className="spin" />
+                                  ) : (
+                                    <><Trash2 size={12} /> Delete</>
+                                  )}
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>
