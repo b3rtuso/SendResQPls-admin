@@ -6,6 +6,7 @@ export interface ToastOptions {
   type?: ToastType;
   detail?: string;
   duration?: number;
+  icon?: React.ReactNode;
 }
 
 interface ToastContextValue {
@@ -49,6 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           message={toast.message}
           detail={toast.detail}
           duration={toast.duration}
+          icon={toast.icon}
           onClose={handleClose}
         />
       )}

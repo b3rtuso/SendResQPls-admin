@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, type ReactNode } from "react";
+import { IoIosSend } from "react-icons/io";
 
 export type ToastType = "simple" | "success" | "danger" | "error" | "warning" | "info" | "update";
 
@@ -10,6 +11,7 @@ export interface ToastProps {
   onClose: () => void;
   actionLabel?: string;
   onAction?: () => void;
+  icon?: ReactNode;
 }
 
 export default function Toast({
@@ -20,12 +22,19 @@ export default function Toast({
   onClose,
   actionLabel,
   onAction,
+  icon,
 }: ToastProps) {
   const [phase, setPhase] = useState<"enter" | "visible" | "exit">("enter");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isDanger = type === "error" || type === "danger";
   const isWarning = type === "warning";
+  const isReportSent = Boolean(
+    !isDanger && !isWarning && (
+      (message && message.toLowerCase().includes("report") && (message.toLowerCase().includes("sent") || message.toLowerCase().includes("submitted"))) ||
+      (detail && detail.toLowerCase().includes("report") && (detail.toLowerCase().includes("sent") || detail.toLowerCase().includes("submitted")))
+    )
+  );
   const isUpdate = type === "update" || (
     !isDanger && !isWarning && (
       message.toLowerCase().includes("update") ||
@@ -226,7 +235,39 @@ export default function Toast({
       }}
     >
       {/* Brand Icon */}
-      {isSuccess ? (
+      {icon ? (
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            background: "#DCFCE7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            color: "#16A34A",
+          }}
+        >
+          {icon}
+        </div>
+      ) : isReportSent ? (
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            background: "#DCFCE7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            color: "#16A34A",
+          }}
+        >
+          <IoIosSend size={18} />
+        </div>
+      ) : isSuccess ? (
         <div
           style={{
             width: 30,
@@ -283,23 +324,10 @@ export default function Toast({
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
+            color: "#2563EB",
           }}
         >
-          <svg
-            style={{ width: 17, height: 17, color: "#2563EB" }}
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="m12 18-7 3 7-18 7 18-7-3Zm0 0v-5"
-            />
-          </svg>
+          <IoIosSend size={18} />
         </div>
       )}
 
