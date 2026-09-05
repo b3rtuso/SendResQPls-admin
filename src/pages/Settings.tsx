@@ -213,7 +213,7 @@ export default function SettingsPage() {
       const res = await toggleAdminStatus(id);
       setAdmins(prev => prev.map(a => a.id === id ? { ...a, isActive: res.data.admin.isActive } : a));
       const action = res.data.admin.isActive ? 'reactivated' : 'deactivated';
-      showToast('danger', `Admin ${action.charAt(0).toUpperCase() + action.slice(1)}`, `${name}'s access has been ${action}.`);
+      showToast(res.data.admin.isActive ? 'success' : 'danger', `Admin ${action.charAt(0).toUpperCase() + action.slice(1)}`, `${name}'s access has been ${action}.`);
     } catch (err: any) {
       showToast('error', 'Failed to Update Admin', err.response?.data?.error || 'Server error occurred.');
     } finally {
@@ -374,7 +374,7 @@ export default function SettingsPage() {
         newPassword
       });
       
-      showToast('danger', 'Security Alert: Password Updated', 'Your administrator credentials have been changed.');
+      showToast('success', 'Password Updated', 'Your administrator credentials have been changed successfully.');
       setPasswordForm({
         currentPassword: '',
         newPassword: '',

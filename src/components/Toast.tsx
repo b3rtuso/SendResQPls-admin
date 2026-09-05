@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 
-export type ToastType = "simple" | "success" | "danger" | "error" | "warning" | "info";
+export type ToastType = "simple" | "success" | "danger" | "error" | "warning" | "info" | "update";
 
 export interface ToastProps {
   message: string;
@@ -25,8 +25,15 @@ export default function Toast({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isDanger = type === "error" || type === "danger";
-  const isSuccess = type === "success";
   const isWarning = type === "warning";
+  const isUpdate = type === "update" || (
+    !isDanger && !isWarning && (
+      message.toLowerCase().includes("update") ||
+      message.toLowerCase().includes("updated") ||
+      Boolean(detail && detail.toLowerCase().includes("updated"))
+    )
+  );
+  const isSuccess = type === "success" || isUpdate;
 
   useEffect(() => {
     const enterTimer = setTimeout(() => setPhase("visible"), 16);

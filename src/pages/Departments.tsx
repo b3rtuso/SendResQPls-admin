@@ -224,7 +224,7 @@ export default function Departments() {
       // If nothing changed -> do not unnecessarily submit/update
       if (changes.length === 0) {
         showToast({
-          type: 'danger',
+          type: 'info',
           message: 'No Changes Detected',
           detail: 'No specifications were modified. The department data is already up to date.',
         });
@@ -253,14 +253,14 @@ export default function Departments() {
         // After successful save, new values become the new saved/original values
         setOriginalDept({ ...editingDept, ...payload });
         showToast({
-          type: 'danger',
+          type: 'success',
           message: `Department Updated: ${payload.name}`,
           detail: `Specifications and responders for ${payload.name} were modified.`,
         });
       } else {
         await createDepartment(payload);
         showToast({
-          type: 'danger',
+          type: 'success',
           message: `Department Created: ${payload.name}`,
           detail: `New emergency response unit ${payload.name} was successfully registered.`,
         });

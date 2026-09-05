@@ -211,7 +211,7 @@ export default function RequestDetails() {
       }
       showToast(
         'success',
-        `Status updated to ${status} 📱`,
+        `Status updated to ${status}`,
         `Incident ${(id || incident?.id || '').slice(0, 8)}... marked as ${status}. Push notification sent to the reporter's mobile app.`
       );
       loadIncident(false);
