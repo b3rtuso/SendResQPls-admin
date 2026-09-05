@@ -164,15 +164,63 @@ export default function Dashboard() {
   const [showComputationModal, setShowComputationModal] = useState(false);
   const [carouselSlide, setCarouselSlide] = useState<0 | 1>(0); // 0 = Forecast, 1 = Top Locations
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const pointerStartX = useRef<number | null>(null);
+  const isPointerDownRef = useRef(false);
 
-  // Auto-advance carousel every 8 seconds when not hovered
+  // Auto-advance carousel every 8 seconds when not hovered and not dragging
   useEffect(() => {
-    if (isCarouselHovered) return;
+    if (isCarouselHovered || isDragging) return;
     const timer = setInterval(() => {
       setCarouselSlide(prev => (prev === 0 ? 1 : 0));
     }, 8000);
     return () => clearInterval(timer);
-  }, [isCarouselHovered]);
+  }, [isCarouselHovered, isDragging]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    pointerStartX.current = e.clientX;
+    isPointerDownRef.current = true;
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPointerDownRef.current || pointerStartX.current === null) return;
+    const delta = e.clientX - pointerStartX.current;
+    if ((carouselSlide === 0 && delta > 0) || (carouselSlide === 1 && delta < 0)) {
+      setDragOffset(delta * 0.25);
+    } else {
+      setDragOffset(delta);
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isPointerDownRef.current && pointerStartX.current !== null) {
+      if (dragOffset < -45 && carouselSlide === 0) {
+        setCarouselSlide(1);
+      } else if (dragOffset > 45 && carouselSlide === 1) {
+        setCarouselSlide(0);
+      }
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch { /* ignore */ }
+    }
+    pointerStartX.current = null;
+    isPointerDownRef.current = false;
+    setIsDragging(false);
+    setDragOffset(0);
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch { /* ignore */ }
+    pointerStartX.current = null;
+    isPointerDownRef.current = false;
+    setIsDragging(false);
+    setDragOffset(0);
+  };
 
   // Live operational clock & dynamic dispatcher greeting
   const [time, setTime] = useState(new Date());
@@ -501,199 +549,286 @@ export default function Dashboard() {
                     </span>
                   )}
 
-                  {/* Navigation Arrows & Dots */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <button
-                      onClick={() => setCarouselSlide(prev => (prev === 0 ? 1 : 0))}
+                  {/* Slide Indicator Dots */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 2px' }}>
+                    <span
+                      onClick={() => setCarouselSlide(0)}
                       style={{
-                        width: 28, height: 28, borderRadius: '50%',
-                        border: '1px solid #E2E8F0', background: '#F8FAFC',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#475569', cursor: 'pointer',
-                        transition: 'all 0.15s ease',
+                        width: carouselSlide === 0 ? 16 : 6, height: 6,
+                        borderRadius: 999,
+                        background: carouselSlide === 0 ? '#2563EB' : '#CBD5E1',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
                       }}
-                      title="Previous slide"
-                    >
-                      <ChevronLeft size={15} />
-                    </button>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 2px' }}>
-                      <span
-                        onClick={() => setCarouselSlide(0)}
-                        style={{
-                          width: carouselSlide === 0 ? 16 : 6, height: 6,
-                          borderRadius: 999,
-                          background: carouselSlide === 0 ? '#2563EB' : '#CBD5E1',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                        }}
-                      />
-                      <span
-                        onClick={() => setCarouselSlide(1)}
-                        style={{
-                          width: carouselSlide === 1 ? 16 : 6, height: 6,
-                          borderRadius: 999,
-                          background: carouselSlide === 1 ? '#2563EB' : '#CBD5E1',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                        }}
-                      />
-                    </div>
-
-                    <button
-                      onClick={() => setCarouselSlide(prev => (prev === 0 ? 1 : 0))}
+                      title="Incident Risk Forecast"
+                    />
+                    <span
+                      onClick={() => setCarouselSlide(1)}
                       style={{
-                        width: 28, height: 28, borderRadius: '50%',
-                        border: '1px solid #E2E8F0', background: '#F8FAFC',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#475569', cursor: 'pointer',
-                        transition: 'all 0.15s ease',
+                        width: carouselSlide === 1 ? 16 : 6, height: 6,
+                        borderRadius: 999,
+                        background: carouselSlide === 1 ? '#2563EB' : '#CBD5E1',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
                       }}
-                      title="Next slide"
-                    >
-                      <ChevronRight size={15} />
-                    </button>
+                      title="Top Incident Locations"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Carousel Content Slides */}
-              {carouselSlide === 0 ? (
-                /* Slide 1: Incident Risk Forecast */
-                <div className="forecast-hero-card" style={{
-                  background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
-                  borderRadius: 18,
-                  padding: '22px 28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 24,
-                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(15, 41, 66, 0.25)',
-                  minHeight: 148,
-                  animation: 'fadeIn 0.25s ease',
-                }}>
-                  {/* Left Content Column */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, flex: 1 }}>
-                    <span style={{
-                      background: '#FFFFFF',
-                      color: '#0F2942',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      padding: '4px 16px',
-                      borderRadius: 9999,
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                    }}>
-                      {currentMonthName}
-                    </span>
-
-                    <div style={{
-                      fontSize: 18,
-                      fontWeight: 400,
-                      color: '#FFFFFF',
-                      lineHeight: 1.4,
-                      fontStyle: 'italic',
-                    }}>
-                      The incident most likely to occur this month is <strong style={{ fontWeight: 800, fontStyle: 'normal', textDecoration: 'underline', textUnderlineOffset: '4px' }}>{forecast?.type || 'Trauma'} Emergency</strong>.
-                    </div>
-                  </div>
-
-                  {/* Right Content Column: Donut Chart Indicator */}
-                  <div style={{
-                    position: 'relative',
-                    width: 104,
-                    height: 104,
+              {/* Carousel Content: Left End Arrow + Swipe Track + Right End Arrow */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                position: 'relative',
+              }}>
+                {/* Left Arrow at the Left End of Component */}
+                <button
+                  type="button"
+                  onClick={() => setCarouselSlide(prev => (prev === 0 ? 1 : 0))}
+                  aria-label="Previous slide"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    border: '1px solid #E2E8F0',
+                    background: '#FFFFFF',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    color: '#334155',
+                    cursor: 'pointer',
                     flexShrink: 0,
-                  }}>
-                    <svg width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="52" cy="52" r="42" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="8" />
-                      <circle cx="52" cy="52" r="42" fill="none" stroke="#FFFFFF" strokeWidth="8" strokeDasharray="263.89" strokeDashoffset="86" strokeLinecap="round" />
-                    </svg>
-                    <div style={{
-                      position: 'absolute',
+                    transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.borderColor = '#93C5FD';
+                    e.currentTarget.style.color = '#2563EB';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.18)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.borderColor = '#E2E8F0';
+                    e.currentTarget.style.color = '#334155';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                  }}
+                  title="Previous slide"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+
+                {/* Sliding Viewport with Touch/Pointer Drag Gestures */}
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    borderRadius: 18,
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    userSelect: 'none',
+                    touchAction: 'pan-y',
+                  }}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerCancel}
+                >
+                  {/* 2-Slide Track with Horizontal Swipe Transition */}
+                  <div
+                    style={{
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      textAlign: 'center',
-                      lineHeight: 1,
-                      pointerEvents: 'none',
-                    }}>
-                      <span style={{
-                        fontSize: 22,
-                        fontWeight: 900,
-                        color: '#FFFFFF',
-                        fontStyle: 'italic',
-                        lineHeight: 1,
+                      width: '200%',
+                      transform: `translateX(calc(-${carouselSlide * 50}% + ${dragOffset}px))`,
+                      transition: isDragging ? 'none' : 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)',
+                      willChange: 'transform',
+                    }}
+                  >
+                    {/* Slide 0: Incident Risk Forecast */}
+                    <div style={{ width: '50%', flexShrink: 0, boxSizing: 'border-box' }}>
+                      <div className="forecast-hero-card" style={{
+                        background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
+                        borderRadius: 18,
+                        padding: '22px 28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 24,
+                        boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(15, 41, 66, 0.25)',
+                        minHeight: 148,
+                        boxSizing: 'border-box',
+                        height: '100%',
                       }}>
-                        {predictedCount}
-                      </span>
-                      <span style={{
-                        fontSize: 8.5,
-                        fontWeight: 800,
-                        color: 'rgba(255, 255, 255, 0.85)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                        marginTop: 3,
+                        {/* Left Content Column */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, flex: 1 }}>
+                          <span style={{
+                            background: '#FFFFFF',
+                            color: '#0F2942',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            padding: '4px 16px',
+                            borderRadius: 9999,
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                          }}>
+                            {currentMonthName}
+                          </span>
+
+                          <div style={{
+                            fontSize: 18,
+                            fontWeight: 400,
+                            color: '#FFFFFF',
+                            lineHeight: 1.4,
+                            fontStyle: 'italic',
+                          }}>
+                            The incident most likely to occur this month is <strong style={{ fontWeight: 800, fontStyle: 'normal', textDecoration: 'underline', textUnderlineOffset: '4px' }}>{forecast?.type || 'Trauma'} Emergency</strong>.
+                          </div>
+                        </div>
+
+                        {/* Right Content Column: Donut Chart Indicator */}
+                        <div style={{
+                          position: 'relative',
+                          width: 104,
+                          height: 104,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          <svg width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
+                            <circle cx="52" cy="52" r="42" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="8" />
+                            <circle cx="52" cy="52" r="42" fill="none" stroke="#FFFFFF" strokeWidth="8" strokeDasharray="263.89" strokeDashoffset="86" strokeLinecap="round" />
+                          </svg>
+                          <div style={{
+                            position: 'absolute',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            lineHeight: 1,
+                            pointerEvents: 'none',
+                          }}>
+                            <span style={{
+                              fontSize: 22,
+                              fontWeight: 900,
+                              color: '#FFFFFF',
+                              fontStyle: 'italic',
+                              lineHeight: 1,
+                            }}>
+                              {predictedCount}
+                            </span>
+                            <span style={{
+                              fontSize: 8.5,
+                              fontWeight: 800,
+                              color: 'rgba(255, 255, 255, 0.85)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.06em',
+                              marginTop: 3,
+                            }}>
+                              incidents
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Slide 1: Top Incident Locations */}
+                    <div style={{ width: '50%', flexShrink: 0, boxSizing: 'border-box' }}>
+                      <div style={{
+                        background: '#F8FAFC',
+                        borderRadius: 18,
+                        padding: '16px 20px',
+                        border: '1px solid #E2E8F0',
+                        minHeight: 148,
+                        boxSizing: 'border-box',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
                       }}>
-                        incidents
-                      </span>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, width: '100%' }}>
+                          {topLocations.map((loc, i) => {
+                            const maxCount = topLocations[0]?.count || 1;
+                            const pct = Math.round((loc.count / maxCount) * 100);
+                            const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
+                            const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';
+                            return (
+                              <div key={loc.name} style={{
+                                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                                background: badgeBg,
+                                borderRadius: 10, border: `1px solid ${i < 3 ? `${badgeColor}33` : '#E2E8F0'}`,
+                                transition: 'all 0.15s ease',
+                              }}>
+                                <div style={{
+                                  width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: 11, fontWeight: 800, color: 'white', background: badgeColor, flexShrink: 0,
+                                }}>
+                                  {i + 1}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {loc.name}
+                                  </div>
+                                  <div style={{ height: 4, width: '100%', background: '#E2E8F0', borderRadius: 2, marginTop: 5, overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${pct}%`, background: badgeColor, borderRadius: 2 }} />
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                  <div style={{ fontSize: 14, fontWeight: 900, color: i < 3 ? badgeColor : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                                    {loc.count}
+                                  </div>
+                                  <div style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>
+                                    Incidents
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ) : (
-                /* Slide 2: Top Incident Locations */
-                <div style={{
-                  background: '#F8FAFC',
-                  borderRadius: 18,
-                  padding: '16px 20px',
-                  border: '1px solid #E2E8F0',
-                  minHeight: 148,
-                  animation: 'fadeIn 0.25s ease',
-                }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
-                    {topLocations.map((loc, i) => {
-                      const maxCount = topLocations[0]?.count || 1;
-                      const pct = Math.round((loc.count / maxCount) * 100);
-                      const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
-                      const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';
-                      return (
-                        <div key={loc.name} style={{
-                          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                          background: badgeBg,
-                          borderRadius: 10, border: `1px solid ${i < 3 ? `${badgeColor}33` : '#E2E8F0'}`,
-                          transition: 'all 0.15s ease',
-                        }}>
-                          <div style={{
-                            width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 800, color: 'white', background: badgeColor, flexShrink: 0,
-                          }}>
-                            {i + 1}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {loc.name}
-                            </div>
-                            <div style={{ height: 4, width: '100%', background: '#E2E8F0', borderRadius: 2, marginTop: 5, overflow: 'hidden' }}>
-                              <div style={{ height: '100%', width: `${pct}%`, background: badgeColor, borderRadius: 2 }} />
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: 14, fontWeight: 900, color: i < 3 ? badgeColor : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
-                              {loc.count}
-                            </div>
-                            <div style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>
-                              Incidents
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+
+                {/* Right Arrow at the Right End of Component */}
+                <button
+                  type="button"
+                  onClick={() => setCarouselSlide(prev => (prev === 0 ? 1 : 0))}
+                  aria-label="Next slide"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    border: '1px solid #E2E8F0',
+                    background: '#FFFFFF',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#334155',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.borderColor = '#93C5FD';
+                    e.currentTarget.style.color = '#2563EB';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.18)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.borderColor = '#E2E8F0';
+                    e.currentTarget.style.color = '#334155';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                  }}
+                  title="Next slide"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
             </div>
           );
         })()}
