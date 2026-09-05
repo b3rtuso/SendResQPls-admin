@@ -162,19 +162,22 @@ export default function Dashboard() {
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
   const [showComputationModal, setShowComputationModal] = useState(false);
-  const [carouselSlide, setCarouselSlide] = useState<0 | 1>(0); // 0 = Forecast, 1 = Top Locations
+  const [rotationDeg, setRotationDeg] = useState(0); // 3D Circular Loop Carousel rotation in degrees
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const pointerStartX = useRef<number | null>(null);
   const isPointerDownRef = useRef(false);
 
-  // Auto-advance carousel every 5 seconds when not hovered and not dragging
+  // Derived active slide index (0 = Forecast, 1 = Top Locations)
+  const activeSlide = (Math.round(Math.abs(rotationDeg / 180)) % 2) as 0 | 1;
+
+  // Auto-advance carousel in continuous circular loop every 6 seconds when not hovered and not dragging
   useEffect(() => {
     if (isCarouselHovered || isDragging) return;
     const timer = setInterval(() => {
-      setCarouselSlide(prev => (prev === 0 ? 1 : 0));
-    }, 5000);
+      setRotationDeg(prev => prev - 180);
+    }, 6000);
     return () => clearInterval(timer);
   }, [isCarouselHovered, isDragging]);
 
@@ -188,19 +191,17 @@ export default function Dashboard() {
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isPointerDownRef.current || pointerStartX.current === null) return;
     const delta = e.clientX - pointerStartX.current;
-    if ((carouselSlide === 0 && delta > 0) || (carouselSlide === 1 && delta < 0)) {
-      setDragOffset(delta * 0.25);
-    } else {
-      setDragOffset(delta);
-    }
+    setDragOffset(delta);
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isPointerDownRef.current && pointerStartX.current !== null) {
-      if (dragOffset < -45 && carouselSlide === 0) {
-        setCarouselSlide(1);
-      } else if (dragOffset > 45 && carouselSlide === 1) {
-        setCarouselSlide(0);
+      if (dragOffset < -40) {
+        // Swiped left -> revolve forward in circular loop
+        setRotationDeg(prev => prev - 180);
+      } else if (dragOffset > 40) {
+        // Swiped right -> revolve backward in circular loop
+        setRotationDeg(prev => prev + 180);
       }
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -475,7 +476,7 @@ export default function Dashboard() {
                 {/* Left Switcher Pills */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', padding: 3, borderRadius: 12 }}>
                   <button
-                    onClick={() => setCarouselSlide(0)}
+                    onClick={() => { if (activeSlide !== 0) setRotationDeg(prev => prev - 180); }}
                     style={{
                       padding: '6px 14px',
                       borderRadius: 9,
@@ -483,9 +484,9 @@ export default function Dashboard() {
                       fontSize: 12.5,
                       fontWeight: 700,
                       cursor: 'pointer',
-                      background: carouselSlide === 0 ? '#FFFFFF' : 'transparent',
-                      color: carouselSlide === 0 ? '#1E3A5F' : '#64748B',
-                      boxShadow: carouselSlide === 0 ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                      background: activeSlide === 0 ? '#FFFFFF' : 'transparent',
+                      color: activeSlide === 0 ? '#1E3A5F' : '#64748B',
+                      boxShadow: activeSlide === 0 ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
                       transition: 'all 0.15s ease',
                       fontFamily: 'inherit',
                       display: 'flex',
@@ -493,12 +494,12 @@ export default function Dashboard() {
                       gap: 6,
                     }}
                   >
-                    <TrendingUp size={13} style={{ color: carouselSlide === 0 ? '#2563EB' : '#94A3B8' }} />
+                    <TrendingUp size={13} style={{ color: activeSlide === 0 ? '#2563EB' : '#94A3B8' }} />
                     <span>Incident Risk Forecast</span>
                   </button>
 
                   <button
-                    onClick={() => setCarouselSlide(1)}
+                    onClick={() => { if (activeSlide !== 1) setRotationDeg(prev => prev - 180); }}
                     style={{
                       padding: '6px 14px',
                       borderRadius: 9,
@@ -506,9 +507,9 @@ export default function Dashboard() {
                       fontSize: 12.5,
                       fontWeight: 700,
                       cursor: 'pointer',
-                      background: carouselSlide === 1 ? '#FFFFFF' : 'transparent',
-                      color: carouselSlide === 1 ? '#1E3A5F' : '#64748B',
-                      boxShadow: carouselSlide === 1 ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                      background: activeSlide === 1 ? '#FFFFFF' : 'transparent',
+                      color: activeSlide === 1 ? '#1E3A5F' : '#64748B',
+                      boxShadow: activeSlide === 1 ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
                       transition: 'all 0.15s ease',
                       fontFamily: 'inherit',
                       display: 'flex',
@@ -516,14 +517,14 @@ export default function Dashboard() {
                       gap: 6,
                     }}
                   >
-                    <FaLocationDot size={12} style={{ color: carouselSlide === 1 ? '#2563EB' : '#94A3B8' }} />
+                    <FaLocationDot size={12} style={{ color: activeSlide === 1 ? '#2563EB' : '#94A3B8' }} />
                     <span>Top Incident Locations</span>
                   </button>
                 </div>
 
                 {/* Right Carousel Controls: Detail link / count badge + Arrows & Dots */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  {carouselSlide === 0 ? (
+                  {activeSlide === 0 ? (
                     <button
                       onClick={() => setShowComputationModal(true)}
                       style={{
@@ -551,17 +552,17 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Carousel Content: Left End Arrow + Swipe Track + Right End Arrow */}
+              {/* Carousel Content: Left End Arrow + 3D Revolving Circular Carousel Cylinder + Right End Arrow */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
                 position: 'relative',
               }}>
-                {/* Left Arrow at the Left End of Component */}
+                {/* Left Arrow at the Left End of Component (Revolves backward along circle) */}
                 <button
                   type="button"
-                  onClick={() => setCarouselSlide(prev => (prev === 0 ? 1 : 0))}
+                  onClick={() => setRotationDeg(prev => prev + 180)}
                   aria-label="Previous slide"
                   style={{
                     width: 36,
@@ -577,6 +578,7 @@ export default function Dashboard() {
                     cursor: 'pointer',
                     flexShrink: 0,
                     transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                    zIndex: 5,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'scale(1.1)';
@@ -590,16 +592,18 @@ export default function Dashboard() {
                     e.currentTarget.style.color = '#334155';
                     e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
                   }}
-                  title="Previous slide"
+                  title="Previous slide (Circular Loop)"
                 >
                   <ChevronLeft size={18} />
                 </button>
 
-                {/* Sliding Viewport with Touch/Pointer Drag Gestures */}
+                {/* 3D Circular Revolving Stage with Touch/Pointer Drag Gestures */}
                 <div
                   style={{
                     flex: 1,
                     minWidth: 0,
+                    perspective: '1400px',
+                    perspectiveOrigin: '50% 50%',
                     overflow: 'hidden',
                     borderRadius: 18,
                     cursor: isDragging ? 'grabbing' : 'grab',
@@ -611,18 +615,31 @@ export default function Dashboard() {
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerCancel}
                 >
-                  {/* 2-Slide Track with Horizontal Swipe Transition */}
+                  {/* 3D Revolving Cylinder Ring */}
                   <div
                     style={{
-                      display: 'flex',
-                      width: '200%',
-                      transform: `translateX(calc(-${carouselSlide * 50}% + ${dragOffset}px))`,
-                      transition: isDragging ? 'none' : 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)',
+                      display: 'grid',
+                      gridTemplateAreas: '"card"',
+                      width: '100%',
+                      transformStyle: 'preserve-3d',
+                      transform: `rotateY(${rotationDeg + (dragOffset * 0.18)}deg)`,
+                      transition: isDragging ? 'none' : 'transform 0.68s cubic-bezier(0.2, 0.9, 0.3, 1)',
                       willChange: 'transform',
                     }}
                   >
-                    {/* Slide 0: Incident Risk Forecast */}
-                    <div style={{ width: '50%', flexShrink: 0, boxSizing: 'border-box' }}>
+                    {/* Slide 0: Incident Risk Forecast (Face at 0deg) */}
+                    <div
+                      style={{
+                        gridArea: 'card',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                        transform: 'rotateY(0deg) translateZ(40px)',
+                        transformStyle: 'preserve-3d',
+                        pointerEvents: activeSlide === 0 ? 'auto' : 'none',
+                      }}
+                    >
                       <div className="forecast-hero-card" style={{
                         background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
                         borderRadius: 18,
@@ -709,8 +726,19 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {/* Slide 1: Top Incident Locations */}
-                    <div style={{ width: '50%', flexShrink: 0, boxSizing: 'border-box' }}>
+                    {/* Slide 1: Top Incident Locations (Face at 180deg) */}
+                    <div
+                      style={{
+                        gridArea: 'card',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                        transform: 'rotateY(180deg) translateZ(40px)',
+                        transformStyle: 'preserve-3d',
+                        pointerEvents: activeSlide === 1 ? 'auto' : 'none',
+                      }}
+                    >
                       <div style={{
                         background: '#F8FAFC',
                         borderRadius: 18,
@@ -722,7 +750,7 @@ export default function Dashboard() {
                         display: 'flex',
                         alignItems: 'center',
                       }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, width: '100%' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, width: '100%' }}>
                           {topLocations.map((loc, i) => {
                             const maxCount = topLocations[0]?.count || 1;
                             const pct = Math.round((loc.count / maxCount) * 100);
@@ -766,10 +794,10 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Right Arrow at the Right End of Component */}
+                {/* Right Arrow at the Right End of Component (Revolves forward along circle) */}
                 <button
                   type="button"
-                  onClick={() => setCarouselSlide(prev => (prev === 0 ? 1 : 0))}
+                  onClick={() => setRotationDeg(prev => prev - 180)}
                   aria-label="Next slide"
                   style={{
                     width: 36,
@@ -785,6 +813,7 @@ export default function Dashboard() {
                     cursor: 'pointer',
                     flexShrink: 0,
                     transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                    zIndex: 5,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'scale(1.1)';
@@ -798,7 +827,7 @@ export default function Dashboard() {
                     e.currentTarget.style.color = '#334155';
                     e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
                   }}
-                  title="Next slide"
+                  title="Next slide (Circular Loop)"
                 >
                   <ChevronRight size={18} />
                 </button>
@@ -814,7 +843,7 @@ export default function Dashboard() {
               }}>
                 <button
                   type="button"
-                  onClick={() => setCarouselSlide(0)}
+                  onClick={() => { if (activeSlide !== 0) setRotationDeg(prev => prev - 180); }}
                   aria-label="Slide 1: Incident Risk Forecast"
                   title="Incident Risk Forecast"
                   style={{
@@ -823,15 +852,15 @@ export default function Dashboard() {
                     borderRadius: '50%',
                     padding: 0,
                     border: 'none',
-                    background: carouselSlide === 0 ? '#2563EB' : '#CBD5E1',
+                    background: activeSlide === 0 ? '#2563EB' : '#CBD5E1',
                     cursor: 'pointer',
                     transition: 'background 0.2s ease',
-                    boxShadow: carouselSlide === 0 ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : 'none',
+                    boxShadow: activeSlide === 0 ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : 'none',
                   }}
                 />
                 <button
                   type="button"
-                  onClick={() => setCarouselSlide(1)}
+                  onClick={() => { if (activeSlide !== 1) setRotationDeg(prev => prev - 180); }}
                   aria-label="Slide 2: Top Incident Locations"
                   title="Top Incident Locations"
                   style={{
@@ -840,10 +869,10 @@ export default function Dashboard() {
                     borderRadius: '50%',
                     padding: 0,
                     border: 'none',
-                    background: carouselSlide === 1 ? '#2563EB' : '#CBD5E1',
+                    background: activeSlide === 1 ? '#2563EB' : '#CBD5E1',
                     cursor: 'pointer',
                     transition: 'background 0.2s ease',
-                    boxShadow: carouselSlide === 1 ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : 'none',
+                    boxShadow: activeSlide === 1 ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : 'none',
                   }}
                 />
               </div>
