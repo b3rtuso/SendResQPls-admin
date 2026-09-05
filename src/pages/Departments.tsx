@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import { DepartmentsSkeleton } from '../components/PageLoader';
 import {
-  Users, Search, Anchor, Copy, Check, Info,
+  Users, Search, Ambulance, Copy, Check, Info,
   Plus, Edit2, Trash2,
 } from 'lucide-react';
 import { FaFire } from 'react-icons/fa6';
@@ -36,7 +36,7 @@ const DEPT_THEME: Record<string, { icon: any; color: string; bg: string }> = {
   PNP: { icon: GiPoliceOfficerHead, color: '#3B82F6', bg: '#EFF6FF' },
   MEDICAL: { icon: FaBriefcaseMedical, color: '#22C55E', bg: '#ECFDF5' },
   ENGINEERING: { icon: MdEngineering, color: '#F59E0B', bg: '#FEFCE8' },
-  RESCUE: { icon: Anchor, color: '#8B5CF6', bg: '#F5F3FF' },
+  RESCUE: { icon: Ambulance, color: '#8B5CF6', bg: '#F5F3FF' },
 };
 
 const getDeptTheme = (name: string) => {

@@ -56,8 +56,9 @@ const STATUS_ORDER: Status[] = ['PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED'
 /** Returns which statuses are allowed from the current status */
 function getAvailableStatuses(current: Status): Status[] {
   // If already at a terminal state, nothing is available
-  if (current === 'RESOLVED' || current === 'REJECTED') return [];
+  if (!current || current === 'RESOLVED' || current === 'REJECTED') return [];
   const idx = STATUS_ORDER.indexOf(current);
+  if (idx === -1) return [];
   // Can only move forward (next steps) + REJECTED from any non-terminal state
   const forward = STATUS_ORDER.slice(idx + 1);
   return [...forward, 'REJECTED'];
@@ -190,15 +191,16 @@ export default function RequestDetails() {
 
     try {
       const res = await updateIncidentStatus(id!, { status, resolutionForm });
-      if (res?.data) {
-        setIncident(res.data);
-        setCurrentStatus(res.data.status);
-        setNotes(res.data.adminNotes || '');
+      const updatedIncident = (res?.data as any)?.updated || res?.data;
+      if (updatedIncident && updatedIncident.id) {
+        setIncident((prev) => prev ? { ...prev, ...updatedIncident } : updatedIncident);
+        setCurrentStatus(updatedIncident.status || status);
+        setNotes(updatedIncident.adminNotes || '');
       }
       showToast(
         'success',
         `Status updated to ${status} 📱`,
-        `Incident ${id?.slice(0, 8)}... marked as ${status}. Push notification sent to the reporter's mobile app.`
+        `Incident ${(id || incident?.id || '').slice(0, 8)}... marked as ${status}. Push notification sent to the reporter's mobile app.`
       );
       loadIncident(false);
     } catch {
@@ -248,9 +250,10 @@ export default function RequestDetails() {
 
     try {
       const res = await updateIncidentStatus(id!, { status: currentStatus, adminNotes: notes });
-      if (res?.data) {
-        setIncident(res.data);
-        setNotes(res.data.adminNotes || '');
+      const updatedIncident = (res?.data as any)?.updated || res?.data;
+      if (updatedIncident && updatedIncident.id) {
+        setIncident((prev) => prev ? { ...prev, ...updatedIncident } : updatedIncident);
+        setNotes(updatedIncident.adminNotes || '');
       }
       showToast('success', 'Notes saved', 'Admin notes have been updated successfully.');
       loadIncident(false);
@@ -293,8 +296,9 @@ export default function RequestDetails() {
     try {
       const res = await updateIncidentStatus(id!, { assignedDepartment: deptKey });
       const dept = departments.find(d => d.key === deptKey);
-      if (res?.data) {
-        setIncident(res.data);
+      const updatedIncident = (res?.data as any)?.updated || res?.data;
+      if (updatedIncident && updatedIncident.id) {
+        setIncident((prev) => prev ? { ...prev, ...updatedIncident } : updatedIncident);
       }
       showToast('success', `Department assigned: ${dept?.name}`, `Contact: ${dept?.contact} — You can now call them directly.`);
       loadIncident(false);
@@ -371,7 +375,7 @@ export default function RequestDetails() {
 
   return (
     <>
-      <Header title={`Request ${incident.id.slice(0, 8)}...`} subtitle="Review incident details and update status" />
+      <Header title={`Request ${(incident?.id || id || '').slice(0, 8)}...`} subtitle="Review incident details and update status" />
       <div className="page-content">
         {toast.show && (
           <Toast
@@ -599,7 +603,7 @@ export default function RequestDetails() {
                   </div>
                   <div className="dept-detail">
                     <User size={16} />
-                    <strong>Reporter:</strong> {incident.reporter?.name || 'Unknown'} ({incident.reporter?.email || incident.reporterId.slice(0, 8) + '...'})
+                    <strong>Reporter:</strong> {incident.reporter?.name || 'Unknown'} ({incident.reporter?.email || (incident.reporterId ? incident.reporterId.slice(0, 8) + '...' : 'Unknown')})
                   </div>
                     {incident.reporter?.phoneNumber && (
                       <div className="dept-detail">

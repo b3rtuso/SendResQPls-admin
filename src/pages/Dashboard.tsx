@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
-  AlertTriangle, RefreshCw, ArrowRight, Anchor,
+  AlertTriangle, RefreshCw, ArrowRight, Ambulance,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info, Clock,
+  Info, Clock, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { TbReport } from 'react-icons/tb';
 import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
@@ -29,7 +29,7 @@ const DEPARTMENTS = [
   { label: 'PNP',         sub: 'Philippine National Police', icon: GiPoliceOfficerHead, color: '#3B82F6', bg: '#EFF6FF', tel: 'tel:(043) 211-4325' },
   { label: 'Medical',     sub: 'EMS / Health Services',      icon: FaBriefcaseMedical,  color: '#22C55E', bg: '#ECFDF5', tel: 'tel:(043) 911-0012' },
   { label: 'Engineering', sub: 'Public Works & Infra',       icon: MdEngineering,       color: '#F59E0B', bg: '#FEFCE8', tel: 'tel:(043) 211-5678' },
-  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Anchor,              color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
+  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Ambulance,          color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
 ];
 
 const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }> = {
@@ -162,6 +162,17 @@ export default function Dashboard() {
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
   const [showComputationModal, setShowComputationModal] = useState(false);
+  const [carouselSlide, setCarouselSlide] = useState<0 | 1>(0); // 0 = Forecast, 1 = Top Locations
+  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+
+  // Auto-advance carousel every 8 seconds when not hovered
+  useEffect(() => {
+    if (isCarouselHovered) return;
+    const timer = setInterval(() => {
+      setCarouselSlide(prev => (prev === 0 ? 1 : 0));
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [isCarouselHovered]);
 
   // Live operational clock & dynamic dispatcher greeting
   const [time, setTime] = useState(new Date());
@@ -381,7 +392,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Monthly Incident Forecast Hero Card (White Container & Sidebar Blue Inner Panel) ── */}
+        {/* ── Top Incident Intelligence Carousel (Risk Forecast & Top Locations) ── */}
         {(() => {
           const currentMonthName = new Date().toLocaleDateString('en-PH', { month: 'long' });
           const currentMonthShort = new Date().toLocaleDateString('en-PH', { month: 'short' });
@@ -389,129 +400,300 @@ export default function Dashboard() {
           const predictedCount = forecast?.desc.match(/~(\d+)|\b(\d+)\s+incidents/)?.[1] || forecast?.desc.match(/\d+/)?.[0] || '41';
 
           return (
-            <div className="fade-in" style={{
-              marginBottom: 28,
-              background: '#FFFFFF',
-              borderRadius: 24,
-              padding: '16px 20px 20px',
-              border: '1px solid #E2E8F0',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-            }}>
-              {/* Top Header Row */}
+            <div
+              className="fade-in"
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
+              style={{
+                marginBottom: 28,
+                background: '#FFFFFF',
+                borderRadius: 24,
+                padding: '16px 20px 20px',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+              }}
+            >
+              {/* Top Header Controls */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 8px 14px',
+                flexWrap: 'wrap',
+                gap: 12,
+                padding: '0 4px 14px',
+                borderBottom: '1px solid #F1F5F9',
+                marginBottom: 16,
               }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#475569', letterSpacing: '0.02em' }}>
-                  Incident Risk Forecast
-                </span>
-                <button
-                  onClick={() => setShowComputationModal(true)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#2563EB',
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    fontStyle: 'italic',
-                    cursor: 'pointer',
-                    padding: 0,
-                    fontFamily: 'inherit',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                >
-                  See detail
-                </button>
-              </div>
+                {/* Left Switcher Pills */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', padding: 3, borderRadius: 12 }}>
+                  <button
+                    onClick={() => setCarouselSlide(0)}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 9,
+                      border: 'none',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: carouselSlide === 0 ? '#FFFFFF' : 'transparent',
+                      color: carouselSlide === 0 ? '#1E3A5F' : '#64748B',
+                      boxShadow: carouselSlide === 0 ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                      transition: 'all 0.15s ease',
+                      fontFamily: 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <TrendingUp size={13} style={{ color: carouselSlide === 0 ? '#2563EB' : '#94A3B8' }} />
+                    <span>Incident Risk Forecast</span>
+                  </button>
 
-              {/* Inner Sidebar Blue Card Panel */}
-              <div className="forecast-hero-card" style={{
-                background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
-                borderRadius: 18,
-                padding: '22px 28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 24,
-                boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(15, 41, 66, 0.25)',
-              }}>
-                {/* Left Content Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, flex: 1 }}>
-                  {/* Floating White Month Pill Badge with Sidebar Dark Blue Text */}
-                  <span style={{
-                    background: '#FFFFFF',
-                    color: '#0F2942',
-                    fontSize: 12,
-                    fontWeight: 800,
-                    padding: '4px 16px',
-                    borderRadius: 9999,
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                  }}>
-                    {currentMonthName}
-                  </span>
-
-                  {/* Main Phrasing Line */}
-                  <div style={{
-                    fontSize: 18,
-                    fontWeight: 400,
-                    color: '#FFFFFF',
-                    lineHeight: 1.4,
-                    fontStyle: 'italic',
-                  }}>
-                    The incident most likely to occur this month is <strong style={{ fontWeight: 800, fontStyle: 'normal', textDecoration: 'underline', textUnderlineOffset: '4px' }}>{forecast?.type || 'Trauma'} Emergency</strong>.
-                  </div>
+                  <button
+                    onClick={() => setCarouselSlide(1)}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 9,
+                      border: 'none',
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: carouselSlide === 1 ? '#FFFFFF' : 'transparent',
+                      color: carouselSlide === 1 ? '#1E3A5F' : '#64748B',
+                      boxShadow: carouselSlide === 1 ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                      transition: 'all 0.15s ease',
+                      fontFamily: 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <FaLocationDot size={12} style={{ color: carouselSlide === 1 ? '#2563EB' : '#94A3B8' }} />
+                    <span>Top Incident Locations</span>
+                  </button>
                 </div>
 
-                {/* Right Content Column: Donut Chart Indicator */}
-                <div style={{
-                  position: 'relative',
-                  width: 104,
-                  height: 104,
+                {/* Right Carousel Controls: Detail link / count badge + Arrows & Dots */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  {carouselSlide === 0 ? (
+                    <button
+                      onClick={() => setShowComputationModal(true)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563EB',
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        fontStyle: 'italic',
+                        cursor: 'pointer',
+                        padding: 0,
+                        fontFamily: 'inherit',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      See detail
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '3px 10px', borderRadius: 20, border: '1px solid #DBEAFE' }}>
+                      {topLocations.length} Key Hotspots
+                    </span>
+                  )}
+
+                  {/* Navigation Arrows & Dots */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      onClick={() => setCarouselSlide(prev => (prev === 0 ? 1 : 0))}
+                      style={{
+                        width: 28, height: 28, borderRadius: '50%',
+                        border: '1px solid #E2E8F0', background: '#F8FAFC',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#475569', cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      title="Previous slide"
+                    >
+                      <ChevronLeft size={15} />
+                    </button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 2px' }}>
+                      <span
+                        onClick={() => setCarouselSlide(0)}
+                        style={{
+                          width: carouselSlide === 0 ? 16 : 6, height: 6,
+                          borderRadius: 999,
+                          background: carouselSlide === 0 ? '#2563EB' : '#CBD5E1',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      />
+                      <span
+                        onClick={() => setCarouselSlide(1)}
+                        style={{
+                          width: carouselSlide === 1 ? 16 : 6, height: 6,
+                          borderRadius: 999,
+                          background: carouselSlide === 1 ? '#2563EB' : '#CBD5E1',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => setCarouselSlide(prev => (prev === 0 ? 1 : 0))}
+                      style={{
+                        width: 28, height: 28, borderRadius: '50%',
+                        border: '1px solid #E2E8F0', background: '#F8FAFC',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#475569', cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      title="Next slide"
+                    >
+                      <ChevronRight size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carousel Content Slides */}
+              {carouselSlide === 0 ? (
+                /* Slide 1: Incident Risk Forecast */
+                <div className="forecast-hero-card" style={{
+                  background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
+                  borderRadius: 18,
+                  padding: '22px 28px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
+                  justifyContent: 'space-between',
+                  gap: 24,
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(15, 41, 66, 0.25)',
+                  minHeight: 148,
+                  animation: 'fadeIn 0.25s ease',
                 }}>
-                  <svg width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="52" cy="52" r="42" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="8" />
-                    <circle cx="52" cy="52" r="42" fill="none" stroke="#FFFFFF" strokeWidth="8" strokeDasharray="263.89" strokeDashoffset="86" strokeLinecap="round" />
-                  </svg>
+                  {/* Left Content Column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, flex: 1 }}>
+                    <span style={{
+                      background: '#FFFFFF',
+                      color: '#0F2942',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      padding: '4px 16px',
+                      borderRadius: 9999,
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                    }}>
+                      {currentMonthName}
+                    </span>
+
+                    <div style={{
+                      fontSize: 18,
+                      fontWeight: 400,
+                      color: '#FFFFFF',
+                      lineHeight: 1.4,
+                      fontStyle: 'italic',
+                    }}>
+                      The incident most likely to occur this month is <strong style={{ fontWeight: 800, fontStyle: 'normal', textDecoration: 'underline', textUnderlineOffset: '4px' }}>{forecast?.type || 'Trauma'} Emergency</strong>.
+                    </div>
+                  </div>
+
+                  {/* Right Content Column: Donut Chart Indicator */}
                   <div style={{
-                    position: 'absolute',
+                    position: 'relative',
+                    width: 104,
+                    height: 104,
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    textAlign: 'center',
-                    lineHeight: 1,
-                    pointerEvents: 'none',
+                    flexShrink: 0,
                   }}>
-                    <span style={{
-                      fontSize: 22,
-                      fontWeight: 900,
-                      color: '#FFFFFF',
-                      fontStyle: 'italic',
+                    <svg width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="52" cy="52" r="42" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="8" />
+                      <circle cx="52" cy="52" r="42" fill="none" stroke="#FFFFFF" strokeWidth="8" strokeDasharray="263.89" strokeDashoffset="86" strokeLinecap="round" />
+                    </svg>
+                    <div style={{
+                      position: 'absolute',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textAlign: 'center',
                       lineHeight: 1,
+                      pointerEvents: 'none',
                     }}>
-                      {predictedCount}
-                    </span>
-                    <span style={{
-                      fontSize: 8.5,
-                      fontWeight: 800,
-                      color: 'rgba(255, 255, 255, 0.85)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      marginTop: 3,
-                    }}>
-                      incidents
-                    </span>
+                      <span style={{
+                        fontSize: 22,
+                        fontWeight: 900,
+                        color: '#FFFFFF',
+                        fontStyle: 'italic',
+                        lineHeight: 1,
+                      }}>
+                        {predictedCount}
+                      </span>
+                      <span style={{
+                        fontSize: 8.5,
+                        fontWeight: 800,
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        marginTop: 3,
+                      }}>
+                        incidents
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* Slide 2: Top Incident Locations */
+                <div style={{
+                  background: '#F8FAFC',
+                  borderRadius: 18,
+                  padding: '16px 20px',
+                  border: '1px solid #E2E8F0',
+                  minHeight: 148,
+                  animation: 'fadeIn 0.25s ease',
+                }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+                    {topLocations.map((loc, i) => {
+                      const maxCount = topLocations[0]?.count || 1;
+                      const pct = Math.round((loc.count / maxCount) * 100);
+                      const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
+                      const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';
+                      return (
+                        <div key={loc.name} style={{
+                          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                          background: badgeBg,
+                          borderRadius: 10, border: `1px solid ${i < 3 ? `${badgeColor}33` : '#E2E8F0'}`,
+                          transition: 'all 0.15s ease',
+                        }}>
+                          <div style={{
+                            width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 800, color: 'white', background: badgeColor, flexShrink: 0,
+                          }}>
+                            {i + 1}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {loc.name}
+                            </div>
+                            <div style={{ height: 4, width: '100%', background: '#E2E8F0', borderRadius: 2, marginTop: 5, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: badgeColor, borderRadius: 2 }} />
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 900, color: i < 3 ? badgeColor : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                              {loc.count}
+                            </div>
+                            <div style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>
+                              Incidents
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()}
@@ -807,65 +989,6 @@ export default function Dashboard() {
                   );
                 })}
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Top Incident Locations — Balayan Hotspots ─────── */}
-        <div className="card fade-in" style={{ marginBottom: 24, overflow: 'hidden' }}>
-          <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', flexShrink: 0 }}>
-                <FaLocationDot size={18} />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Top Incident Locations</h3>
-                <div style={{ fontSize: 11.5, color: '#94A3B8' }}>Historical incident frequency across Balayan barangays & landmarks</div>
-              </div>
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '4px 12px', borderRadius: 20, border: '1px solid #DBEAFE' }}>
-              {topLocations.length} Key Hotspots
-            </span>
-          </div>
-          <div className="card-body" style={{ padding: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
-              {topLocations.map((loc, i) => {
-                const maxCount = topLocations[0]?.count || 1;
-                const pct = Math.round((loc.count / maxCount) * 100);
-                const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
-                const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#F8FAFC';
-                return (
-                  <div key={loc.name} style={{
-                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                    background: i < 3 ? badgeBg : 'var(--bg-card-hover)',
-                    borderRadius: 12, border: i < 3 ? `1px solid ${badgeColor}33` : '1px solid var(--border)',
-                    transition: 'all 0.15s ease',
-                  }}>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 12, fontWeight: 800, color: 'white', background: badgeColor, flexShrink: 0,
-                    }}>
-                      {i + 1}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {loc.name}
-                      </div>
-                      <div style={{ height: 4, width: '100%', background: '#E2E8F0', borderRadius: 2, marginTop: 6, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: badgeColor, borderRadius: 2 }} />
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 900, color: i < 3 ? badgeColor : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
-                        {loc.count}
-                      </div>
-                      <div style={{ fontSize: 9.5, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Incidents
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>

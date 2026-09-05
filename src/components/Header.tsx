@@ -526,7 +526,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                     fontSize: 11, fontWeight: 600, color: '#64748B',
                     background: '#E2E8F0', padding: '3px 8px', borderRadius: 6
                   }}>
-                    ID: {currentUnrecognized.id.slice(0, 8)}
+                    ID: {currentUnrecognized?.id ? currentUnrecognized.id.slice(0, 8) : ''}
                   </span>
                 )}
               </div>

@@ -157,7 +157,7 @@ export default function SettingsPage() {
       setAdmins(prev => [...prev, res.data.admin]);
       setNewAdmin({ name: '', email: '', password: '', phoneNumber: '' });
       setShowCreateAdmin(false);
-      showToast('danger', 'Admin Created', `${res.data.admin.name} can now log in to the admin panel.`);
+      showToast('success', 'Admin Created', `${res.data.admin.name} can now log in to the admin panel.`);
     } catch (err: any) {
       showToast('error', 'Failed to Create Admin', err.response?.data?.error || 'Server error occurred.');
     } finally {
@@ -311,7 +311,7 @@ export default function SettingsPage() {
       
       window.dispatchEvent(new Event('storage'));
       
-      showToast('danger', 'Profile Saved', 'Your administrator information has been successfully updated.');
+      showToast('success', 'Profile Saved', 'Your administrator information has been successfully updated.');
     } catch (err: any) {
       console.error('Failed to update profile:', err);
       showToast('error', 'Profile Update Failed', err.response?.data?.error || 'Server error occurred.');
