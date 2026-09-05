@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
@@ -162,24 +162,69 @@ export default function Dashboard() {
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
   const [showComputationModal, setShowComputationModal] = useState(false);
-  const [rotationDeg, setRotationDeg] = useState(0); // 3D Circular Loop Carousel rotation in degrees
+  const [carouselIndex, setCarouselIndex] = useState(1); // 1 = Forecast, 2 = Top Locations (0 and 3 are infinite wrap clones)
+  const [withTransition, setWithTransition] = useState(true);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const pointerStartX = useRef<number | null>(null);
   const isPointerDownRef = useRef(false);
+  const isAnimatingRef = useRef(false);
 
-  // Derived active slide index (0 = Forecast, 1 = Top Locations)
-  const activeSlide = (Math.round(Math.abs(rotationDeg / 180)) % 2) as 0 | 1;
+  // Derived active slide index for switcher tabs & dots (0 = Forecast, 1 = Top Locations)
+  const activeSlide: 0 | 1 = (carouselIndex === 1 || carouselIndex === 3) ? 0 : 1;
 
-  // Auto-advance carousel in continuous circular loop every 6 seconds when not hovered and not dragging
+  const handleNext = useCallback(() => {
+    if (isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
+    setWithTransition(true);
+    setCarouselIndex(prev => prev + 1);
+    setTimeout(() => {
+      isAnimatingRef.current = false;
+    }, 520);
+  }, []);
+
+  const handlePrev = useCallback(() => {
+    if (isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
+    setWithTransition(true);
+    setCarouselIndex(prev => prev - 1);
+    setTimeout(() => {
+      isAnimatingRef.current = false;
+    }, 520);
+  }, []);
+
+  const handleTransitionEnd = () => {
+    isAnimatingRef.current = false;
+    if (carouselIndex === 3) {
+      // Reached cloned Forecast at end -> silently snap back to real Forecast at index 1
+      setWithTransition(false);
+      setCarouselIndex(1);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setWithTransition(true);
+        });
+      });
+    } else if (carouselIndex === 0) {
+      // Reached cloned Top Locations at start -> silently snap back to real Top Locations at index 2
+      setWithTransition(false);
+      setCarouselIndex(2);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setWithTransition(true);
+        });
+      });
+    }
+  };
+
+  // Auto-advance carousel in continuous slide loop every 6 seconds when not hovered and not dragging
   useEffect(() => {
     if (isCarouselHovered || isDragging) return;
     const timer = setInterval(() => {
-      setRotationDeg(prev => prev - 180);
+      handleNext();
     }, 6000);
     return () => clearInterval(timer);
-  }, [isCarouselHovered, isDragging]);
+  }, [isCarouselHovered, isDragging, handleNext]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     pointerStartX.current = e.clientX;
@@ -197,11 +242,9 @@ export default function Dashboard() {
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isPointerDownRef.current && pointerStartX.current !== null) {
       if (dragOffset < -40) {
-        // Swiped left -> revolve forward in circular loop
-        setRotationDeg(prev => prev - 180);
+        handleNext();
       } else if (dragOffset > 40) {
-        // Swiped right -> revolve backward in circular loop
-        setRotationDeg(prev => prev + 180);
+        handlePrev();
       }
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -476,7 +519,7 @@ export default function Dashboard() {
                 {/* Left Switcher Pills */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', padding: 3, borderRadius: 12 }}>
                   <button
-                    onClick={() => { if (activeSlide !== 0) setRotationDeg(prev => prev - 180); }}
+                    onClick={() => { if (activeSlide !== 0) handleNext(); }}
                     style={{
                       padding: '6px 14px',
                       borderRadius: 9,
@@ -499,7 +542,7 @@ export default function Dashboard() {
                   </button>
 
                   <button
-                    onClick={() => { if (activeSlide !== 1) setRotationDeg(prev => prev - 180); }}
+                    onClick={() => { if (activeSlide !== 1) handleNext(); }}
                     style={{
                       padding: '6px 14px',
                       borderRadius: 9,
@@ -552,17 +595,17 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Carousel Content: Left End Arrow + 3D Revolving Circular Carousel Cylinder + Right End Arrow */}
+              {/* Carousel Content: Left End Arrow + Infinite Loop Sliding Viewport + Right End Arrow */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
                 position: 'relative',
               }}>
-                {/* Left Arrow at the Left End of Component (Revolves backward along circle) */}
+                {/* Left Arrow at the Left End of Component */}
                 <button
                   type="button"
-                  onClick={() => setRotationDeg(prev => prev + 180)}
+                  onClick={handlePrev}
                   aria-label="Previous slide"
                   style={{
                     width: 36,
@@ -592,18 +635,16 @@ export default function Dashboard() {
                     e.currentTarget.style.color = '#334155';
                     e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
                   }}
-                  title="Previous slide (Circular Loop)"
+                  title="Previous slide"
                 >
                   <ChevronLeft size={18} />
                 </button>
 
-                {/* 3D Circular Revolving Stage with Touch/Pointer Drag Gestures */}
+                {/* Sliding Viewport with Touch/Pointer Drag Gestures */}
                 <div
                   style={{
                     flex: 1,
                     minWidth: 0,
-                    perspective: '1400px',
-                    perspectiveOrigin: '50% 50%',
                     overflow: 'hidden',
                     borderRadius: 18,
                     cursor: isDragging ? 'grabbing' : 'grab',
@@ -615,31 +656,76 @@ export default function Dashboard() {
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerCancel}
                 >
-                  {/* 3D Revolving Cylinder Ring */}
+                  {/* Infinite 4-Panel Sliding Track (Cloned Ends for Seamless Infinite Loop) */}
                   <div
+                    onTransitionEnd={handleTransitionEnd}
                     style={{
-                      display: 'grid',
-                      gridTemplateAreas: '"card"',
-                      width: '100%',
-                      transformStyle: 'preserve-3d',
-                      transform: `rotateY(${rotationDeg + (dragOffset * 0.18)}deg)`,
-                      transition: isDragging ? 'none' : 'transform 0.68s cubic-bezier(0.2, 0.9, 0.3, 1)',
+                      display: 'flex',
+                      width: '400%',
+                      transform: `translateX(calc(-${carouselIndex * 25}% + ${dragOffset}px))`,
+                      transition: isDragging
+                        ? 'none'
+                        : (withTransition ? 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'),
                       willChange: 'transform',
                     }}
                   >
-                    {/* Slide 0: Incident Risk Forecast (Face at 0deg) */}
-                    <div
-                      style={{
-                        gridArea: 'card',
-                        width: '100%',
+                    {/* Index 0: Top Locations (Clone for infinite backward wrap) */}
+                    <div style={{ width: '25%', flexShrink: 0, boxSizing: 'border-box' }}>
+                      <div style={{
+                        background: '#F8FAFC',
+                        borderRadius: 18,
+                        padding: '16px 20px',
+                        border: '1px solid #E2E8F0',
+                        minHeight: 148,
                         boxSizing: 'border-box',
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        transform: 'rotateY(0deg) translateZ(40px)',
-                        transformStyle: 'preserve-3d',
-                        pointerEvents: activeSlide === 0 ? 'auto' : 'none',
-                      }}
-                    >
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, width: '100%' }}>
+                          {topLocations.map((loc, i) => {
+                            const maxCount = topLocations[0]?.count || 1;
+                            const pct = Math.round((loc.count / maxCount) * 100);
+                            const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
+                            const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';
+                            return (
+                              <div key={`c0-${loc.name}`} style={{
+                                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                                background: badgeBg,
+                                borderRadius: 10, border: `1px solid ${i < 3 ? `${badgeColor}33` : '#E2E8F0'}`,
+                                transition: 'all 0.15s ease',
+                              }}>
+                                <div style={{
+                                  width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: 11, fontWeight: 800, color: 'white', background: badgeColor, flexShrink: 0,
+                                }}>
+                                  {i + 1}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {loc.name}
+                                  </div>
+                                  <div style={{ height: 4, width: '100%', background: '#E2E8F0', borderRadius: 2, marginTop: 5, overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${pct}%`, background: badgeColor, borderRadius: 2 }} />
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                  <div style={{ fontSize: 14, fontWeight: 900, color: i < 3 ? badgeColor : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                                    {loc.count}
+                                  </div>
+                                  <div style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>
+                                    Incidents
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Index 1: Incident Risk Forecast (Real) */}
+                    <div style={{ width: '25%', flexShrink: 0, boxSizing: 'border-box' }}>
                       <div className="forecast-hero-card" style={{
                         background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
                         borderRadius: 18,
@@ -726,19 +812,8 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {/* Slide 1: Top Incident Locations (Face at 180deg) */}
-                    <div
-                      style={{
-                        gridArea: 'card',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        transform: 'rotateY(180deg) translateZ(40px)',
-                        transformStyle: 'preserve-3d',
-                        pointerEvents: activeSlide === 1 ? 'auto' : 'none',
-                      }}
-                    >
+                    {/* Index 2: Top Incident Locations (Real) */}
+                    <div style={{ width: '25%', flexShrink: 0, boxSizing: 'border-box' }}>
                       <div style={{
                         background: '#F8FAFC',
                         borderRadius: 18,
@@ -757,7 +832,7 @@ export default function Dashboard() {
                             const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
                             const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';
                             return (
-                              <div key={loc.name} style={{
+                              <div key={`r2-${loc.name}`} style={{
                                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                                 background: badgeBg,
                                 borderRadius: 10, border: `1px solid ${i < 3 ? `${badgeColor}33` : '#E2E8F0'}`,
@@ -791,13 +866,101 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Index 3: Incident Risk Forecast (Clone for infinite forward wrap) */}
+                    <div style={{ width: '25%', flexShrink: 0, boxSizing: 'border-box' }}>
+                      <div className="forecast-hero-card" style={{
+                        background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
+                        borderRadius: 18,
+                        padding: '22px 28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 24,
+                        boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(15, 41, 66, 0.25)',
+                        minHeight: 148,
+                        boxSizing: 'border-box',
+                        height: '100%',
+                      }}>
+                        {/* Left Content Column */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, flex: 1 }}>
+                          <span style={{
+                            background: '#FFFFFF',
+                            color: '#0F2942',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            padding: '4px 16px',
+                            borderRadius: 9999,
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                          }}>
+                            {currentMonthName}
+                          </span>
+
+                          <div style={{
+                            fontSize: 18,
+                            fontWeight: 400,
+                            color: '#FFFFFF',
+                            lineHeight: 1.4,
+                            fontStyle: 'italic',
+                          }}>
+                            The incident most likely to occur this month is <strong style={{ fontWeight: 800, fontStyle: 'normal', textDecoration: 'underline', textUnderlineOffset: '4px' }}>{forecast?.type || 'Trauma'} Emergency</strong>.
+                          </div>
+                        </div>
+
+                        {/* Right Content Column: Donut Chart Indicator */}
+                        <div style={{
+                          position: 'relative',
+                          width: 104,
+                          height: 104,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          <svg width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
+                            <circle cx="52" cy="52" r="42" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="8" />
+                            <circle cx="52" cy="52" r="42" fill="none" stroke="#FFFFFF" strokeWidth="8" strokeDasharray="263.89" strokeDashoffset="86" strokeLinecap="round" />
+                          </svg>
+                          <div style={{
+                            position: 'absolute',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            lineHeight: 1,
+                            pointerEvents: 'none',
+                          }}>
+                            <span style={{
+                              fontSize: 22,
+                              fontWeight: 900,
+                              color: '#FFFFFF',
+                              fontStyle: 'italic',
+                              lineHeight: 1,
+                            }}>
+                              {predictedCount}
+                            </span>
+                            <span style={{
+                              fontSize: 8.5,
+                              fontWeight: 800,
+                              color: 'rgba(255, 255, 255, 0.85)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.06em',
+                              marginTop: 3,
+                            }}>
+                              incidents
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Right Arrow at the Right End of Component (Revolves forward along circle) */}
+                {/* Right Arrow at the Right End of Component */}
                 <button
                   type="button"
-                  onClick={() => setRotationDeg(prev => prev - 180)}
+                  onClick={handleNext}
                   aria-label="Next slide"
                   style={{
                     width: 36,
@@ -827,7 +990,7 @@ export default function Dashboard() {
                     e.currentTarget.style.color = '#334155';
                     e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
                   }}
-                  title="Next slide (Circular Loop)"
+                  title="Next slide"
                 >
                   <ChevronRight size={18} />
                 </button>
@@ -843,7 +1006,7 @@ export default function Dashboard() {
               }}>
                 <button
                   type="button"
-                  onClick={() => { if (activeSlide !== 0) setRotationDeg(prev => prev - 180); }}
+                  onClick={() => { if (activeSlide !== 0) handleNext(); }}
                   aria-label="Slide 1: Incident Risk Forecast"
                   title="Incident Risk Forecast"
                   style={{
@@ -860,7 +1023,7 @@ export default function Dashboard() {
                 />
                 <button
                   type="button"
-                  onClick={() => { if (activeSlide !== 1) setRotationDeg(prev => prev - 180); }}
+                  onClick={() => { if (activeSlide !== 1) handleNext(); }}
                   aria-label="Slide 2: Top Incident Locations"
                   title="Top Incident Locations"
                   style={{
