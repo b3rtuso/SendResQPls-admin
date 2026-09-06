@@ -3,11 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
 import { FiPhone } from 'react-icons/fi';
-import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, createCallLog } from '../api/client';
-import type { Status, Incident, ResolutionForm, Department } from '../types';
+import type { Status, Incident, Department, ResolutionForm } from '../types';
+import {
+  updateIncidentStatus,
+  getIncident as fetchIncident,
+  reverseGeocode,
+  createCallLog,
+  lockIncident,
+  unlockIncident,
+  heartbeatIncident,
+  forceUnlockIncident,
+} from '../api/client';
 import ResolutionFormModal from '../components/ResolutionFormModal';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '../context/ConfirmContext';
@@ -113,6 +122,12 @@ export default function RequestDetails() {
   const [resolvedAddress, setResolvedAddress] = useState('');
   const [resolvingAddress, setResolvingAddress] = useState(false);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [lockState, setLockState] = useState<{
+    isLockedByOther: boolean;
+    lockedByAdminName?: string;
+    lockedAt?: string;
+  }>({ isLockedByOther: false });
+  const [isTakingOver, setIsTakingOver] = useState(false);
 
   const showToast = useCallback((type: ToastType, message: string, detail?: string) => {
     setToast({ show: true, message, detail, type });
@@ -141,11 +156,18 @@ export default function RequestDetails() {
     if (!id) return;
     if (showLoading) setLoading(true);
     try {
-      const res = await fetchIncident(id);
+      const res = await fetchIncident(id, true);
       if (res?.data) {
         setIncident(res.data);
         setCurrentStatus(res.data.status);
         setNotes(res.data.adminNotes || '');
+        if (res.data.isLockedByOther) {
+          setLockState({
+            isLockedByOther: true,
+            lockedByAdminName: res.data.lockedByAdminName,
+            lockedAt: res.data.lockedAt,
+          });
+        }
       }
     } catch {
       if (showLoading) {
@@ -155,6 +177,68 @@ export default function RequestDetails() {
       if (showLoading) setLoading(false);
     }
   }, [id, showToast]);
+
+  // Lock acquisition & 30s heartbeat lifecycle
+  useEffect(() => {
+    if (!id) return;
+    let isCancelled = false;
+
+    const acquireLock = async () => {
+      try {
+        const res = await lockIncident(id);
+        if (!isCancelled && res.data) {
+          setLockState({ isLockedByOther: false });
+        }
+      } catch (err: any) {
+        if (!isCancelled && err.response?.status === 423) {
+          setLockState({
+            isLockedByOther: true,
+            lockedByAdminName: err.response.data?.lockedByAdminName,
+            lockedAt: err.response.data?.lockedAt,
+          });
+        }
+      }
+    };
+
+    acquireLock();
+
+    const heartbeatTimer = setInterval(() => {
+      if (!lockState.isLockedByOther) {
+        heartbeatIncident(id).catch(() => {});
+      }
+    }, 30000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(heartbeatTimer);
+      unlockIncident(id).catch(() => {});
+    };
+  }, [id, lockState.isLockedByOther]);
+
+  const handleForceTakeover = async () => {
+    if (!id) return;
+    const isConfirmed = await confirm({
+      type: 'warning',
+      title: 'Force Incident Takeover?',
+      message: `Are you sure you want to take over control of Incident #${id.slice(0, 8)}?`,
+      detail: `${lockState.lockedByAdminName || 'The active dispatcher'} will be disconnected from editing this incident.`,
+      confirmText: 'Confirm Takeover',
+      cancelText: 'Cancel',
+    });
+    if (!isConfirmed) return;
+
+    setIsTakingOver(true);
+    try {
+      await forceUnlockIncident(id);
+      setLockState({ isLockedByOther: false });
+      showToast('success', 'Incident Lock Acquired', 'You now have full control of this emergency report.');
+      loadIncident(false);
+    } catch (err: any) {
+      showToast('error', 'Takeover Failed', err.response?.data?.error || 'Could not force takeover.');
+    } finally {
+      setIsTakingOver(false);
+    }
+  };
 
   useEffect(() => {
     loadIncident(true);
@@ -404,6 +488,119 @@ export default function RequestDetails() {
     );
   }
 
+  if (incident && lockState.isLockedByOther) {
+    return (
+      <>
+        <Header title={`Incident #${id?.slice(0, 8)} (Locked)`} subtitle="Emergency request currently being handled by another dispatcher" />
+        <div className="page-content" style={{ maxWidth: 640, margin: '48px auto', textAlign: 'center' }}>
+          <div style={{
+            background: '#FFFFFF',
+            border: '1.5px solid #E2E8F0',
+            borderRadius: 16,
+            padding: '36px 28px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
+          }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: '#FEF2F2',
+              color: '#EF4444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 18px',
+              border: '2px solid #FCA5A5'
+            }}>
+              <ShieldAlert size={32} />
+            </div>
+
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              background: '#FEF2F2',
+              border: '1px solid #FECDD3',
+              borderRadius: 20,
+              padding: '4px 12px',
+              color: '#B91C1C',
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: 14,
+            }}>
+              <Lock size={13} /> Active Dispatch Session
+            </div>
+
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>
+              This Incident is Currently Locked
+            </h2>
+            <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.6, marginBottom: 24 }}>
+              <strong>{lockState.lockedByAdminName || 'Another Dispatcher'}</strong> is actively reviewing, dispatching, or updating this emergency report. To prevent conflicting dispatches, parallel modifications are blocked until they finish or release the incident.
+            </p>
+
+            <div style={{
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              borderRadius: 10,
+              padding: '12px 16px',
+              fontSize: 12.5,
+              color: '#475569',
+              marginBottom: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <span>Status: <strong style={{ color: '#0F172A' }}>{incident.status}</strong></span>
+              <span>Hazard: <strong style={{ color: '#0F172A' }}>{incident.aiDetectedType || 'Pending'}</strong></span>
+              <span>Lock: <strong style={{ color: '#EF4444' }}>Engaged</strong></span>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/requests')}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <ArrowLeft size={16} />
+                Return to Requests Queue
+              </Button>
+
+              <Button
+                variant="destructive"
+                onClick={handleForceTakeover}
+                disabled={isTakingOver}
+                style={{
+                  background: '#EF4444',
+                  color: '#FFFFFF',
+                  padding: '10px 20px',
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <AlertTriangle size={16} />
+                {isTakingOver ? 'Taking Over...' : 'Emergency Takeover'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Header title={`Request ${(incident?.id || id || '').slice(0, 8)}...`} subtitle="Review incident details and update status" />
@@ -525,12 +722,12 @@ export default function RequestDetails() {
                   </div>
                 </div>
 
-                <div style={{ gridColumn: 'span 2', marginTop: 8, paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>RECLASSIFY HAZARD TYPE</strong>
-                    <span style={{ fontSize: 11, color: '#94A3B8' }}>Click to assign type & department</span>
+                <div style={{ gridColumn: 'span 2', marginTop: 12, paddingTop: 12, borderTop: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <strong style={{ fontSize: 13, color: '#1E293B', fontWeight: 800 }}>RECLASSIFY HAZARD TYPE</strong>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Click to assign type & department</span>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {OFFICIAL_TYPES.map(t => (
                       <button
                         key={t}
@@ -538,14 +735,16 @@ export default function RequestDetails() {
                         onClick={() => handleReclassify(t)}
                         disabled={saving}
                         style={{
-                          padding: '3px 8px',
-                          fontSize: 11,
-                          fontWeight: incident.aiDetectedType === t ? 800 : 500,
-                          borderRadius: 6,
-                          border: incident.aiDetectedType === t ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
+                          padding: '8px 14px',
+                          fontSize: 13,
+                          fontWeight: incident.aiDetectedType === t ? 800 : 600,
+                          borderRadius: 8,
+                          border: incident.aiDetectedType === t ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
                           background: incident.aiDetectedType === t ? '#EFF6FF' : '#FFFFFF',
-                          color: incident.aiDetectedType === t ? '#1D4ED8' : '#475569',
+                          color: incident.aiDetectedType === t ? '#1D4ED8' : '#334155',
                           cursor: saving ? 'not-allowed' : 'pointer',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                          transition: 'all 0.15s ease',
                         }}
                       >
                         {t}
@@ -589,7 +788,7 @@ export default function RequestDetails() {
                       </div>
                       <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                         The AI could not identify a valid emergency incident in the submitted photo.
-                        Review the photo — reject if it is a false alarm, or select the correct hazard type below.
+                        Review the photo — reject if it is a false alarm, or select the correct hazard type above.
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
                         {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (
@@ -613,33 +812,6 @@ export default function RequestDetails() {
                             {saving ? 'Rejecting...' : 'Reject Report'}
                           </button>
                         )}
-                      </div>
-                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(239,68,68,0.2)' }}>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>
-                          Or reclassify as genuine emergency:
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                          {OFFICIAL_TYPES.map(t => (
-                            <button
-                              key={t}
-                              type="button"
-                              onClick={() => handleReclassify(t)}
-                              disabled={saving}
-                              style={{
-                                padding: '3px 8px',
-                                fontSize: 11,
-                                fontWeight: incident.aiDetectedType === t ? 800 : 600,
-                                borderRadius: 6,
-                                border: '1px solid #CBD5E1',
-                                background: '#FFFFFF',
-                                color: '#1E293B',
-                                cursor: saving ? 'not-allowed' : 'pointer',
-                              }}
-                            >
-                              {t}
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -979,7 +1151,7 @@ export default function RequestDetails() {
                         ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, description: undefined, createdAt: incident.updatedAt }] : []),
                       ];
 
-                  return activities.map((item, idx) => (
+                  return activities.map((item: any, idx: number) => (
                     <div className="timeline-item" key={item.id || idx}>
                       <div className="tl-time" style={{ fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                         <span style={{ color: '#2563EB', fontSize: 14 }}>●</span>

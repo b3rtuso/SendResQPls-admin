@@ -5,7 +5,7 @@ import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, RefreshCw, ArrowRight, Ambulance, Car, HelpCircle,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info, Clock, ChevronLeft, ChevronRight, CalendarDays, Target,
+  Info, Clock, ChevronLeft, ChevronRight, CalendarDays, Target, Lock,
 } from 'lucide-react';
 import { TbReport } from 'react-icons/tb';
 import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
@@ -1468,15 +1468,34 @@ export default function Dashboard() {
                                 : '—'}
                             </td>
                             <td style={{ padding: '13px 18px' }}>
-                              <Badge style={{
-                                padding: '3px 9px', borderRadius: 6,
-                                background: ss.bg, color: ss.color,
-                                fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
-                                textTransform: 'uppercase',
-                                border: 'none',
-                              }}>
-                                <span>{ss.label}</span>
-                              </Badge>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Badge style={{
+                                  padding: '3px 9px', borderRadius: 6,
+                                  background: ss.bg, color: ss.color,
+                                  fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+                                  textTransform: 'uppercase',
+                                  border: 'none',
+                                }}>
+                                  <span>{ss.label}</span>
+                                </Badge>
+                                {inc.lockedByAdminName && inc.status !== 'RESOLVED' && inc.status !== 'REJECTED' && (
+                                  <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    color: '#B91C1C',
+                                    background: '#FEF2F2',
+                                    border: '1px solid #FECDD3',
+                                    borderRadius: 4,
+                                    padding: '1px 5px',
+                                    whiteSpace: 'nowrap',
+                                  }} title={`Locked by ${inc.lockedByAdminName}`}>
+                                    <Lock size={9} /> {inc.lockedByAdminName}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td style={{ padding: '13px 18px', color: '#94A3B8', fontSize: 12, whiteSpace: 'nowrap' }}>
                               {timeAgo(inc.createdAt)}
@@ -1533,14 +1552,33 @@ export default function Dashboard() {
                           <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#2563EB' }}>
                             #{inc.id.slice(0, 8).toUpperCase()}
                           </span>
-                          <Badge style={{
-                            padding: '2px 8px', borderRadius: 6,
-                            background: ss.bg, color: ss.color,
-                            fontSize: 10, fontWeight: 800,
-                            border: 'none',
-                          }}>
-                            <span>{ss.label}</span>
-                          </Badge>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Badge style={{
+                              padding: '2px 8px', borderRadius: 6,
+                              background: ss.bg, color: ss.color,
+                              fontSize: 10, fontWeight: 800,
+                              border: 'none',
+                            }}>
+                              <span>{ss.label}</span>
+                            </Badge>
+                            {inc.lockedByAdminName && inc.status !== 'RESOLVED' && inc.status !== 'REJECTED' && (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 3,
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: '#B91C1C',
+                                background: '#FEF2F2',
+                                border: '1px solid #FECDD3',
+                                borderRadius: 4,
+                                padding: '1px 5px',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                <Lock size={9} /> {inc.lockedByAdminName}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13.5, color: '#1E293B' }}>

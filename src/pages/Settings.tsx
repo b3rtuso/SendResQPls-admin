@@ -241,7 +241,7 @@ export default function SettingsPage() {
     try {
       await deleteAdmin(id);
       setAdmins(prev => prev.filter(a => a.id !== id));
-      showToast('danger', 'Admin Deleted', `${name}'s administrator account and credentials have been permanently removed.`);
+      showToast('success', 'Admin Deleted', `${name}'s administrator account and credentials have been permanently removed.`);
     } catch (err: any) {
       showToast('error', 'Failed to Delete Admin', err.response?.data?.error || 'Server error occurred.');
     } finally {
@@ -1081,24 +1081,124 @@ export default function SettingsPage() {
                 No administrator accounts found.
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Administrator</th>
-                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Email</th>
-                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Phone</th>
-                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Created</th>
-                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Access Status</th>
-                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {admins.map((admin) => {
-                      const isSelf = admin.id === localStorage.getItem('userId');
-                      return (
-                        <tr key={admin.id} style={{ borderBottom: '1px solid #F1F5F9', opacity: admin.isActive ? 1 : 0.6 }}>
-                          <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden sm:block" style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                        <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Administrator</th>
+                        <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Email</th>
+                        <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Phone</th>
+                        <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Created</th>
+                        <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Access Status</th>
+                        <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {admins.map((admin) => {
+                        const isSelf = admin.id === localStorage.getItem('userId');
+                        return (
+                          <tr key={admin.id} style={{ borderBottom: '1px solid #F1F5F9', opacity: admin.isActive ? 1 : 0.6 }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{
+                                width: 32, height: 32, borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff', fontSize: 12, fontWeight: 800, flexShrink: 0
+                              }}>
+                                {admin.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span>{admin.name}</span>
+                              {isSelf && <span style={{ fontSize: 10, background: '#DBEAFE', color: '#1E40AF', borderRadius: 6, padding: '2px 6px', fontWeight: 800 }}>You</span>}
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#475569' }}>{admin.email}</td>
+                            <td style={{ padding: '12px 16px', color: '#475569' }}>{admin.phoneNumber || '—'}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                              {new Date(admin.createdAt).toLocaleDateString()}
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              {admin.isActive ? (
+                                <span style={{ background: '#DCFCE7', color: '#14532D', padding: '3px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <UserCheck size={11} /> Active
+                                </span>
+                              ) : (
+                                <span style={{ background: '#FEE2E2', color: '#7F1D1D', padding: '3px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <UserX size={11} /> Inactive
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                              {!isSelf && (
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                                  <button
+                                    onClick={() => handleToggleAdmin(admin.id, admin.name)}
+                                    disabled={togglingAdmin === admin.id || deletingAdmin === admin.id}
+                                    style={{
+                                      fontSize: 12, fontWeight: 700, padding: '5px 12px',
+                                      border: `1px solid ${admin.isActive ? '#FCA5A5' : '#BFDBFE'}`,
+                                      borderRadius: 7, cursor: (togglingAdmin === admin.id || deletingAdmin === admin.id) ? 'not-allowed' : 'pointer',
+                                      background: admin.isActive ? '#FEF2F2' : '#EFF6FF',
+                                      color: admin.isActive ? '#DC2626' : '#2563EB',
+                                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                                      fontFamily: 'inherit',
+                                    }}
+                                  >
+                                    {togglingAdmin === admin.id ? (
+                                      <Loader2 size={12} className="spin" />
+                                    ) : admin.isActive ? (
+                                      <><UserX size={12} /> Deactivate</>
+                                    ) : (
+                                      <><UserCheck size={12} /> Reactivate</>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAdmin(admin.id, admin.name)}
+                                    disabled={togglingAdmin === admin.id || deletingAdmin === admin.id}
+                                    style={{
+                                      fontSize: 12, fontWeight: 700, padding: '5px 10px',
+                                      border: '1px solid #FECACA',
+                                      borderRadius: 7, cursor: (togglingAdmin === admin.id || deletingAdmin === admin.id) ? 'not-allowed' : 'pointer',
+                                      background: '#FEF2F2',
+                                      color: '#DC2626',
+                                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                                      fontFamily: 'inherit',
+                                    }}
+                                    title={`Permanently delete ${admin.name}`}
+                                  >
+                                    {deletingAdmin === admin.id ? (
+                                      <Loader2 size={12} className="spin" />
+                                    ) : (
+                                      <><Trash2 size={12} /> Delete</>
+                                    )}
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards View */}
+                <div className="flex flex-col gap-3 sm:hidden">
+                  {admins.map((admin) => {
+                    const isSelf = admin.id === localStorage.getItem('userId');
+                    return (
+                      <div key={admin.id} style={{
+                        background: '#F8FAFC',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: 10,
+                        padding: 14,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        opacity: admin.isActive ? 1 : 0.65,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{
                               width: 32, height: 32, borderRadius: '50%',
                               background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
@@ -1107,78 +1207,79 @@ export default function SettingsPage() {
                             }}>
                               {admin.name.charAt(0).toUpperCase()}
                             </div>
-                            <span>{admin.name}</span>
-                            {isSelf && <span style={{ fontSize: 10, background: '#DBEAFE', color: '#1E40AF', borderRadius: 6, padding: '2px 6px', fontWeight: 800 }}>You</span>}
-                          </td>
-                          <td style={{ padding: '12px 16px', color: '#475569' }}>{admin.email}</td>
-                          <td style={{ padding: '12px 16px', color: '#475569' }}>{admin.phoneNumber || '—'}</td>
-                          <td style={{ padding: '12px 16px', color: '#64748B', whiteSpace: 'nowrap' }}>
-                            {new Date(admin.createdAt).toLocaleDateString()}
-                          </td>
-                          <td style={{ padding: '12px 16px' }}>
+                            <div>
+                              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span>{admin.name}</span>
+                                {isSelf && <span style={{ fontSize: 10, background: '#DBEAFE', color: '#1E40AF', borderRadius: 6, padding: '1px 5px', fontWeight: 800 }}>You</span>}
+                              </div>
+                              <div style={{ fontSize: 12, color: '#64748B' }}>{admin.email}</div>
+                            </div>
+                          </div>
+                          <div>
                             {admin.isActive ? (
-                              <span style={{ background: '#DCFCE7', color: '#14532D', padding: '3px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ background: '#DCFCE7', color: '#14532D', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                 <UserCheck size={11} /> Active
                               </span>
                             ) : (
-                              <span style={{ background: '#FEE2E2', color: '#7F1D1D', padding: '3px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ background: '#FEE2E2', color: '#7F1D1D', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                 <UserX size={11} /> Inactive
                               </span>
                             )}
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                            {!isSelf && (
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
-                                <button
-                                  onClick={() => handleToggleAdmin(admin.id, admin.name)}
-                                  disabled={togglingAdmin === admin.id || deletingAdmin === admin.id}
-                                  style={{
-                                    fontSize: 12, fontWeight: 700, padding: '5px 12px',
-                                    border: `1px solid ${admin.isActive ? '#FCA5A5' : '#BFDBFE'}`,
-                                    borderRadius: 7, cursor: (togglingAdmin === admin.id || deletingAdmin === admin.id) ? 'not-allowed' : 'pointer',
-                                    background: admin.isActive ? '#FEF2F2' : '#EFF6FF',
-                                    color: admin.isActive ? '#DC2626' : '#2563EB',
-                                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                                    fontFamily: 'inherit',
-                                  }}
-                                >
-                                  {togglingAdmin === admin.id ? (
-                                    <Loader2 size={12} className="spin" />
-                                  ) : admin.isActive ? (
-                                    <><UserX size={12} /> Deactivate</>
-                                  ) : (
-                                    <><UserCheck size={12} /> Reactivate</>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteAdmin(admin.id, admin.name)}
-                                  disabled={togglingAdmin === admin.id || deletingAdmin === admin.id}
-                                  style={{
-                                    fontSize: 12, fontWeight: 700, padding: '5px 10px',
-                                    border: '1px solid #FECACA',
-                                    borderRadius: 7, cursor: (togglingAdmin === admin.id || deletingAdmin === admin.id) ? 'not-allowed' : 'pointer',
-                                    background: '#FEF2F2',
-                                    color: '#DC2626',
-                                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                                    fontFamily: 'inherit',
-                                  }}
-                                  title={`Permanently delete ${admin.name}`}
-                                >
-                                  {deletingAdmin === admin.id ? (
-                                    <Loader2 size={12} className="spin" />
-                                  ) : (
-                                    <><Trash2 size={12} /> Delete</>
-                                  )}
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748B', borderTop: '1px solid #E2E8F0', paddingTop: 8 }}>
+                          <span>Phone: <strong style={{ color: '#334155' }}>{admin.phoneNumber || '—'}</strong></span>
+                          <span>Joined: <strong style={{ color: '#334155' }}>{new Date(admin.createdAt).toLocaleDateString()}</strong></span>
+                        </div>
+
+                        {!isSelf && (
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '1px solid #E2E8F0', paddingTop: 8 }}>
+                            <button
+                              onClick={() => handleToggleAdmin(admin.id, admin.name)}
+                              disabled={togglingAdmin === admin.id || deletingAdmin === admin.id}
+                              style={{
+                                fontSize: 12, fontWeight: 700, padding: '6px 12px',
+                                border: `1px solid ${admin.isActive ? '#FCA5A5' : '#BFDBFE'}`,
+                                borderRadius: 7, cursor: (togglingAdmin === admin.id || deletingAdmin === admin.id) ? 'not-allowed' : 'pointer',
+                                background: admin.isActive ? '#FEF2F2' : '#EFF6FF',
+                                color: admin.isActive ? '#DC2626' : '#2563EB',
+                                display: 'inline-flex', alignItems: 'center', gap: 5,
+                              }}
+                            >
+                              {togglingAdmin === admin.id ? (
+                                <Loader2 size={12} className="spin" />
+                              ) : admin.isActive ? (
+                                <><UserX size={12} /> Deactivate</>
+                              ) : (
+                                <><UserCheck size={12} /> Reactivate</>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAdmin(admin.id, admin.name)}
+                              disabled={togglingAdmin === admin.id || deletingAdmin === admin.id}
+                              style={{
+                                fontSize: 12, fontWeight: 700, padding: '6px 12px',
+                                border: '1px solid #FECACA',
+                                borderRadius: 7, cursor: (togglingAdmin === admin.id || deletingAdmin === admin.id) ? 'not-allowed' : 'pointer',
+                                background: '#FEF2F2',
+                                color: '#DC2626',
+                                display: 'inline-flex', alignItems: 'center', gap: 5,
+                              }}
+                            >
+                              {deletingAdmin === admin.id ? (
+                                <Loader2 size={12} className="spin" />
+                              ) : (
+                                <><Trash2 size={12} /> Delete</>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         </div>

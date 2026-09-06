@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
-import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Car, HelpCircle } from 'lucide-react';
+import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Car, HelpCircle, Lock } from 'lucide-react';
 import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
@@ -789,18 +789,37 @@ export default function Requests() {
 
                           {/* Status */}
                           <td className="rq-td" style={{ padding: '14px 18px' }}>
-                            <Badge style={{
-                              padding: '4px 10px',
-                              borderRadius: 999,
-                              background: ss.bg,
-                              color: ss.color,
-                              border: `1px solid ${ss.border}`,
-                              fontSize: 11,
-                              fontWeight: 800,
-                              letterSpacing: '0.04em',
-                            }}>
-                              <span>{inc.status}</span>
-                            </Badge>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                              <Badge style={{
+                                padding: '4px 10px',
+                                borderRadius: 999,
+                                background: ss.bg,
+                                color: ss.color,
+                                border: `1px solid ${ss.border}`,
+                                fontSize: 11,
+                                fontWeight: 800,
+                                letterSpacing: '0.04em',
+                              }}>
+                                <span>{inc.status}</span>
+                              </Badge>
+                              {inc.lockedByAdminName && inc.status !== 'RESOLVED' && inc.status !== 'REJECTED' && (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3,
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  color: '#B91C1C',
+                                  background: '#FEF2F2',
+                                  border: '1px solid #FECDD3',
+                                  borderRadius: 4,
+                                  padding: '2px 5px',
+                                  whiteSpace: 'nowrap',
+                                }} title={`Locked by ${inc.lockedByAdminName}`}>
+                                  <Lock size={10} /> {inc.lockedByAdminName}
+                                </span>
+                              )}
+                            </div>
                           </td>
 
                           {/* Reported time */}
@@ -927,15 +946,34 @@ export default function Requests() {
                           </span>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <Badge style={{
-                            padding: '3px 9px', borderRadius: 999,
-                            background: ss.bg, color: ss.color, border: `1px solid ${ss.border}`,
-                            fontSize: 10.5, fontWeight: 800,
-                          }}>
-                            <span>{inc.status}</span>
-                          </Badge>
-                          <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo(inc.createdAt)}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Badge style={{
+                              padding: '3px 9px', borderRadius: 999,
+                              background: ss.bg, color: ss.color, border: `1px solid ${ss.border}`,
+                              fontSize: 10.5, fontWeight: 800,
+                            }}>
+                              <span>{inc.status}</span>
+                            </Badge>
+                            <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo(inc.createdAt)}</span>
+                          </div>
+                          {inc.lockedByAdminName && inc.status !== 'RESOLVED' && inc.status !== 'REJECTED' && (
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 3,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: '#B91C1C',
+                              background: '#FEF2F2',
+                              border: '1px solid #FECDD3',
+                              borderRadius: 4,
+                              padding: '1px 5px',
+                              whiteSpace: 'nowrap',
+                            }} title={`Locked by ${inc.lockedByAdminName}`}>
+                              <Lock size={9} /> {inc.lockedByAdminName}
+                            </span>
+                          )}
                         </div>
                       </div>
 

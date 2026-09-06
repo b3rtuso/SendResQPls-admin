@@ -110,9 +110,31 @@ export const updateIncidentStatus = (id: string, data: { status?: string; adminN
 export const getIncidents = () => cachedGet('/incidents', 60000);
 export const getIncidentsByRange = (from: string, to: string) =>
   cachedGet(`/incidents?from=${from}&to=${to}`, 60000);
-export const getIncident = (id: string) => cachedGet(`/incidents/${id}`, 30000);
+export const getIncident = (id: string, skipCache = false) =>
+  skipCache ? api.get(`/incidents/${id}`) : cachedGet(`/incidents/${id}`, 5000);
 export const getIncidentStats = () => cachedGet('/incidents/stats', 60000);
 export const getMyIncidents = (userId: string) => cachedGet(`/incidents/my/${userId}`, 30000);
+
+export const lockIncident = (id: string) =>
+  api.post(`/incidents/${id}/lock`).then(res => {
+    invalidateCache('incidents');
+    return res;
+  });
+
+export const unlockIncident = (id: string) =>
+  api.post(`/incidents/${id}/unlock`).then(res => {
+    invalidateCache('incidents');
+    return res;
+  });
+
+export const heartbeatIncident = (id: string) =>
+  api.post(`/incidents/${id}/heartbeat`);
+
+export const forceUnlockIncident = (id: string) =>
+  api.post(`/incidents/${id}/force-unlock`).then(res => {
+    invalidateCache('incidents');
+    return res;
+  });
 
 export const reverseGeocode = (lat: number, lng: number) =>
   cachedGet(`/incidents/geocode/reverse?lat=${lat}&lng=${lng}`, 300000);

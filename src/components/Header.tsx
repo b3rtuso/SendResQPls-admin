@@ -1,9 +1,10 @@
 import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Building2, FileText, PhoneCall, LayoutDashboard, Settings as SettingsIcon } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getIncidents, updateIncidentStatus } from '../api/client';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getIncidents, updateIncidentStatus, lockIncident } from '../api/client';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { useAdminNav } from '../context/AdminNavContext';
+import { useToast } from '../context/ToastContext';
 
 interface HeaderProps {
   title: string;
@@ -52,6 +53,8 @@ const DEPARTMENTS_LIST = [
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { showToast } = useToast();
   const { toggleSidebar } = useAdminNav();
   const [notifications, setNotifications] = useState<NotifItem[]>([]);
   const [showPanel, setShowPanel] = useState(false);
@@ -63,6 +66,9 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sseRef = useRef<AbortController | null>(null);
+
+  // Check if admin is currently in the middle of working on an incident
+  const isWorkingOnIncident = location.pathname.startsWith('/requests/') && location.pathname !== '/requests';
 
   // Global search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -157,6 +163,26 @@ export default function Header({ title, subtitle }: HeaderProps) {
               };
               setNotifications(prev => [newItem, ...prev].slice(0, 20));
               setUnseenCount(prev => prev + 1);
+
+              // If currently working on an incident, show non-blocking toast so dispatcher isn't interrupted
+              if (location.pathname.startsWith('/requests/') && location.pathname !== '/requests') {
+                showToast({
+                  type: 'warning',
+                  message: 'Unrecognized Incident Reported',
+                  detail: `A new unrecognized emergency (${data.aiDetectedType || 'Unspecified'}) was reported. Queued for review.`,
+                  duration: 5000,
+                });
+              }
+            } catch { /* ignore */ }
+          }
+
+          if (event.event === 'incident_locked') {
+            try {
+              const data = JSON.parse(event.data);
+              // If another admin locked an unrecognized incident, remove it from this admin's queue
+              if (data.lockedByAdminId && data.lockedByAdminId !== localStorage.getItem('userId')) {
+                setUnrecognizedQueue(prev => prev.filter(item => item.id !== data.incidentId));
+              }
             } catch { /* ignore */ }
           }
         },
@@ -234,53 +260,41 @@ export default function Header({ title, subtitle }: HeaderProps) {
           status: 'REJECTED',
           adminNotes: 'Rejected by admin — AI could not recognize the incident and admin determined it is not a valid emergency.'
         });
-      } else {
-        await updateIncidentStatus(targetIncident.id, {
-          adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.'
+        setUnrecognizedQueue(prev => prev.slice(1));
+        showToast({
+          type: 'success',
+          message: 'Report Rejected',
+          detail: 'Unrecognized incident marked as invalid and archived.',
         });
-      }
-
-      const remaining = unrecognizedQueue.slice(1);
-      setUnrecognizedQueue(remaining);
-
-      if (action === 'keep' && remaining.length === 0) {
-        navigate(`/requests/${targetIncident.id}`);
+      } else {
+        // Keep for review — acquire lock before opening
+        try {
+          await lockIncident(targetIncident.id);
+          await updateIncidentStatus(targetIncident.id, {
+            adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.'
+          });
+          const remaining = unrecognizedQueue.slice(1);
+          setUnrecognizedQueue(remaining);
+          navigate(`/requests/${targetIncident.id}`);
+        } catch (lockErr: any) {
+          if (lockErr.response?.status === 423) {
+            showToast({
+              type: 'warning',
+              message: 'Incident Already Claimed',
+              detail: lockErr.response?.data?.error || 'Another administrator has already claimed this incident for review.',
+            });
+            setUnrecognizedQueue(prev => prev.filter(i => i.id !== targetIncident.id));
+          } else {
+            showToast({
+              type: 'error',
+              message: 'Failed to Claim Incident',
+              detail: lockErr.response?.data?.error || 'Could not acquire lock on this incident.',
+            });
+          }
+        }
       }
     } catch (e) {
       console.error('Failed to process decision:', e);
-    } finally {
-      setDecidingIncident(false);
-    }
-  };
-
-  const handleReclassifyFromHeader = async (type: string) => {
-    if (!currentUnrecognized) return;
-    const targetIncident = currentUnrecognized;
-    const deptMap: Record<string, string> = {
-      'Fire': 'BFP',
-      'Flood': 'RESCUE',
-      'Medical': 'MEDICAL',
-      'Vehicular Accident': 'RESCUE',
-      'Trauma': 'MEDICAL',
-      'Crime': 'PNP',
-      'Typhoon': 'RESCUE',
-      'Landslide': 'ENGINEERING',
-    };
-    const dept = deptMap[type] || 'RESCUE';
-    setDecidingIncident(true);
-    try {
-      await updateIncidentStatus(targetIncident.id, {
-        aiDetectedType: type,
-        assignedDepartment: dept,
-        adminNotes: `Reclassified by admin as ${type} and assigned to ${dept}.`,
-      });
-      const remaining = unrecognizedQueue.slice(1);
-      setUnrecognizedQueue(remaining);
-      if (remaining.length === 0) {
-        navigate(`/requests/${targetIncident.id}`);
-      }
-    } catch (e) {
-      console.error('Failed to reclassify incident:', e);
     } finally {
       setDecidingIncident(false);
     }
@@ -484,8 +498,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
         }
       `}</style>
 
-      {/* Unrecognized Incident Modal (Stackable Review Queue) */}
-      {currentUnrecognized && (
+      {/* Unrecognized Incident Modal (Stackable Review Queue — Suppressed while actively on an incident page) */}
+      {currentUnrecognized && !isWorkingOnIncident && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 10000,
           background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(6px)',
@@ -730,41 +744,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
                     </span>
                   </div>
                 </button>
-              </div>
-
-              {/* Direct Reclassify Choices for Admin */}
-              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #E2E8F0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>
-                    Or classify incident manually:
-                  </span>
-                  <span style={{ fontSize: 11, color: '#64748B' }}>Auto-assigns department</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {['Fire', 'Flood', 'Medical', 'Vehicular Accident', 'Trauma', 'Crime', 'Typhoon', 'Landslide'].map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => handleReclassifyFromHeader(t)}
-                      disabled={decidingIncident}
-                      style={{
-                        padding: '4px 10px',
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        borderRadius: 6,
-                        border: '1px solid #CBD5E1',
-                        background: '#F8FAFC',
-                        color: '#0F172A',
-                        cursor: decidingIncident ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#EFF6FF'; e.currentTarget.style.borderColor = '#2563EB'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#CBD5E1'; }}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Dismiss Option */}

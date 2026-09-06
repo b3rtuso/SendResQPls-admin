@@ -79,6 +79,10 @@ export interface Incident {
   reporter?: User;
   resolutionForm?: ResolutionForm;
   activities?: IncidentActivity[];
+  lockedByAdminId?: string | null;
+  lockedByAdminName?: string | null;
+  lockedAt?: string | null;
+  isLockedByOther?: boolean;
   createdAt: string;
   updatedAt: string;
 }

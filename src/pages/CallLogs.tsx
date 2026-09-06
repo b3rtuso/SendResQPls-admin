@@ -250,7 +250,7 @@ export default function CallLogs() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
           overflow: 'hidden',
         }}>
-          <div className="table-responsive">
+          <div className="table-responsive hidden sm:block">
             <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
@@ -360,6 +360,125 @@ export default function CallLogs() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card List (< 640px) */}
+          <div className="flex flex-col gap-3 p-3 sm:hidden">
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '32px 16px', color: '#94A3B8' }}>
+                <RefreshCw size={20} className="spin" style={{ margin: '0 auto 8px', display: 'block' }} />
+                Loading communication records...
+              </div>
+            ) : filteredLogs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 16px', color: '#94A3B8' }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: '#F8FAFC', border: '1px solid #E2E8F0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 10px', color: '#64748B',
+                }}>
+                  <FiPhone size={20} />
+                </div>
+                <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 14 }}>No Call Logs Available</div>
+              </div>
+            ) : (
+              filteredLogs.map((log) => {
+                const isIncidentLinked = log.requestId && log.requestId !== 'DIRECT_DISPATCH' && log.requestId !== 'DIRECT';
+                return (
+                  <div
+                    key={log.id}
+                    style={{
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: 12,
+                      padding: 14,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 13, color: '#2563EB' }}>
+                        #{log.id.slice(0, 8)}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: '#94A3B8' }}>
+                          {new Date(log.timestamp || log.createdAt || Date.now()).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          })} {new Date(log.timestamp || log.createdAt || Date.now()).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                          })}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(log.id)}
+                          style={{ color: '#94A3B8', padding: 2, height: 26, width: 26 }}
+                          title="Delete log"
+                        >
+                          <Trash2 size={13} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>
+                        {log.callerName}
+                      </div>
+                      <div>
+                        {isIncidentLinked ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/admin/requests/${log.requestId}`)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              background: '#EFF6FF',
+                              color: '#2563EB',
+                              border: '1px solid #BFDBFE',
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              fontFamily: 'monospace',
+                              height: 'auto',
+                            }}
+                          >
+                            #{log.requestId?.slice(0, 8)} <ExternalLink size={10} />
+                          </Button>
+                        ) : (
+                          <span style={{ fontSize: 11, color: '#64748B', background: '#F1F5F9', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                            Direct Dispatch
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: 8, fontSize: 12 }}>
+                      <span style={{ color: '#475569', fontWeight: 600 }}>{log.department}</span>
+                      <a
+                        href={`tel:${log.contact?.replace(/[^0-9+]/g, '')}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          color: '#2563EB',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <FiPhone size={12} /> {log.contact}
+                      </a>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
