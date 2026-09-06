@@ -176,6 +176,10 @@ export default function Dashboard() {
   // Derived active slide index for switcher tabs & dots (0 = Forecast, 1 = Top Locations)
   const activeSlide: 0 | 1 = (carouselIndex === 1 || carouselIndex === 3) ? 0 : 1;
 
+  const sortedTopLocations = useMemo(() => {
+    return [...topLocations].sort((a, b) => b.count - a.count);
+  }, []);
+
   const handleNext = useCallback(() => {
     if (isAnimatingRef.current) return;
     isAnimatingRef.current = true;
@@ -591,7 +595,7 @@ export default function Dashboard() {
                     </button>
                   ) : (
                     <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '3px 10px', borderRadius: 20, border: '1px solid #DBEAFE' }}>
-                      {topLocations.length} Key Hotspots
+                      {sortedTopLocations.length} Key Hotspots
                     </span>
                   )}
                 </div>
@@ -685,8 +689,8 @@ export default function Dashboard() {
                         alignItems: 'center',
                       }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, width: '100%' }}>
-                          {topLocations.map((loc, i) => {
-                            const maxCount = topLocations[0]?.count || 1;
+                          {sortedTopLocations.map((loc, i) => {
+                            const maxCount = sortedTopLocations[0]?.count || 1;
                             const pct = Math.round((loc.count / maxCount) * 100);
                             const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
                             const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';
@@ -828,8 +832,8 @@ export default function Dashboard() {
                         alignItems: 'center',
                       }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, width: '100%' }}>
-                          {topLocations.map((loc, i) => {
-                            const maxCount = topLocations[0]?.count || 1;
+                          {sortedTopLocations.map((loc, i) => {
+                            const maxCount = sortedTopLocations[0]?.count || 1;
                             const pct = Math.round((loc.count / maxCount) * 100);
                             const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
                             const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';

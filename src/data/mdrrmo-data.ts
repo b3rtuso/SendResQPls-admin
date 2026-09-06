@@ -102,8 +102,8 @@ export const yearlyTotals = [
 // ── Top incident locations ──────────────────────────────────────────
 export const topLocations = [
   { name: 'Brgy. Caloocan',     count: 174 },
-  { name: 'Brgy. Lanatan',      count:  86 },
   { name: 'Brgy. Sambat',       count:  98 },
+  { name: 'Brgy. Lanatan',      count:  86 },
   { name: 'Balayan Public Market', count: 54 },
   { name: 'Balayan Gov\'t Center', count: 41 },
   { name: 'Brgy. Sampaga',      count:  20 },
