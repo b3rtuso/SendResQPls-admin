@@ -18,6 +18,7 @@ import { FaBell, FaCog } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { validatePhilippineMobile } from '../utils/phoneValidator';
 
 export default function SettingsPage() {
   const { confirm } = useConfirm();
@@ -143,8 +144,13 @@ export default function SettingsPage() {
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAdmin.name || !newAdmin.email || !newAdmin.password) {
+    if (!newAdmin.name.trim() || !newAdmin.email.trim() || !newAdmin.password) {
       showToast('error', 'Validation Error', 'Name, email, and password are required.');
+      return;
+    }
+    const phoneCheck = validatePhilippineMobile(newAdmin.phoneNumber);
+    if (!phoneCheck.valid) {
+      showToast('error', 'Validation Error', phoneCheck.error || 'Invalid mobile number.');
       return;
     }
     if (newAdmin.password.length < 8) {
@@ -153,7 +159,12 @@ export default function SettingsPage() {
     }
     setCreatingAdmin(true);
     try {
-      const res = await createAdmin(newAdmin);
+      const res = await createAdmin({
+        name: newAdmin.name.trim(),
+        email: newAdmin.email.trim(),
+        password: newAdmin.password,
+        phoneNumber: phoneCheck.cleaned!,
+      });
       setAdmins(prev => [...prev, res.data.admin]);
       setNewAdmin({ name: '', email: '', password: '', phoneNumber: '' });
       setShowCreateAdmin(false);
@@ -256,6 +267,12 @@ export default function SettingsPage() {
       return;
     }
 
+    const phoneCheck = validatePhilippineMobile(profile.phone);
+    if (!phoneCheck.valid) {
+      showToast('error', 'Validation Error', phoneCheck.error || 'Invalid mobile number.');
+      return;
+    }
+
     if (originalProfile) {
       // 1. Detect which fields were actually changed
       const changes = detectFieldChanges(originalProfile, profile, {
@@ -293,13 +310,13 @@ export default function SettingsPage() {
       await updateProfile({
         name: profile.name.trim(),
         email: profile.email.trim(),
-        phoneNumber: profile.phone.trim()
+        phoneNumber: phoneCheck.cleaned!,
       });
       
       const updated = {
         name: profile.name.trim(),
         email: profile.email.trim(),
-        phone: profile.phone.trim(),
+        phone: phoneCheck.cleaned!,
         department: profile.department
       };
       setProfile(updated);
@@ -716,13 +733,17 @@ export default function SettingsPage() {
 
                 <div className="st-form-row">
                   <div className="st-form-group" style={{ margin: 0 }}>
-                    <label className="st-label">Phone Number</label>
+                    <label className="st-label">Phone Number *</label>
                     <input 
                       className="st-input" 
+                      type="tel"
                       value={profile.phone} 
-                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })} 
-                      placeholder="0917XXXXXXX"
+                      onChange={(e) => setProfile({ ...profile, phone: e.target.value.replace(/[^0-9+]/g, '') })} 
+                      placeholder="09292695926"
                     />
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                      Must be 11 digits starting with 09 (e.g. 09292695926, no +63)
+                    </span>
                   </div>
                   <div className="st-form-group" style={{ margin: 0 }}>
                     <label className="st-label">Assigned Station</label>
@@ -1057,9 +1078,17 @@ export default function SettingsPage() {
                       onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })} />
                   </div>
                   <div className="st-form-group" style={{ margin: 0 }}>
-                    <label className="st-label">Phone Number (optional)</label>
-                    <input className="st-input" placeholder="0917XXXXXXX" value={newAdmin.phoneNumber}
-                      onChange={e => setNewAdmin({ ...newAdmin, phoneNumber: e.target.value })} />
+                    <label className="st-label">Phone Number *</label>
+                    <input 
+                      className="st-input" 
+                      type="tel"
+                      placeholder="09292695926" 
+                      value={newAdmin.phoneNumber}
+                      onChange={e => setNewAdmin({ ...newAdmin, phoneNumber: e.target.value.replace(/[^0-9+]/g, '') })} 
+                    />
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                      Must be 11 digits starting with 09 (e.g. 09292695926, no +63)
+                    </span>
                   </div>
                 </div>
                 <button className="st-btn-primary" type="submit" disabled={creatingAdmin} style={{ alignSelf: 'flex-start' }}>
