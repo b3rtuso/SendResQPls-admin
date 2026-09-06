@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
-import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Car, HelpCircle, Lock } from 'lucide-react';
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Car, HelpCircle, Lock } from 'lucide-react';
 import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
@@ -23,19 +23,31 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string; border: string }
   REJECTED:   { bg: '#FEE2E2', color: '#7F1D1D', border: '#FECACA' },
 };
 
-type TypeIconEntry = { icon: React.ElementType | null; emoji?: string; color: string };
+type TypeIconEntry = { icon: React.ElementType | null; color: string };
 const TYPE_ICON: Record<string, TypeIconEntry> = {
-  Fire:         { icon: FaFire,            emoji: '🔥', color: '#DC2626' },
-  Flood:        { icon: FaHouseFloodWater, emoji: '🌊', color: '#3B82F6' },
-  Medical:      { icon: FaBriefcaseMedical,emoji: '🚑', color: '#22C55E' },
-  Crime:        { icon: RiCriminalFill,    emoji: '🚨', color: '#000000' },
-  Typhoon:      { icon: RiTyphoonFill,     emoji: '🌀', color: '#8B5CF6' },
-  Landslide:    { icon: MdLandslide,       emoji: '⛰️', color: '#78716C' },
-  Trauma:       { icon: IoBandage,         emoji: '🩹', color: '#F59E0B' },
-  Accident:     { icon: Car,               emoji: '🚗', color: '#3B82F6' },
-  Unrecognized: { icon: HelpCircle,        emoji: '❓', color: '#64748B' },
-  Unknown:      { icon: HelpCircle,        emoji: '❓', color: '#64748B' },
+  Fire:         { icon: FaFire,            color: '#EF4444' },
+  Flood:        { icon: FaHouseFloodWater, color: '#3B82F6' },
+  Medical:      { icon: FaBriefcaseMedical,color: '#22C55E' },
+  Crime:        { icon: RiCriminalFill,    color: '#0F172A' },
+  Typhoon:      { icon: RiTyphoonFill,     color: '#8B5CF6' },
+  Landslide:    { icon: MdLandslide,       color: '#78716C' },
+  Trauma:       { icon: IoBandage,         color: '#F59E0B' },
+  Accident:     { icon: Car,               color: '#3B82F6' },
+  Unrecognized: { icon: HelpCircle,        color: '#64748B' },
+  Unknown:      { icon: HelpCircle,        color: '#64748B' },
 };
+
+const HAZARD_OPTIONS = [
+  { id: 'ALL',        label: 'All Hazard Types', icon: Filter,            color: '#64748B' },
+  { id: 'Fire',       label: 'Fire',             icon: FaFire,            color: '#EF4444' },
+  { id: 'Flood',      label: 'Flood',            icon: FaHouseFloodWater, color: '#3B82F6' },
+  { id: 'Medical',    label: 'Medical',          icon: FaBriefcaseMedical,color: '#22C55E' },
+  { id: 'Trauma',     label: 'Trauma',           icon: IoBandage,         color: '#F59E0B' },
+  { id: 'Accident',   label: 'Accident',         icon: Car,               color: '#3B82F6' },
+  { id: 'Crime',      label: 'Crime',            icon: RiCriminalFill,    color: '#0F172A' },
+  { id: 'Typhoon',    label: 'Typhoon',          icon: RiTyphoonFill,     color: '#8B5CF6' },
+  { id: 'Landslide',  label: 'Landslide',        icon: MdLandslide,       color: '#78716C' },
+];
 
 const TAB_THEMES: Record<string, {
   activeBg: string;
@@ -159,12 +171,26 @@ export default function Requests() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterStatus, setFilterStatus] = useState<Status | 'ALL'>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) {
+        setShowTypeDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+
+  const selectedHazardOption = HAZARD_OPTIONS.find(o => o.id === filterType) || HAZARD_OPTIONS[0];
 
   // Multi-select batch operations state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -546,30 +572,127 @@ export default function Requests() {
           </div>
 
           {/* Type Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Filter size={14} color="#94A3B8" />
-            <select
-              value={filterType}
-              onChange={e => setFilterType(e.target.value)}
+          <div ref={typeDropdownRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setShowTypeDropdown(prev => !prev)}
               style={{
-                padding: '9px 12px',
-                border: '1px solid #E2E8F0',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 12px',
+                border: showTypeDropdown ? '1px solid #2563EB' : '1px solid #CBD5E1',
                 borderRadius: 9,
                 fontSize: 13,
-                color: '#334155',
-                background: '#F8FAFC',
-                fontFamily: 'inherit',
-                cursor: 'pointer',
-                outline: 'none',
                 fontWeight: 500,
+                color: filterType !== 'ALL' ? '#0F172A' : '#475569',
+                background: showTypeDropdown ? '#F8FAFC' : '#FFFFFF',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: showTypeDropdown ? '0 0 0 3px rgba(37,99,235,0.1)' : 'none',
               }}
             >
-              {['ALL', 'Fire', 'Flood', 'Medical', 'Trauma', 'Accident', 'Crime', 'Typhoon', 'Landslide'].map(t => (
-                <option key={t} value={t}>
-                  {t === 'ALL' ? 'All Hazard Types' : `${TYPE_ICON[t]?.emoji ? `${TYPE_ICON[t].emoji} ` : ''}${t}`}
-                </option>
-              ))}
-            </select>
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: filterType !== 'ALL' ? `${selectedHazardOption.color}15` : '#F1F5F9',
+                  color: selectedHazardOption.color,
+                  flexShrink: 0,
+                }}
+              >
+                {selectedHazardOption.icon && <selectedHazardOption.icon size={13} style={{ display: 'block' }} />}
+              </div>
+              <span>{selectedHazardOption.label}</span>
+              <ChevronDown
+                size={14}
+                style={{
+                  color: '#94A3B8',
+                  transform: showTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                  marginLeft: 2,
+                }}
+              />
+            </button>
+
+            {showTypeDropdown && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  zIndex: 60,
+                  minWidth: 200,
+                  background: '#FFFFFF',
+                  borderRadius: 10,
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05)',
+                  padding: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                }}
+              >
+                {HAZARD_OPTIONS.map(opt => {
+                  const Icon = opt.icon;
+                  const isSelected = filterType === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setFilterType(opt.id);
+                        setShowTypeDropdown(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        width: '100%',
+                        padding: '8px 10px',
+                        border: 'none',
+                        borderRadius: 7,
+                        fontSize: 13,
+                        fontWeight: isSelected ? 600 : 500,
+                        color: isSelected ? '#0F172A' : '#475569',
+                        background: isSelected ? '#EFF6FF' : 'transparent',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background 0.15s ease',
+                      }}
+                      onMouseEnter={e => {
+                        if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#F8FAFC';
+                      }}
+                      onMouseLeave={e => {
+                        if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: 6,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: `${opt.color}15`,
+                          color: opt.color,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {Icon && <Icon size={14} />}
+                      </div>
+                      <span style={{ flex: 1 }}>{opt.label}</span>
+                      {isSelected && <CheckCircle2 size={15} color="#2563EB" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div style={{ flex: 1 }} />
@@ -755,10 +878,11 @@ export default function Requests() {
                           {/* Type */}
                           <td className="rq-td" style={{ padding: '14px 18px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              {ti.icon
-                                ? <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
-                                : <span>{ti.emoji}</span>
-                              }
+                              {ti.icon ? (
+                                <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
+                              ) : (
+                                <HelpCircle size={16} style={{ color: '#64748B', flexShrink: 0 }} />
+                              )}
                               <strong style={{ color: '#0F172A', fontWeight: 700 }}>
                                 {inc.aiDetectedType || 'Emergency'}
                               </strong>
@@ -997,10 +1121,11 @@ export default function Requests() {
 
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                            {ti.icon
-                              ? <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
-                              : <span>{ti.emoji}</span>
-                            }
+                            {ti.icon ? (
+                              <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
+                            ) : (
+                              <HelpCircle size={16} style={{ color: '#64748B', flexShrink: 0 }} />
+                            )}
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.aiDetectedType || 'Emergency'}</span>
                           </div>
                           <div style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
