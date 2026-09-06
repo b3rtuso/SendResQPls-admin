@@ -25,16 +25,16 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string; border: string }
 
 type TypeIconEntry = { icon: React.ElementType | null; emoji?: string; color: string };
 const TYPE_ICON: Record<string, TypeIconEntry> = {
-  Fire:         { icon: FaFire,            color: '#DC2626' },
-  Flood:        { icon: FaHouseFloodWater, color: '#3B82F6' },
-  Medical:      { icon: FaBriefcaseMedical,color: '#22C55E' },
-  Crime:        { icon: RiCriminalFill,    color: '#000000' },
-  Typhoon:      { icon: RiTyphoonFill,     color: '#8B5CF6' },
-  Landslide:    { icon: MdLandslide,       color: '#78716C' },
-  Trauma:       { icon: IoBandage,         color: '#F59E0B' },
-  Accident:     { icon: Car,               color: '#3B82F6' },
-  Unrecognized: { icon: HelpCircle,        color: '#64748B' },
-  Unknown:      { icon: HelpCircle,        color: '#64748B' },
+  Fire:         { icon: FaFire,            emoji: '🔥', color: '#DC2626' },
+  Flood:        { icon: FaHouseFloodWater, emoji: '🌊', color: '#3B82F6' },
+  Medical:      { icon: FaBriefcaseMedical,emoji: '🚑', color: '#22C55E' },
+  Crime:        { icon: RiCriminalFill,    emoji: '🚨', color: '#000000' },
+  Typhoon:      { icon: RiTyphoonFill,     emoji: '🌀', color: '#8B5CF6' },
+  Landslide:    { icon: MdLandslide,       emoji: '⛰️', color: '#78716C' },
+  Trauma:       { icon: IoBandage,         emoji: '🩹', color: '#F59E0B' },
+  Accident:     { icon: Car,               emoji: '🚗', color: '#3B82F6' },
+  Unrecognized: { icon: HelpCircle,        emoji: '❓', color: '#64748B' },
+  Unknown:      { icon: HelpCircle,        emoji: '❓', color: '#64748B' },
 };
 
 const TAB_THEMES: Record<string, {
@@ -566,7 +566,7 @@ export default function Requests() {
             >
               {['ALL', 'Fire', 'Flood', 'Medical', 'Trauma', 'Accident', 'Crime', 'Typhoon', 'Landslide'].map(t => (
                 <option key={t} value={t}>
-                  {t === 'ALL' ? 'All Hazard Types' : `${TYPE_ICON[t] || ''} ${t}`}
+                  {t === 'ALL' ? 'All Hazard Types' : `${TYPE_ICON[t]?.emoji ? `${TYPE_ICON[t].emoji} ` : ''}${t}`}
                 </option>
               ))}
             </select>
