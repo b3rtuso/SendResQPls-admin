@@ -733,13 +733,25 @@ export default function SettingsPage() {
 
                 <div className="st-form-row">
                   <div className="st-form-group" style={{ margin: 0 }}>
-                    <label className="st-label">Phone Number *</label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <label className="st-label" style={{ margin: 0 }}>Phone Number *</label>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: profile.phone.length === 11 && profile.phone.startsWith('09') ? '#16A34A' : 'var(--text-muted)',
+                        transition: 'color 0.2s',
+                      }}>
+                        {profile.phone.length}/11 digits
+                      </span>
+                    </div>
                     <input 
                       className="st-input" 
                       type="tel"
+                      inputMode="numeric"
+                      maxLength={11}
                       value={profile.phone} 
-                      onChange={(e) => setProfile({ ...profile, phone: e.target.value.replace(/[^0-9+]/g, '') })} 
-                      placeholder="09292695926"
+                      onChange={(e) => setProfile({ ...profile, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })} 
+                      placeholder="09292695926 (11 digits)"
                     />
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
                       Must be 11 digits starting with 09 (e.g. 09292695926, no +63)
@@ -1078,13 +1090,25 @@ export default function SettingsPage() {
                       onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })} />
                   </div>
                   <div className="st-form-group" style={{ margin: 0 }}>
-                    <label className="st-label">Phone Number *</label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <label className="st-label" style={{ margin: 0 }}>Phone Number *</label>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: newAdmin.phoneNumber.length === 11 && newAdmin.phoneNumber.startsWith('09') ? '#16A34A' : 'var(--text-muted)',
+                        transition: 'color 0.2s',
+                      }}>
+                        {newAdmin.phoneNumber.length}/11 digits
+                      </span>
+                    </div>
                     <input 
                       className="st-input" 
                       type="tel"
-                      placeholder="09292695926" 
+                      inputMode="numeric"
+                      maxLength={11}
+                      placeholder="09292695926 (11 digits)" 
                       value={newAdmin.phoneNumber}
-                      onChange={e => setNewAdmin({ ...newAdmin, phoneNumber: e.target.value.replace(/[^0-9+]/g, '') })} 
+                      onChange={e => setNewAdmin({ ...newAdmin, phoneNumber: e.target.value.replace(/\D/g, '').slice(0, 11) })} 
                     />
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
                       Must be 11 digits starting with 09 (e.g. 09292695926, no +63)
