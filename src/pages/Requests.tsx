@@ -536,6 +536,8 @@ export default function Requests() {
 
         {/* ── Search & Filter Controls ── */}
         <div className="fade-in" style={{
+          position: 'relative',
+          zIndex: 40,
           background: '#FFFFFF',
           borderRadius: 14,
           padding: '14px 18px',
@@ -572,7 +574,7 @@ export default function Requests() {
           </div>
 
           {/* Type Filter */}
-          <div ref={typeDropdownRef} style={{ position: 'relative' }}>
+          <div ref={typeDropdownRef} style={{ position: 'relative', zIndex: 50 }}>
             <button
               type="button"
               onClick={() => setShowTypeDropdown(prev => !prev)}
@@ -625,7 +627,7 @@ export default function Requests() {
                   position: 'absolute',
                   top: 'calc(100% + 6px)',
                   left: 0,
-                  zIndex: 60,
+                  zIndex: 100,
                   minWidth: 200,
                   background: '#FFFFFF',
                   borderRadius: 10,
@@ -723,7 +725,7 @@ export default function Requests() {
         </div>
 
         {/* ── Incident Table Card ── */}
-        <div className="rq-card-container fade-in">
+        <div className="rq-card-container fade-in" style={{ position: 'relative', zIndex: 1 }}>
           {loading ? (
             <RequestsTableSkeleton />
           ) : sortedAndFiltered.length === 0 ? (
