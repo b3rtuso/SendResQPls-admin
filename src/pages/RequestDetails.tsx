@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, PhoneCall, Navigation } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
 import { FiPhone } from 'react-icons/fi';
 import type { Status, Incident, Department, ResolutionForm } from '../types';
@@ -435,6 +435,10 @@ export default function RequestDetails() {
       status: 'Accepted',
     }).catch(() => {});
     showToast('info', `Calling ${dept.name}`, `Initiated call to ${dept.contact}. Call log recorded.`);
+    const cleanNumber = (dept.contact || '').replace(/[^\d+]/g, '');
+    if (cleanNumber) {
+      window.location.href = `tel:${cleanNumber}`;
+    }
   };
 
   const handleCallReporter = () => {
@@ -454,6 +458,15 @@ export default function RequestDetails() {
     if (incident) {
       window.open(
         `https://www.google.com/maps?q=${incident.latitude},${incident.longitude}`,
+        '_blank'
+      );
+    }
+  };
+
+  const openDirections = () => {
+    if (incident) {
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${incident.latitude},${incident.longitude}`,
         '_blank'
       );
     }
@@ -671,7 +684,38 @@ export default function RequestDetails() {
                   </div>
                 </div>
                 <div>
-                  <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>ASSIGNED DEPT</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, flexWrap: 'wrap' }}>
+                    <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>ASSIGNED DEPT</strong>
+                    {(() => {
+                      const activeDeptKey = incident.assignedDepartment || incident.aiRecommendedDept;
+                      const deptObj = departments.find(d => d.key === activeDeptKey);
+                      if (!deptObj) return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={(e) => handleCallDept(e, deptObj)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            border: `1px solid ${deptObj.color}`,
+                            background: `${deptObj.color}12`,
+                            color: deptObj.color,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          title={`Call ${deptObj.name} (${deptObj.contact})`}
+                        >
+                          <PhoneCall size={11} />
+                          <span>Call {deptObj.abbr || deptObj.key}</span>
+                        </button>
+                      );
+                    })()}
+                  </div>
                   <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4, color: incident.assignedDepartment ? 'var(--primary)' : 'var(--text-muted)' }}>
                     {incident.assignedDepartment ? deptNames[incident.assignedDepartment] || incident.assignedDepartment : 'Not yet assigned'}
                   </div>
@@ -688,6 +732,10 @@ export default function RequestDetails() {
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>SEVERITY RANKING</strong>
                   <div style={{ fontSize: 14, fontWeight: 800, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     {(() => {
+                      const isTerminal = currentStatus === 'RESOLVED' || currentStatus === 'REJECTED';
+                      if (isTerminal) {
+                        return <span style={{ fontSize: 13, color: '#94A3B8', fontWeight: 600 }}>—</span>;
+                      }
                       const sev = (incident.severity || 'MEDIUM').toUpperCase();
                       const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
                         CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
@@ -920,15 +968,38 @@ export default function RequestDetails() {
 
             {/* Map Card */}
             <div className="card" style={{ overflow: 'hidden' }}>
-              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <h3><FaLocationDot size={16} style={{ marginRight: 6, verticalAlign: -2, display: 'inline-block', color: '#2563EB' }} /> Incident Location Map</h3>
-                <button
-                  onClick={openLocation}
-                  className="btn btn-sm btn-outline"
-                  style={{ padding: '4px 10px', fontSize: 12 }}
-                >
-                  <ExternalLink size={12} /> Open in Google Maps
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    onClick={openDirections}
+                    className="btn btn-sm"
+                    style={{
+                      padding: '5px 12px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background: '#2563EB',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
+                    }}
+                    title="Get turn-by-turn directions to incident location"
+                  >
+                    <Navigation size={13} /> Get Directions
+                  </button>
+                  <button
+                    onClick={openLocation}
+                    className="btn btn-sm btn-outline"
+                    style={{ padding: '4px 10px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                  >
+                    <ExternalLink size={12} /> Google Maps
+                  </button>
+                </div>
               </div>
               <div className="card-body" style={{ padding: 0, position: 'relative' }}>
                 <div style={{ height: '350px', width: '100%', position: 'relative' }} className="details-map-container">
@@ -952,6 +1023,27 @@ export default function RequestDetails() {
                           <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginTop: 4 }}>
                             {incident.latitude.toFixed(6)}°N, {incident.longitude.toFixed(6)}°E
                           </span>
+                          <button
+                            onClick={openDirections}
+                            style={{
+                              marginTop: 8,
+                              width: '100%',
+                              padding: '6px 10px',
+                              background: '#2563EB',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 5,
+                            }}
+                          >
+                            <Navigation size={12} /> Get Directions
+                          </button>
                         </div>
                       </Popup>
                     </Marker>

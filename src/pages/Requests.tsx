@@ -124,6 +124,14 @@ const TAB_THEMES: Record<string, {
 const STATUS_TABS: (Status | 'ALL')[] = ['ALL', 'PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED', 'REJECTED'];
 const PAGE_SIZE = 12;
 
+const DEPT_NAMES: Record<string, string> = {
+  BFP: 'BFP (Fire)',
+  PNP: 'PNP (Police)',
+  MEDICAL: 'Medical / EMS',
+  ENGINEERING: 'Engineering',
+  RESCUE: 'MDRRMO Rescue Team',
+};
+
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime();
   const m = Math.floor(diff / 60000);
@@ -909,8 +917,16 @@ export default function Requests() {
                           </td>
 
                           {/* Unit */}
-                          <td className="rq-td" style={{ padding: '14px 18px', fontWeight: 600, color: '#475569' }}>
-                            {inc.aiRecommendedDept || 'MDRRMO'}
+                          <td className="rq-td" style={{ padding: '14px 18px', fontWeight: 600, color: '#1E293B' }}>
+                            {inc.assignedDepartment ? (
+                              <span>{DEPT_NAMES[inc.assignedDepartment] || inc.assignedDepartment}</span>
+                            ) : inc.aiRecommendedDept ? (
+                              <span style={{ color: '#64748B', fontSize: 12 }}>
+                                Rec: {DEPT_NAMES[inc.aiRecommendedDept] || inc.aiRecommendedDept}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#94A3B8', fontSize: 12 }}>MDRRMO</span>
+                            )}
                           </td>
 
                           {/* Status */}
@@ -1049,6 +1065,7 @@ export default function Requests() {
                     LOW:      { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981' },
                   };
                   const s = sevColors[sev] || sevColors.MEDIUM;
+                  const isTerminal = inc.status === 'RESOLVED' || inc.status === 'REJECTED';
 
                   return (
                     <div
@@ -1136,21 +1153,31 @@ export default function Requests() {
                               <span>{brgyName}</span>
                             </span>
                             <span style={{ color: '#CBD5E1' }}>•</span>
-                            <span>{inc.aiRecommendedDept || 'MDRRMO'}</span>
+                            <span style={{ fontWeight: 600 }}>
+                              {inc.assignedDepartment
+                                ? (DEPT_NAMES[inc.assignedDepartment] || inc.assignedDepartment)
+                                : inc.aiRecommendedDept
+                                ? `Rec: ${DEPT_NAMES[inc.aiRecommendedDept] || inc.aiRecommendedDept}`
+                                : 'MDRRMO'}
+                            </span>
                           </div>
                         </div>
                       </div>
 
                       {/* Severity & Action Buttons */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #F1F5F9' }}>
-                        <Badge style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 5,
-                          padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
-                          background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
-                        }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot }} />
-                          <span>{sev}</span>
-                        </Badge>
+                        {isTerminal ? (
+                          <span style={{ fontSize: 11, color: '#94A3B8' }}>—</span>
+                        ) : (
+                          <Badge style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
+                            background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
+                          }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot }} />
+                            <span>{sev}</span>
+                          </Badge>
+                        )}
 
                         <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
                           {inc.status === 'PENDING' && (
