@@ -124,9 +124,9 @@ export default function ConfirmModal({
             width: '100%',
             maxWidth: 420,
             background: '#FFFFFF',
-            border: '1px solid #FEE2E2',
-            borderRadius: 18,
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(220, 38, 38, 0.08)',
+            border: '1px solid #E2E8F0',
+            borderRadius: 20,
+            boxShadow: '0 24px 60px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(0, 0, 0, 0.04)',
             padding: '24px 22px',
             color: '#0F172A',
             fontFamily: "var(--font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
@@ -186,7 +186,7 @@ export default function ConfirmModal({
           </div>
 
           {detail && (
-            <div style={{ fontSize: 12, color: '#9F1239', background: '#FFF1F2', border: '1px solid #FECDD3', padding: '10px 12px', borderRadius: 8 }}>
+            <div style={{ fontSize: 12, color: '#9F1239', background: '#FFFFFF', border: '1px solid #FECDD3', padding: '10px 12px', borderRadius: 10 }}>
               {detail}
             </div>
           )}
@@ -197,7 +197,7 @@ export default function ConfirmModal({
               onClick={onCancel}
               style={{
                 padding: '8px 18px',
-                background: '#F8FAFC',
+                background: '#FFFFFF',
                 color: '#475569',
                 border: '1px solid #CBD5E1',
                 borderRadius: 9999,
@@ -207,11 +207,11 @@ export default function ConfirmModal({
                 transition: 'all 0.15s',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#F1F5F9';
+                e.currentTarget.style.background = '#F8FAFC';
                 e.currentTarget.style.color = '#0F172A';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#F8FAFC';
+                e.currentTarget.style.background = '#FFFFFF';
                 e.currentTarget.style.color = '#475569';
               }}
             >
@@ -252,14 +252,14 @@ export default function ConfirmModal({
     : isDiscard
     ? '#DC2626'
     : isUpdate
-    ? '#2563EB'
-    : '#2563EB';
+    ? '#16A34A'
+    : '#16A34A';
 
   const accentBg = isWarning
     ? '#FEF3C7'
     : isDiscard
     ? '#FEE2E2'
-    : '#DBEAFE';
+    : '#DCFCE7';
 
   const IconComponent = isWarning || isDiscard ? AlertTriangle : CheckCircle2;
 
@@ -289,8 +289,8 @@ export default function ConfirmModal({
           maxWidth: 440,
           background: '#FFFFFF',
           border: '1px solid #E2E8F0',
-          borderRadius: 18,
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0, 0, 0, 0.04)',
+          borderRadius: 20,
+          boxShadow: '0 24px 60px rgba(15, 23, 42, 0.2), 0 4px 16px rgba(0, 0, 0, 0.04)',
           padding: '24px 22px',
           color: '#0F172A',
           fontFamily: "var(--font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
@@ -356,7 +356,7 @@ export default function ConfirmModal({
             maxHeight: 260,
             overflowY: 'auto',
             padding: '12px 14px',
-            background: '#F8FAFC',
+            background: '#FFFFFF',
             border: '1px solid #E2E8F0',
             borderRadius: 12,
             margin: '4px 0',
@@ -408,7 +408,7 @@ export default function ConfirmModal({
         )}
 
         {detail && (
-          <div style={{ fontSize: 12, color: '#64748B', background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '10px 12px', borderRadius: 10 }}>
+          <div style={{ fontSize: 12, color: '#64748B', background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '10px 12px', borderRadius: 10 }}>
             {detail}
           </div>
         )}
@@ -426,7 +426,7 @@ export default function ConfirmModal({
             onClick={onCancel}
             style={{
               padding: '8px 18px',
-              background: '#F8FAFC',
+              background: '#FFFFFF',
               color: '#475569',
               border: '1px solid #CBD5E1',
               borderRadius: 9999,
@@ -436,11 +436,11 @@ export default function ConfirmModal({
               transition: 'all 0.15s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#F1F5F9';
+              e.currentTarget.style.background = '#F8FAFC';
               e.currentTarget.style.color = '#0F172A';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#F8FAFC';
+              e.currentTarget.style.background = '#FFFFFF';
               e.currentTarget.style.color = '#475569';
             }}
           >

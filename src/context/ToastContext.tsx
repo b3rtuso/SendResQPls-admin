@@ -20,17 +20,29 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const showToast = useCallback((options: ToastOptions | string, type?: ToastType, detail?: string) => {
     if (typeof options === 'string') {
-      setToast({
-        id: Date.now(),
-        message: options,
-        type: type || 'simple',
-        detail,
-        duration: 4000,
-      });
+      const knownTypes: ToastType[] = ['success', 'danger', 'error', 'warning', 'info', 'update', 'simple'];
+      if (knownTypes.includes(options as ToastType)) {
+        setToast({
+          id: Date.now(),
+          type: options as ToastType,
+          message: (type as unknown as string) || options,
+          detail,
+          duration: 4000,
+        });
+      } else {
+        setToast({
+          id: Date.now(),
+          message: options,
+          type: type || 'success',
+          detail,
+          duration: 4000,
+        });
+      }
     } else {
       setToast({
         id: Date.now(),
         duration: 4000,
+        type: options.type || 'success',
         ...options,
       });
     }

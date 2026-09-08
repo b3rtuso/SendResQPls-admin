@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, type ReactNode } from "react";
-import { IoIosSend } from "react-icons/io";
 
 export type ToastType = "simple" | "success" | "danger" | "error" | "warning" | "info" | "update";
 
@@ -29,20 +28,9 @@ export default function Toast({
 
   const isDanger = type === "error" || type === "danger";
   const isWarning = type === "warning";
-  const isReportSent = Boolean(
-    !isDanger && !isWarning && (
-      (message && message.toLowerCase().includes("report") && (message.toLowerCase().includes("sent") || message.toLowerCase().includes("submitted"))) ||
-      (detail && detail.toLowerCase().includes("report") && (detail.toLowerCase().includes("sent") || detail.toLowerCase().includes("submitted")))
-    )
-  );
-  const isUpdate = type === "update" || (
-    !isDanger && !isWarning && (
-      message.toLowerCase().includes("update") ||
-      message.toLowerCase().includes("updated") ||
-      Boolean(detail && detail.toLowerCase().includes("updated"))
-    )
-  );
-  const isSuccess = type === "success" || isUpdate;
+  const isInfo = type === "info";
+  // When something is executed properly (success, update, simple, or default), treat as success check
+  const isSuccess = !isDanger && !isWarning && !isInfo;
 
   useEffect(() => {
     const enterTimer = setTimeout(() => setPhase("visible"), 16);
@@ -251,45 +239,6 @@ export default function Toast({
         >
           {icon}
         </div>
-      ) : isReportSent ? (
-        <div
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 8,
-            background: "#DCFCE7",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            color: "#16A34A",
-          }}
-        >
-          <IoIosSend size={18} />
-        </div>
-      ) : isSuccess ? (
-        <div
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 8,
-            background: "#DCFCE7",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <svg
-            style={{ width: 17, height: 17, color: "#16A34A" }}
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M5 11.917 9.724 16.5 19 7.5" />
-          </svg>
-        </div>
       ) : isWarning ? (
         <div
           style={{
@@ -313,7 +262,7 @@ export default function Toast({
             <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
           </svg>
         </div>
-      ) : (
+      ) : isInfo ? (
         <div
           style={{
             width: 30,
@@ -327,16 +276,71 @@ export default function Toast({
             color: "#2563EB",
           }}
         >
-          <IoIosSend size={18} />
+          <svg
+            style={{ width: 17, height: 17 }}
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M12 8h.01M12 12v4m9-4a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </div>
+      ) : isSuccess ? (
+        /* When something is executed properly / success / update — check icon matching mobile phone */
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            background: "#DCFCE7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            color: "#16A34A",
+          }}
+        >
+          <svg
+            style={{ width: 17, height: 17, color: "#16A34A" }}
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 11.917 9.724 16.5 19 7.5" />
+          </svg>
+        </div>
+      ) : (
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            background: "#DCFCE7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            color: "#16A34A",
+          }}
+        >
+          <svg
+            style={{ width: 17, height: 17, color: "#16A34A" }}
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 11.917 9.724 16.5 19 7.5" />
+          </svg>
         </div>
       )}
 
-      {/* Message with vertical divider bar */}
+      {/* Message content — clean spacing matching mobile */}
       <div
         style={{
           marginLeft: 12,
-          paddingLeft: 12,
-          borderLeft: "1px solid #E2E8F0",
           fontSize: 13.5,
           fontWeight: 600,
           color: "#0F172A",

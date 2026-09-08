@@ -1321,7 +1321,7 @@ export default function RequestDetails() {
               flexDirection: 'column',
               gap: 4,
               padding: '12px 14px',
-              background: '#F8FAFC',
+              background: '#FFFFFF',
               border: '1px solid #E2E8F0',
               borderRadius: 12,
               marginBottom: 16,
@@ -1369,7 +1369,7 @@ export default function RequestDetails() {
                 style={{
                   width: '100%', border: '1.5px solid #E2E8F0', borderRadius: 10,
                   padding: '10px 12px', fontSize: 13, fontFamily: 'var(--font)',
-                  color: '#0F172A', background: '#F8FAFC', resize: 'vertical',
+                  color: '#0F172A', background: '#FFFFFF', resize: 'vertical',
                   outline: 'none', transition: 'border 0.18s',
                   boxSizing: 'border-box',
                 }}
@@ -1384,7 +1384,7 @@ export default function RequestDetails() {
                 onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
                 style={{
                   flex: 1, padding: '12px', borderRadius: 10,
-                  background: '#F1F5F9', border: '1.5px solid #E2E8F0',
+                  background: '#FFFFFF', border: '1.5px solid #E2E8F0',
                   fontSize: 14, fontWeight: 700, color: '#475569',
                   cursor: 'pointer', fontFamily: 'var(--font)',
                   transition: 'background 0.15s',
