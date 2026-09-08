@@ -68,6 +68,7 @@ export interface Incident {
   latitude: number;
   longitude: number;
   photoUrl: string;
+  description?: string;
   aiDetectedType?: string;
   aiRecommendedDept?: Department;
   assignedDepartment?: Department;

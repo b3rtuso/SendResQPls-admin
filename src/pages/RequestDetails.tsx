@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
 import { FiPhone } from 'react-icons/fi';
 import type { Status, Incident, Department, ResolutionForm } from '../types';
@@ -860,6 +860,32 @@ export default function RequestDetails() {
                     ) : (
                       <span style={{ color: 'var(--text-muted)' }}>No photo available</span>
                     )}
+                  </div>
+                  <div className="dept-detail" style={{ alignItems: 'flex-start' }}>
+                    <MessageSquare size={16} style={{ marginTop: 2, flexShrink: 0, color: '#2563EB' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <strong>Citizen Description:</strong>{' '}
+                      {incident.description ? (
+                        <div style={{
+                          marginTop: 6,
+                          padding: '10px 14px',
+                          background: '#F8FAFC',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: 10,
+                          fontSize: 13.5,
+                          color: '#0F172A',
+                          lineHeight: 1.55,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}>
+                          {incident.description}
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: 13 }}>
+                          None provided (optional)
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="dept-detail">
                     <User size={16} />
