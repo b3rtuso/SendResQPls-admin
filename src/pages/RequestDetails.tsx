@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, PhoneCall, Navigation } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
 import { FiPhone } from 'react-icons/fi';
 import type { Status, Incident, Department, ResolutionForm } from '../types';
@@ -660,82 +660,160 @@ export default function RequestDetails() {
           <span>Back to Requests</span>
         </Button>
 
-        <div className="grid-3-1 fade-in">
-          {/* Left Column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* AI Triage Card — uses REAL data from database */}
-            <div className="ai-card">
-              <h3><Brain size={20} /> AI Triage Assessment</h3>
-              <p>Analysis completed using Gemini 1.5 Flash</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>DETECTED TYPE</strong>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {(!incident.aiDetectedType || incident.aiDetectedType.toLowerCase().includes('unrecognized') || incident.aiDetectedType.toLowerCase().includes('unknown') || incident.aiDetectedType.toLowerCase().includes('pending')) && (
-                      <HelpCircle size={18} style={{ color: '#DC2626', flexShrink: 0 }} />
-                    )}
-                    <span>{incident.aiDetectedType || 'Pending Analysis'}</span>
+        {/* ── TOP: 2-Column Grid ────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 20, marginBottom: 20 }} className="fade-in">
+
+          {/* ── LEFT COLUMN: Photo + Map + Badges ──────────────────────── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Large Incident Photo */}
+            <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
+              {incident.photoUrl ? (
+                <div
+                  onClick={() => setShowPhoto(true)}
+                  style={{ cursor: 'pointer', position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}
+                  title="Click to enlarge"
+                >
+                  <img
+                    src={incident.photoUrl}
+                    alt="Incident photo"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.03)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                  />
+                  <div style={{
+                    position: 'absolute', bottom: 10, right: 10,
+                    background: 'rgba(0,0,0,0.55)', color: 'white',
+                    borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    backdropFilter: 'blur(4px)',
+                  }}>
+                    <Camera size={13} /> Click to enlarge
                   </div>
                 </div>
+              ) : (
+                <div style={{
+                  aspectRatio: '4/3', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--bg-body)', gap: 10,
+                }}>
+                  <Camera size={36} color="var(--text-muted)" />
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>No photo submitted</span>
+                </div>
+              )}
+            </div>
+
+            {/* Map Card — below photo so boomers see WHAT then WHERE */}
+            <div className="card" style={{ overflow: 'hidden' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <h3><FaLocationDot size={16} style={{ marginRight: 6, verticalAlign: -2, display: 'inline-block', color: '#2563EB' }} /> Incident Location Map</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    onClick={openDirections}
+                    className="btn btn-sm"
+                    style={{
+                      padding: '5px 12px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background: '#2563EB',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
+                    }}
+                    title="Get turn-by-turn directions to incident location"
+                  >
+                    <Navigation size={13} /> Get Directions
+                  </button>
+                  <button
+                    onClick={openLocation}
+                    className="btn btn-sm btn-outline"
+                    style={{ padding: '4px 10px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                  >
+                    <ExternalLink size={12} /> Google Maps
+                  </button>
+                </div>
+              </div>
+              <div className="card-body" style={{ padding: 0, position: 'relative' }}>
+                <div style={{ height: '260px', width: '100%', position: 'relative' }} className="details-map-container">
+                  <MapContainer
+                    center={[incident.latitude, incident.longitude]}
+                    zoom={16}
+                    style={{ height: '100%', width: '100%', background: '#0d1117' }}
+                    scrollWheelZoom={true}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={[incident.latitude, incident.longitude]} icon={emergencyMarkerIcon}>
+                      <Popup maxWidth={300}>
+                        <div style={{ padding: '6px 8px', color: '#1e293b' }}>
+                          <strong style={{ fontSize: 13, color: '#0f172a' }}>Emergency Report</strong>
+                          <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#334155', lineHeight: 1.4 }}>
+                            {resolvedAddress || getNearestBarangay(incident.latitude, incident.longitude)}
+                          </p>
+                          <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginTop: 4 }}>
+                            {incident.latitude.toFixed(6)}°N, {incident.longitude.toFixed(6)}°E
+                          </span>
+                          <button
+                            onClick={openDirections}
+                            style={{
+                              marginTop: 8,
+                              width: '100%',
+                              padding: '6px 10px',
+                              background: '#2563EB',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 5,
+                            }}
+                          >
+                            <Navigation size={12} /> Get Directions
+                          </button>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* DT + SR + Status Badges */}
+            <div className="card">
+              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Detected Type */}
                 <div>
-                  <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>RECOMMENDED DEPT</strong>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
-                    {incident.aiRecommendedDept ? deptNames[incident.aiRecommendedDept] || incident.aiRecommendedDept : '—'}
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Brain size={13} /> Detected Type
+                  </div>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '8px 14px', borderRadius: 10,
+                    background: 'rgba(37,99,235,0.08)', border: '1.5px solid rgba(37,99,235,0.2)',
+                    fontSize: 15, fontWeight: 800, color: '#1D4ED8',
+                  }}>
+                    🔍 {incident.aiDetectedType || 'Pending Analysis'}
                   </div>
                 </div>
+
+                {/* Severity Rating */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, flexWrap: 'wrap' }}>
-                    <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>ASSIGNED DEPT</strong>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                    Severity Rating
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     {(() => {
-                      const activeDeptKey = incident.assignedDepartment || incident.aiRecommendedDept;
-                      const deptObj = departments.find(d => d.key === activeDeptKey);
-                      if (!deptObj) return null;
-                      return (
-                        <button
-                          type="button"
-                          onClick={(e) => handleCallDept(e, deptObj)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            border: `1px solid ${deptObj.color}`,
-                            background: `${deptObj.color}12`,
-                            color: deptObj.color,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                          title={`Call ${deptObj.name} (${deptObj.contact})`}
-                        >
-                          <PhoneCall size={11} />
-                          <span>Call {deptObj.abbr || deptObj.key}</span>
-                        </button>
-                      );
-                    })()}
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4, color: incident.assignedDepartment ? 'var(--primary)' : 'var(--text-muted)' }}>
-                    {incident.assignedDepartment ? deptNames[incident.assignedDepartment] || incident.assignedDepartment : 'Not yet assigned'}
-                  </div>
-                </div>
-                <div>
-                  <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>STATUS</strong>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
-                    <Badge className={`badge ${currentStatus.toLowerCase()}`}>
-                      <span>{currentStatus}</span>
-                    </Badge>
-                  </div>
-                </div>
-                <div style={{ gridColumn: 'span 2', marginTop: 4 }}>
-                  <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>SEVERITY RANKING</strong>
-                  <div style={{ fontSize: 14, fontWeight: 800, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    {(() => {
-                      const isTerminal = currentStatus === 'RESOLVED' || currentStatus === 'REJECTED';
-                      if (isTerminal) {
-                        return <span style={{ fontSize: 13, color: '#94A3B8', fontWeight: 600 }}>—</span>;
-                      }
                       const sev = (incident.severity || 'MEDIUM').toUpperCase();
                       const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
                         CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
@@ -749,9 +827,9 @@ export default function RequestDetails() {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 6,
-                          padding: '4px 10px',
+                          padding: '6px 12px',
                           borderRadius: 8,
-                          fontSize: 12.5,
+                          fontSize: 13,
                           fontWeight: 800,
                           background: s.bg,
                           color: s.color,
@@ -770,104 +848,86 @@ export default function RequestDetails() {
                   </div>
                 </div>
 
-                <div style={{ gridColumn: 'span 2', marginTop: 12, paddingTop: 12, borderTop: '1px solid #E2E8F0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <strong style={{ fontSize: 13, color: '#1E293B', fontWeight: 800 }}>RECLASSIFY HAZARD TYPE</strong>
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Click to assign type & department</span>
+                {/* Status */}
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                    Current Status
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {OFFICIAL_TYPES.map(t => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => handleReclassify(t)}
-                        disabled={saving}
-                        style={{
-                          padding: '8px 14px',
-                          fontSize: 13,
-                          fontWeight: incident.aiDetectedType === t ? 800 : 600,
-                          borderRadius: 8,
-                          border: incident.aiDetectedType === t ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
-                          background: incident.aiDetectedType === t ? '#EFF6FF' : '#FFFFFF',
-                          color: incident.aiDetectedType === t ? '#1D4ED8' : '#334155',
-                          cursor: saving ? 'not-allowed' : 'pointer',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+                  <Badge className={`badge ${currentStatus.toLowerCase()}`} style={{ fontSize: 13, padding: '6px 14px' }}>
+                    {currentStatus}
+                  </Badge>
                 </div>
               </div>
-
-              {/* ── Reject Suggestion Banner (shown when AI cannot recognise the incident) ── */}
-              {(() => {
-                const type = (incident.aiDetectedType || '').toLowerCase();
-                const isUnrecognized =
-                  type.includes('unrecognized') ||
-                  type.includes('unknown') ||
-                  type.includes('pending review') ||
-                  type.includes('unclear') ||
-                  !incident.aiRecommendedDept;
-                if (!isUnrecognized) return null;
-                return (
-                  <div style={{
-                    marginTop: 18,
-                    padding: '14px 16px',
-                    borderRadius: 12,
-                    background: 'rgba(239,68,68,0.07)',
-                    border: '1.5px solid rgba(239,68,68,0.25)',
-                    display: 'flex',
-                    gap: 12,
-                    alignItems: 'flex-start',
-                  }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                      background: 'rgba(239,68,68,0.12)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <HelpCircle size={20} color="#DC2626" />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#DC2626', marginBottom: 4 }}>
-                        AI Alert: Unrecognized Incident
-                      </div>
-                      <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                        The AI could not identify a valid emergency incident in the submitted photo.
-                        Review the photo — reject if it is a false alarm, or select the correct hazard type above.
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                        {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (
-                          <button
-                            onClick={() => handleStatusUpdate('REJECTED')}
-                            disabled={saving}
-                            style={{
-                              padding: '7px 16px',
-                              borderRadius: 8,
-                              background: '#EF4444',
-                              color: 'white',
-                              border: 'none',
-                              fontWeight: 700,
-                              fontSize: 12.5,
-                              cursor: saving ? 'not-allowed' : 'pointer',
-                              fontFamily: 'var(--font)',
-                              opacity: saving ? 0.6 : 1,
-                              transition: 'opacity 0.15s',
-                            }}
-                          >
-                            {saving ? 'Rejecting...' : 'Reject Report'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
             </div>
 
-            {/* Incident Details — uses REAL data from database */}
+            {/* ── Reject Suggestion Banner (shown when AI cannot recognise the incident) ── */}
+            {(() => {
+              const type = (incident.aiDetectedType || '').toLowerCase();
+              const isUnrecognized =
+                type.includes('unrecognized') ||
+                type.includes('unknown') ||
+                type.includes('pending review') ||
+                type.includes('unclear') ||
+                !incident.aiRecommendedDept;
+              if (!isUnrecognized) return null;
+              return (
+                <div style={{
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  background: 'rgba(239,68,68,0.07)',
+                  border: '1.5px solid rgba(239,68,68,0.25)',
+                  display: 'flex',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: 'rgba(239,68,68,0.12)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <HelpCircle size={20} color="#DC2626" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#DC2626', marginBottom: 4 }}>
+                      AI Alert: Unrecognized Incident
+                    </div>
+                    <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                      The AI could not identify a valid emergency incident in the submitted photo.
+                      Review the photo — reject if it is a false alarm, or select the correct hazard type.
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                      {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (
+                        <button
+                          onClick={() => handleStatusUpdate('REJECTED')}
+                          disabled={saving}
+                          style={{
+                            padding: '7px 16px',
+                            borderRadius: 8,
+                            background: '#EF4444',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: 700,
+                            fontSize: 12.5,
+                            cursor: saving ? 'not-allowed' : 'pointer',
+                            fontFamily: 'var(--font)',
+                            opacity: saving ? 0.6 : 1,
+                            transition: 'opacity 0.15s',
+                          }}
+                        >
+                          {saving ? 'Rejecting...' : 'Reject Report'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* ── RIGHT COLUMN: Incident Details + CLT Reclassify + Assign Dept + Status ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Incident Details */}
             <div className="card">
               <div className="card-header"><h3>Incident Details</h3></div>
               <div className="card-body">
@@ -939,19 +999,19 @@ export default function RequestDetails() {
                     <User size={16} />
                     <strong>Reporter:</strong> {incident.reporter?.name || 'Unknown'} ({incident.reporter?.email || (incident.reporterId ? incident.reporterId.slice(0, 8) + '...' : 'Unknown')})
                   </div>
-                    {incident.reporter?.phoneNumber && (
-                      <div className="dept-detail">
-                        <FiPhone size={16} />
-                        <strong>Phone:</strong>
-                        <a
-                          href={`tel:${incident.reporter.phoneNumber}`}
-                          onClick={() => handleCallReporter()}
-                          style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
-                        >
-                          {incident.reporter.phoneNumber}
-                        </a>
-                      </div>
-                    )}
+                  {incident.reporter?.phoneNumber && (
+                    <div className="dept-detail">
+                      <FiPhone size={16} />
+                      <strong>Phone:</strong>
+                      <a
+                        href={`tel:${incident.reporter.phoneNumber}`}
+                        onClick={() => handleCallReporter()}
+                        style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
+                      >
+                        {incident.reporter.phoneNumber}
+                      </a>
+                    </div>
+                  )}
                   <div className="dept-detail">
                     <Clock size={16} />
                     <strong>Reported:</strong> {new Date(incident.createdAt).toLocaleString()}
@@ -962,92 +1022,64 @@ export default function RequestDetails() {
                       <strong>Last Updated:</strong> {new Date(incident.updatedAt).toLocaleString()}
                     </div>
                   )}
+                  {incident.aiRecommendedDept && (
+                    <div className="dept-detail">
+                      <Brain size={16} />
+                      <div>
+                        <strong>AI Recommended:</strong>{' '}
+                        <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
+                          {deptNames[incident.aiRecommendedDept] || incident.aiRecommendedDept}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {incident.assignedDepartment && (
+                    <div className="dept-detail">
+                      <Building2 size={16} />
+                      <div>
+                        <strong>Assigned Department:</strong>{' '}
+                        <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
+                          {deptNames[incident.assignedDepartment] || incident.assignedDepartment}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Map Card */}
-            <div className="card" style={{ overflow: 'hidden' }}>
-              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                <h3><FaLocationDot size={16} style={{ marginRight: 6, verticalAlign: -2, display: 'inline-block', color: '#2563EB' }} /> Incident Location Map</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button
-                    onClick={openDirections}
-                    className="btn btn-sm"
-                    style={{
-                      padding: '5px 12px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background: '#2563EB',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 6,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      cursor: 'pointer',
-                      boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
-                    }}
-                    title="Get turn-by-turn directions to incident location"
-                  >
-                    <Navigation size={13} /> Get Directions
-                  </button>
-                  <button
-                    onClick={openLocation}
-                    className="btn btn-sm btn-outline"
-                    style={{ padding: '4px 10px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                  >
-                    <ExternalLink size={12} /> Google Maps
-                  </button>
-                </div>
+            {/* CLT: Reclassify Hazard Type */}
+            <div className="card">
+              <div className="card-header">
+                <h3>RECLASSIFY HAZARD TYPE</h3>
               </div>
-              <div className="card-body" style={{ padding: 0, position: 'relative' }}>
-                <div style={{ height: '350px', width: '100%', position: 'relative' }} className="details-map-container">
-                  <MapContainer
-                    center={[incident.latitude, incident.longitude]}
-                    zoom={16}
-                    style={{ height: '100%', width: '100%', background: '#0d1117' }}
-                    scrollWheelZoom={true}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <Marker position={[incident.latitude, incident.longitude]} icon={emergencyMarkerIcon}>
-                      <Popup maxWidth={300}>
-                        <div style={{ padding: '6px 8px', color: '#1e293b' }}>
-                          <strong style={{ fontSize: 13, color: '#0f172a' }}>Emergency Report</strong>
-                          <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#334155', lineHeight: 1.4 }}>
-                            {resolvedAddress || getNearestBarangay(incident.latitude, incident.longitude)}
-                          </p>
-                          <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginTop: 4 }}>
-                            {incident.latitude.toFixed(6)}°N, {incident.longitude.toFixed(6)}°E
-                          </span>
-                          <button
-                            onClick={openDirections}
-                            style={{
-                              marginTop: 8,
-                              width: '100%',
-                              padding: '6px 10px',
-                              background: '#2563EB',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: 6,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: 5,
-                            }}
-                          >
-                            <Navigation size={12} /> Get Directions
-                          </button>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  </MapContainer>
+              <div className="card-body">
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                  Click to reclassify incident type and auto-assign corresponding department:
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {OFFICIAL_TYPES.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleReclassify(t)}
+                      disabled={saving || currentStatus === 'RESOLVED' || currentStatus === 'REJECTED'}
+                      style={{
+                        padding: '9px 15px',
+                        fontSize: 13,
+                        fontWeight: incident.aiDetectedType === t ? 800 : 600,
+                        borderRadius: 8,
+                        border: incident.aiDetectedType === t ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
+                        background: incident.aiDetectedType === t ? '#EFF6FF' : '#FFFFFF',
+                        color: incident.aiDetectedType === t ? '#1D4ED8' : '#334155',
+                        cursor: (saving || currentStatus === 'RESOLVED' || currentStatus === 'REJECTED') ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1056,7 +1088,7 @@ export default function RequestDetails() {
             <div className="card">
               <div className="card-header"><h3><Building2 size={18} style={{ marginRight: 6, verticalAlign: -3 }} /> Assign Department</h3></div>
               <div className="card-body">
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>Select a responding department. This will update the Assigned Dept above and notify the team.</p>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>Select a responding department. This will update the Assigned Dept and notify the team.</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   {departments.map((dept) => {
                     const isSelected = incident.assignedDepartment === dept.key;
@@ -1067,7 +1099,7 @@ export default function RequestDetails() {
                         style={{
                           border: isSelected ? `2px solid ${dept.color}` : '1.5px solid var(--border)',
                           borderRadius: 14,
-                          padding: '18px 16px',
+                          padding: '16px 14px',
                           cursor: saving ? 'not-allowed' : 'pointer',
                           background: isSelected ? `${dept.color}08` : 'var(--bg-card)',
                           transition: 'all 0.2s ease',
@@ -1079,52 +1111,16 @@ export default function RequestDetails() {
                         )}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                           <div style={{
-                            width: 36, height: 36, borderRadius: 10,
+                            width: 34, height: 34, borderRadius: 10,
                             background: `${dept.color}15`, display: 'flex',
                             alignItems: 'center', justifyContent: 'center',
                             color: dept.color, fontWeight: 800, fontSize: 12,
                           }}>{dept.abbr}</div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{dept.name}</div>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>{dept.name}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                           <FiPhone size={13} color="var(--text-secondary)" />
-                          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{dept.contact}</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <a
-                            href={`tel:${dept.contact.replace(/[^0-9+]/g, '')}`}
-                            onClick={(e) => handleCallDept(e, dept)}
-                            style={{
-                              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                              padding: '9px 0', borderRadius: 8, fontSize: 13, fontWeight: 700,
-                              background: isSelected ? dept.color : 'var(--bg-body)',
-                              color: isSelected ? 'white' : 'var(--text-secondary)',
-                              border: isSelected ? 'none' : '1px solid var(--border)',
-                              cursor: 'pointer', transition: 'all 0.2s ease',
-                              textDecoration: 'none', fontFamily: 'var(--font)',
-                            }}
-                          >
-                            <FiPhone size={13} /> Call
-                          </a>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(dept.contact).then(() => {
-                                showToast('info', `Copied: ${dept.contact}`, 'Number copied to clipboard.');
-                              });
-                            }}
-                            style={{
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                              padding: '9px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                              background: 'var(--bg-body)', color: 'var(--text-secondary)',
-                              border: '1px solid var(--border)',
-                              height: 'auto',
-                            }}
-                          >
-                            📋 Copy
-                          </Button>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{dept.contact}</span>
                         </div>
                       </div>
                     );
@@ -1226,67 +1222,144 @@ export default function RequestDetails() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Right Column - Activity Timeline */}
-          <div className="card" style={{ height: 'fit-content' }}>
-            <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
-                ACTIVITY TIMELINE
-              </h3>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '2px 8px', borderRadius: 6, border: '1px solid #DBEAFE' }}>
-                {(() => {
-                  const activities = incident.activities && incident.activities.length > 0
-                    ? incident.activities
-                    : [
-                        { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, createdAt: incident.createdAt },
-                        ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
-                        ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
-                        ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, createdAt: incident.updatedAt }] : []),
-                        ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, createdAt: incident.updatedAt }] : []),
-                      ];
-                  return `${activities.length} Events`;
-                })()}
-              </span>
+        {/* ── FULL-WIDTH: CALL BUTTON STRIP ─────────────────────────────── */}
+        <div className="card fade-in" style={{ marginBottom: 20 }}>
+          <div className="card-body" style={{ padding: '20px 24px' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
+              📞 Emergency Quick Call
             </div>
-            <div className="card-body">
-              <div className="timeline">
-                {(() => {
-                  const formatTimelineDate = (dateInput: string | Date) => {
-                    const d = new Date(dateInput);
-                    if (isNaN(d.getTime())) return '';
-                    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                    return `${datePart} • ${timePart}`;
-                  };
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+              {/* Call Assigned Dept (prominent full-width hero button) */}
+              {(() => {
+                const targetDeptKey = incident.assignedDepartment || incident.aiRecommendedDept;
+                const targetDept = departments.find(d => d.key === targetDeptKey);
+                if (!targetDept) return null;
+                return (
+                  <a
+                    href={`tel:${targetDept.contact.replace(/[^0-9+]/g, '')}`}
+                    onClick={(e) => handleCallDept(e, targetDept)}
+                    style={{
+                      gridColumn: '1 / -1',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                      padding: '16px 24px', borderRadius: 14,
+                      background: `linear-gradient(135deg, ${targetDept.color}, ${targetDept.color}cc)`,
+                      color: 'white', fontWeight: 800, fontSize: 16,
+                      textDecoration: 'none', fontFamily: 'var(--font)',
+                      boxShadow: `0 4px 18px ${targetDept.color}40`,
+                      transition: 'opacity 0.15s',
+                    }}
+                  >
+                    <FiPhone size={20} />
+                    Call {targetDept.name} — {targetDept.contact}
+                  </a>
+                );
+              })()}
 
-                  const activities = incident.activities && incident.activities.length > 0
-                    ? incident.activities
-                    : [
-                        { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, description: undefined, createdAt: incident.createdAt },
-                        ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
-                        ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
-                        ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, description: undefined, createdAt: incident.updatedAt }] : []),
-                        ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, description: undefined, createdAt: incident.updatedAt }] : []),
-                      ];
+              {/* Call Reporter */}
+              {incident.reporter?.phoneNumber && (
+                <a
+                  href={`tel:${incident.reporter.phoneNumber}`}
+                  onClick={() => handleCallReporter()}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    padding: '13px 20px', borderRadius: 12,
+                    background: 'var(--bg-body)', color: 'var(--text-primary)',
+                    fontWeight: 700, fontSize: 14,
+                    border: '1.5px solid var(--border)',
+                    textDecoration: 'none', fontFamily: 'var(--font)',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  <User size={16} />
+                  Call Reporter — {incident.reporter.phoneNumber}
+                </a>
+              )}
 
-                  return activities.map((item: any, idx: number) => (
-                    <div className="timeline-item" key={item.id || idx}>
-                      <div className="tl-time" style={{ fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                        <span style={{ color: '#2563EB', fontSize: 14 }}>●</span>
-                        <span>{formatTimelineDate(item.createdAt)}</span>
-                      </div>
-                      <div className="tl-text" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 600 }}>
-                        <span>{item.title}</span>
-                      </div>
-                      {item.description && (
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, fontStyle: 'italic' }}>
-                          {item.description}
-                        </div>
-                      )}
+              {/* Other departments quick call */}
+              {departments.filter(d => d.key !== (incident.assignedDepartment || incident.aiRecommendedDept)).map(dept => (
+                <a
+                  key={dept.key}
+                  href={`tel:${dept.contact.replace(/[^0-9+]/g, '')}`}
+                  onClick={(e) => handleCallDept(e, dept)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    padding: '13px 16px', borderRadius: 12,
+                    background: 'var(--bg-body)', color: 'var(--text-primary)',
+                    fontWeight: 600, fontSize: 13,
+                    border: '1.5px solid var(--border)',
+                    textDecoration: 'none', fontFamily: 'var(--font)',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  <FiPhone size={14} color={dept.color} />
+                  {dept.abbr} — {dept.contact}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── FULL-WIDTH: ACTIVITY TIMELINE (BELOW CALL) ────────────────── */}
+        <div className="card fade-in" style={{ marginBottom: 24 }}>
+          <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
+              📋 Activity Timeline
+            </h3>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '2px 8px', borderRadius: 6, border: '1px solid #DBEAFE' }}>
+              {(() => {
+                const activities = incident.activities && incident.activities.length > 0
+                  ? incident.activities
+                  : [
+                      { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, createdAt: incident.createdAt },
+                      ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
+                      ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
+                      ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, createdAt: incident.updatedAt }] : []),
+                      ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, createdAt: incident.updatedAt }] : []),
+                    ];
+                return `${activities.length} Events`;
+              })()}
+            </span>
+          </div>
+          <div className="card-body">
+            <div className="timeline" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '4px 24px' }}>
+              {(() => {
+                const formatTimelineDate = (dateInput: string | Date) => {
+                  const d = new Date(dateInput);
+                  if (isNaN(d.getTime())) return '';
+                  const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                  return `${datePart} • ${timePart}`;
+                };
+
+                const activities = incident.activities && incident.activities.length > 0
+                  ? incident.activities
+                  : [
+                      { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, description: undefined, createdAt: incident.createdAt },
+                      ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
+                      ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
+                      ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, description: undefined, createdAt: incident.updatedAt }] : []),
+                      ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, description: undefined, createdAt: incident.updatedAt }] : []),
+                    ];
+
+                return activities.map((item: any, idx: number) => (
+                  <div className="timeline-item" key={item.id || idx}>
+                    <div className="tl-time" style={{ fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                      <span style={{ color: '#2563EB', fontSize: 14 }}>●</span>
+                      <span>{formatTimelineDate(item.createdAt)}</span>
                     </div>
-                  ));
-                })()}
-              </div>
+                    <div className="tl-text" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 600 }}>
+                      <span>{item.title}</span>
+                    </div>
+                    {item.description && (
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, fontStyle: 'italic' }}>
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>
