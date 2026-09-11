@@ -922,6 +922,85 @@ export default function RequestDetails() {
                 </div>
               );
             })()}
+
+            {/* ── Emergency Quick Call (below AI Alert / Badges) ── */}
+            <div className="card">
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: 13.5, fontWeight: 800, margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-primary)' }}>
+                  📞 Emergency Quick Call
+                </h3>
+              </div>
+              <div className="card-body" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Call Assigned / Recommended Dept Hero Button */}
+                {(() => {
+                  const targetDeptKey = incident.assignedDepartment || incident.aiRecommendedDept;
+                  const targetDept = departments.find(d => d.key === targetDeptKey);
+                  if (!targetDept) return null;
+                  return (
+                    <a
+                      href={`tel:${targetDept.contact.replace(/[^0-9+]/g, '')}`}
+                      onClick={(e) => handleCallDept(e, targetDept)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                        padding: '13px 18px', borderRadius: 12,
+                        background: `linear-gradient(135deg, ${targetDept.color}, ${targetDept.color}cc)`,
+                        color: 'white', fontWeight: 800, fontSize: 14.5,
+                        textDecoration: 'none', fontFamily: 'var(--font)',
+                        boxShadow: `0 4px 16px ${targetDept.color}35`,
+                        transition: 'opacity 0.15s',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <FiPhone size={18} />
+                      Call {targetDept.name} — {targetDept.contact}
+                    </a>
+                  );
+                })()}
+
+                {/* Call Reporter */}
+                {incident.reporter?.phoneNumber && (
+                  <a
+                    href={`tel:${incident.reporter.phoneNumber}`}
+                    onClick={() => handleCallReporter()}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      padding: '11px 16px', borderRadius: 10,
+                      background: 'var(--bg-body)', color: 'var(--text-primary)',
+                      fontWeight: 700, fontSize: 13.5,
+                      border: '1.5px solid var(--border)',
+                      textDecoration: 'none', fontFamily: 'var(--font)',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    <User size={15} />
+                    Call Citizen Reporter — {incident.reporter.phoneNumber}
+                  </a>
+                )}
+
+                {/* Other partner departments grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8, marginTop: 4 }}>
+                  {departments.filter(d => d.key !== (incident.assignedDepartment || incident.aiRecommendedDept)).map(dept => (
+                    <a
+                      key={dept.key}
+                      href={`tel:${dept.contact.replace(/[^0-9+]/g, '')}`}
+                      onClick={(e) => handleCallDept(e, dept)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        padding: '9px 10px', borderRadius: 8,
+                        background: 'var(--bg-body)', color: 'var(--text-primary)',
+                        fontWeight: 600, fontSize: 12,
+                        border: '1px solid var(--border)',
+                        textDecoration: 'none', fontFamily: 'var(--font)',
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      <FiPhone size={12} color={dept.color} />
+                      {dept.abbr} ({dept.contact})
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ── RIGHT COLUMN: Incident Details + CLT Reclassify + Assign Dept + Status ── */}
@@ -1224,84 +1303,7 @@ export default function RequestDetails() {
           </div>
         </div>
 
-        {/* ── FULL-WIDTH: CALL BUTTON STRIP ─────────────────────────────── */}
-        <div className="card fade-in" style={{ marginBottom: 20 }}>
-          <div className="card-body" style={{ padding: '20px 24px' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
-              📞 Emergency Quick Call
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
-              {/* Call Assigned Dept (prominent full-width hero button) */}
-              {(() => {
-                const targetDeptKey = incident.assignedDepartment || incident.aiRecommendedDept;
-                const targetDept = departments.find(d => d.key === targetDeptKey);
-                if (!targetDept) return null;
-                return (
-                  <a
-                    href={`tel:${targetDept.contact.replace(/[^0-9+]/g, '')}`}
-                    onClick={(e) => handleCallDept(e, targetDept)}
-                    style={{
-                      gridColumn: '1 / -1',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                      padding: '16px 24px', borderRadius: 14,
-                      background: `linear-gradient(135deg, ${targetDept.color}, ${targetDept.color}cc)`,
-                      color: 'white', fontWeight: 800, fontSize: 16,
-                      textDecoration: 'none', fontFamily: 'var(--font)',
-                      boxShadow: `0 4px 18px ${targetDept.color}40`,
-                      transition: 'opacity 0.15s',
-                    }}
-                  >
-                    <FiPhone size={20} />
-                    Call {targetDept.name} — {targetDept.contact}
-                  </a>
-                );
-              })()}
-
-              {/* Call Reporter */}
-              {incident.reporter?.phoneNumber && (
-                <a
-                  href={`tel:${incident.reporter.phoneNumber}`}
-                  onClick={() => handleCallReporter()}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    padding: '13px 20px', borderRadius: 12,
-                    background: 'var(--bg-body)', color: 'var(--text-primary)',
-                    fontWeight: 700, fontSize: 14,
-                    border: '1.5px solid var(--border)',
-                    textDecoration: 'none', fontFamily: 'var(--font)',
-                    transition: 'background 0.15s',
-                  }}
-                >
-                  <User size={16} />
-                  Call Reporter — {incident.reporter.phoneNumber}
-                </a>
-              )}
-
-              {/* Other departments quick call */}
-              {departments.filter(d => d.key !== (incident.assignedDepartment || incident.aiRecommendedDept)).map(dept => (
-                <a
-                  key={dept.key}
-                  href={`tel:${dept.contact.replace(/[^0-9+]/g, '')}`}
-                  onClick={(e) => handleCallDept(e, dept)}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    padding: '13px 16px', borderRadius: 12,
-                    background: 'var(--bg-body)', color: 'var(--text-primary)',
-                    fontWeight: 600, fontSize: 13,
-                    border: '1.5px solid var(--border)',
-                    textDecoration: 'none', fontFamily: 'var(--font)',
-                    transition: 'background 0.15s',
-                  }}
-                >
-                  <FiPhone size={14} color={dept.color} />
-                  {dept.abbr} — {dept.contact}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── FULL-WIDTH: ACTIVITY TIMELINE (BELOW CALL) ────────────────── */}
+        {/* ── FULL-WIDTH: ACTIVITY TIMELINE ─────────────────────────────── */}
         <div className="card fade-in" style={{ marginBottom: 24 }}>
           <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
