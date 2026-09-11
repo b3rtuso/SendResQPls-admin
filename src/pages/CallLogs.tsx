@@ -297,7 +297,7 @@ export default function CallLogs() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => navigate(`/admin/requests/${log.requestId}`)}
+                              onClick={() => navigate(`/requests/${log.requestId}`)}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -433,7 +433,7 @@ export default function CallLogs() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => navigate(`/admin/requests/${log.requestId}`)}
+                            onClick={() => navigate(`/requests/${log.requestId}`)}
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
