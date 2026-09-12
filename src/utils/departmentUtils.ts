@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { FaFire } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
-import { RiCriminalFill } from 'react-icons/ri';
+import { GiPoliceBadge } from 'react-icons/gi';
 import { IoBandage } from 'react-icons/io5';
 import type { DepartmentInfo } from '../types';
 
@@ -30,7 +30,7 @@ export const KNOWN_DEPT_THEMES: Record<string, DeptTheme> = {
     border: 'rgba(239, 68, 68, 0.25)',
   },
   PNP: {
-    icon: RiCriminalFill,
+    icon: GiPoliceBadge,
     color: '#3B82F6',
     bg: 'rgba(59, 130, 246, 0.08)',
     border: 'rgba(59, 130, 246, 0.25)',
