@@ -450,14 +450,15 @@ export default function Requests() {
           background: #FFFFFF;
           border-radius: 16px;
           border: 1px solid #E2E8F0;
-          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.03);
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.02);
+          overflow: hidden;
         }
 
         .rq-desktop-table {
           display: block !important;
           width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .rq-mobile-cards {
@@ -490,7 +491,7 @@ export default function Requests() {
           background: rgba(37, 99, 235, 0.02);
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 640px) {
           .rq-desktop-table {
             display: none !important;
           }
@@ -761,7 +762,7 @@ export default function Requests() {
           ) : (
             <>
               {/* Desktop Table View */}
-              <div className="rq-desktop-table hidden lg:block" style={{ overflowX: 'auto' }}>
+              <div className="rq-desktop-table">
                 <style>{`
                   .rq-table {
                     width: 100%;
@@ -770,20 +771,27 @@ export default function Requests() {
                     text-align: left;
                   }
                   .rq-th {
-                    padding: 12px 10px;
+                    padding: 13px 12px;
                     font-size: 11px;
                     font-weight: 800;
                     color: #64748B;
                     text-transform: uppercase;
-                    letter-spacing: 0.06em;
+                    letter-spacing: 0.05em;
                     background: #F8FAFC;
                     border-bottom: 1px solid #E2E8F0;
                     white-space: nowrap;
+                    user-select: none;
                   }
                   .rq-td {
-                    padding: 12px 10px;
+                    padding: 13px 12px;
                     border-bottom: 1px solid #F1F5F9;
                     vertical-align: middle;
+                  }
+                  .rq-tr {
+                    transition: background 0.12s ease;
+                  }
+                  .rq-tr:hover {
+                    background: #F8FAFC;
                   }
                   .rq-evidence-box {
                     width: 38px;
@@ -799,23 +807,59 @@ export default function Requests() {
                   .rq-badge-brgy {
                     background: #F1F5F9;
                     color: #334155;
-                    padding: 3px 7px;
+                    padding: 3px 8px;
                     border-radius: 6px;
                     font-size: 12px;
+                    font-weight: 600;
                     display: inline-flex;
                     align-items: center;
                     gap: 4px;
                     white-space: nowrap;
                   }
+                  .rq-btn-view {
+                    padding: 5px 14px !important;
+                    border-radius: 7px !important;
+                    background: rgba(37, 99, 235, 0.06) !important;
+                    color: #2563EB !important;
+                    border: 1px solid rgba(37, 99, 235, 0.25) !important;
+                    font-size: 12px !important;
+                    font-weight: 700 !important;
+                    height: auto !important;
+                    letter-spacing: 0.02em !important;
+                    transition: all 0.15s ease !important;
+                  }
+                  .rq-btn-view:hover {
+                    background: #2563EB !important;
+                    color: #FFFFFF !important;
+                  }
+                  .rq-btn-accept {
+                    padding: 4px 8px !important;
+                    font-size: 11px !important;
+                  }
 
-                  @media (max-width: 1366px) {
+                  @media (max-width: 1440px) {
                     .rq-th {
-                      padding: 9px 7px !important;
+                      padding: 11px 9px !important;
                       font-size: 10.5px !important;
+                    }
+                    .rq-td {
+                      padding: 11px 9px !important;
+                      font-size: 12.5px !important;
+                    }
+                    .rq-evidence-box {
+                      width: 35px;
+                      height: 28px;
+                    }
+                  }
+
+                  @media (max-width: 1280px) {
+                    .rq-th {
+                      padding: 10px 7px !important;
+                      font-size: 10px !important;
                       letter-spacing: 0.03em !important;
                     }
                     .rq-td {
-                      padding: 9px 7px !important;
+                      padding: 10px 7px !important;
                       font-size: 12px !important;
                     }
                     .rq-evidence-box {
@@ -823,39 +867,43 @@ export default function Requests() {
                       height: 26px;
                     }
                     .rq-badge-brgy {
-                      padding: 2px 5px;
+                      padding: 2.5px 6px;
                       font-size: 11px;
                     }
                     .rq-btn-view {
-                      padding: 4px 9px !important;
-                      font-size: 11px !important;
-                    }
-                    .rq-btn-accept {
-                      padding: 4px 8px !important;
+                      padding: 4px 10px !important;
                       font-size: 11px !important;
                     }
                   }
 
-                  @media (max-width: 1200px) {
+                  @media (max-width: 1024px) {
                     .rq-th {
-                      padding: 8px 5px !important;
-                      font-size: 10px !important;
+                      padding: 9px 6px !important;
+                      font-size: 9.5px !important;
                       letter-spacing: 0.02em !important;
                     }
                     .rq-td {
-                      padding: 8px 5px !important;
+                      padding: 9px 6px !important;
                       font-size: 11.5px !important;
                     }
+                    .rq-evidence-box {
+                      width: 30px;
+                      height: 24px;
+                    }
                     .rq-badge-brgy {
-                      padding: 2px 4px;
+                      padding: 2px 5px;
                       font-size: 10.5px;
+                    }
+                    .rq-btn-view {
+                      padding: 3.5px 8px !important;
+                      font-size: 10.5px !important;
                     }
                   }
                 `}</style>
-                <table className="rq-table" style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                <table className="rq-table" style={{ width: '100%', minWidth: 840, borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr>
-                      <th className="rq-th" style={{ width: 34, textAlign: 'center' }}>
+                      <th className="rq-th" style={{ width: 36, minWidth: 36, textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={paged.length > 0 && paged.every(inc => selectedIds.has(inc.id))}
@@ -864,64 +912,64 @@ export default function Requests() {
                           style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#2563EB' }}
                         />
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('id')} style={{ cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('id')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Incident ID</span>
                           {sortKey === 'id' ? (
-                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
-                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
+                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th">Evidence</th>
-                      <th className="rq-th sortable" onClick={() => handleSort('type')} style={{ cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <th className="rq-th" style={{ width: 50, minWidth: 46 }}>Evidence</th>
+                      <th className="rq-th sortable" onClick={() => handleSort('type')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Hazard Type</span>
                           {sortKey === 'type' ? (
-                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
-                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
+                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('location')} style={{ cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('location')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Barangay Location</span>
                           {sortKey === 'location' ? (
-                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
-                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
+                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('unit')} style={{ cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('unit')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Assigned Unit</span>
                           {sortKey === 'unit' ? (
-                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
-                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
+                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('status')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Triage Status</span>
                           {sortKey === 'status' ? (
-                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
-                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
+                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')} style={{ cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Reported</span>
                           {sortKey === 'createdAt' ? (
-                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
-                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
+                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Severity</span>
                           {sortKey === 'urgency' ? (
-                            sortDir === 'asc' ? <ArrowUp size={13} color="#DC2626" /> : <ArrowDown size={13} color="#DC2626" />
-                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={12} color="#DC2626" /> : <ArrowDown size={12} color="#DC2626" />
+                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th" style={{ textAlign: 'right' }}>Actions</th>
+                      <th className="rq-th" style={{ textAlign: 'right', whiteSpace: 'nowrap', width: 68 }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1138,8 +1186,8 @@ export default function Requests() {
                 </table>
               </div>
 
-              {/* Mobile Card List View (< 1024px) */}
-              <div className="rq-mobile-cards block lg:hidden">
+              {/* Mobile Card List View (Mobile devices <= 640px) */}
+              <div className="rq-mobile-cards">
                 {paged.map((inc) => {
                   const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                   const normalized = normalizeIncidentType(inc.aiDetectedType);

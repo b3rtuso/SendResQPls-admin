@@ -84,7 +84,7 @@ export default function Sidebar() {
 
           @media (min-width: 1025px) and (max-width: 1366px) {
             .app-sidebar {
-              width: 220px;
+              width: 210px;
             }
             .sb-brand {
               padding: 16px 14px 14px;
