@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation, Copy, Phone } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation, Copy, Phone, ChevronRight } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
 import { FiPhone } from 'react-icons/fi';
 import type { Status, Incident, Department, ResolutionForm, DepartmentInfo } from '../types';
@@ -869,7 +869,7 @@ export default function RequestDetails() {
                     background: 'rgba(37,99,235,0.08)', border: '1.5px solid rgba(37,99,235,0.2)',
                     fontSize: 15, fontWeight: 800, color: '#1D4ED8',
                   }}>
-                    🔍 {incident.aiDetectedType || 'Pending Analysis'}
+                    <Brain size={15} style={{ flexShrink: 0 }} /> {incident.aiDetectedType || 'Pending Analysis'}
                   </div>
                 </div>
 
@@ -1537,10 +1537,10 @@ export default function RequestDetails() {
                         }}
                       >
                         {isPast && (
-                          <span style={{ marginRight: 4, fontSize: 11 }}>🔒</span>
+                          <Lock size={11} style={{ marginRight: 4, flexShrink: 0 }} />
                         )}
                         {isCurrent && (
-                          <span style={{ marginRight: 4, fontSize: 11 }}>●</span>
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'currentColor', display: 'inline-block', marginRight: 4, flexShrink: 0 }} />
                         )}
                         {s}
                       </button>
@@ -1739,7 +1739,7 @@ export default function RequestDetails() {
                 }}>
                   {currentStatus}
                 </span>
-                <span style={{ color: '#2563EB', fontWeight: 800, fontSize: 14 }}>→</span>
+                <span style={{ color: '#2563EB', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center' }}><ChevronRight size={18} /></span>
                 <span style={{
                   color: '#15803D',
                   background: '#DCFCE7',
