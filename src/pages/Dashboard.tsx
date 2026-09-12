@@ -17,7 +17,7 @@ import { GiPoliceOfficerHead } from 'react-icons/gi';
 import { IoBandage } from 'react-icons/io5';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
-import { getIncidents, getIncidentStats, invalidateCache } from '../api/client';
+import { getIncidents, getAnalyticsSummary, getIncidentDistribution, invalidateCache } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -163,6 +163,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
+  const [serverDistribution, setServerDistribution] = useState<{ name: string; value: number }[] | null>(null);
   const [showComputationModal, setShowComputationModal] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(1); // 1 = Forecast, 2 = Top Locations (0 and 3 are infinite wrap clones)
   const [withTransition, setWithTransition] = useState(true);
@@ -292,6 +293,7 @@ export default function Dashboard() {
   const handleManualRefresh = async () => {
     setRefreshing(true);
     invalidateCache('incidents');
+    invalidateCache('analytics');
     await fetchData();
     setRefreshing(false);
   };
@@ -312,39 +314,62 @@ export default function Dashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [incRes, statsRes] = await Promise.all([
-        getIncidents(),
-        getIncidentStats().catch(() => null),
+      const [summaryRes, distRes, incRes] = await Promise.all([
+        getAnalyticsSummary().catch(() => null),
+        getIncidentDistribution().catch(() => null),
+        getIncidents().catch(() => ({ data: [] })),
       ]);
-      setIncidents(incRes.data);
-      if (statsRes) {
-        const s = statsRes.data;
-        const today = new Date().toDateString();
-        const resolvedToday = incRes.data.filter(
-          (i: Incident) => i.status === 'RESOLVED' && new Date(i.updatedAt).toDateString() === today
-        ).length;
+
+      const incData: Incident[] = Array.isArray(incRes?.data) ? incRes.data : [];
+      setIncidents(incData);
+
+      if (distRes?.data?.distribution) {
+        setServerDistribution(distRes.data.distribution);
+      }
+
+      if (summaryRes?.data?.data) {
+        const s = summaryRes.data.data;
         setPrevStats(stats); // store previous for trend delta
-        setStats({ total: s.total, pending: s.pending, dispatched: s.dispatched, resolved: resolvedToday });
+        setStats({
+          total: s.total ?? 0,
+          pending: s.pending ?? 0,
+          dispatched: s.dispatched ?? 0,
+          resolved: s.resolvedToday ?? 0,
+        });
       } else {
-        const d = incRes.data;
         const today = new Date().toDateString();
         const next = {
-          total:      d.length,
-          pending:    d.filter((i: Incident) => i.status === 'PENDING').length,
-          dispatched: d.filter((i: Incident) => i.status === 'DISPATCHED').length,
-          resolved:   d.filter((i: Incident) => i.status === 'RESOLVED' && new Date(i.updatedAt).toDateString() === today).length,
+          total:      incData.length,
+          pending:    incData.filter((i: Incident) => i.status === 'PENDING').length,
+          dispatched: incData.filter((i: Incident) => i.status === 'DISPATCHED').length,
+          resolved:   incData.filter((i: Incident) => i.status === 'RESOLVED' && new Date(i.updatedAt).toDateString() === today).length,
         };
         setPrevStats(stats);
         setStats(next);
       }
-    } catch { setIncidents([]); }
-    finally  { setLoading(false); }
+    } catch {
+      setIncidents([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchData();
-    const iv = setInterval(fetchData, 60000); // 60s — SSE handles real-time alerts
-    return () => clearInterval(iv);
+
+    const handleSseUpdate = () => {
+      invalidateCache('incidents');
+      invalidateCache('analytics');
+      fetchData();
+    };
+
+    window.addEventListener('incident-sse-update', handleSseUpdate);
+    const iv = setInterval(fetchData, 60000); // 60s fallback heartbeat
+
+    return () => {
+      window.removeEventListener('incident-sse-update', handleSseUpdate);
+      clearInterval(iv);
+    };
   }, []);
 
   const pendingCount = stats.pending;
@@ -363,6 +388,9 @@ export default function Dashboard() {
   }, [incidents, statusFilter]);
 
   const donutData = useMemo(() => {
+    if (serverDistribution && serverDistribution.length > 0) {
+      return serverDistribution;
+    }
     if (incidents.length === 0) {
       return [
         { name: 'Fire', value: 0 },
@@ -380,7 +408,7 @@ export default function Dashboard() {
       name,
       value,
     }));
-  }, [incidents]);
+  }, [serverDistribution, incidents]);
 
   // Dynamic Computation Analysis for 'See detail' modal & Donut Chart
   const computationAnalysis = useMemo(() => {
@@ -1254,7 +1282,7 @@ export default function Dashboard() {
                 <Calculator size={13} /> View Computation
               </button>
             </div>
-            <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
+            <div className="card-body donut-card-body">
               <div style={{ height: '260px', width: '100%', position: 'relative', minWidth: 0 }}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <PieChart>
@@ -1463,7 +1491,9 @@ export default function Dashboard() {
                               <span style={{ fontWeight: 600, color: '#1E293B' }}>{inc.aiDetectedType || 'Unknown'}</span>
                             </td>
                             <td style={{ padding: '13px 18px', color: '#475569', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {inc.latitude && inc.longitude
+                              {inc.barangay
+                                ? inc.barangay.split(',')[0]
+                                : inc.latitude && inc.longitude
                                 ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                                 : '—'}
                             </td>
@@ -1530,7 +1560,9 @@ export default function Dashboard() {
                     const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                     const normalized = normalizeIncidentType(inc.aiDetectedType);
                     const ti = TYPE_ICON[normalized] || { icon: HelpCircle, color: '#64748B' };
-                    const brgy = inc.latitude && inc.longitude
+                    const brgy = inc.barangay
+                      ? inc.barangay.split(',')[0]
+                      : inc.latitude && inc.longitude
                       ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                       : 'Balayan';
                     return (

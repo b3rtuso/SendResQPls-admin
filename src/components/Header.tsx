@@ -1,7 +1,7 @@
 import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Building2, FileText, PhoneCall, LayoutDashboard, Settings as SettingsIcon } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getIncidents, updateIncidentStatus, lockIncident } from '../api/client';
+import { getIncidents, updateIncidentStatus, lockIncident, invalidateCache } from '../api/client';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { useAdminNav } from '../context/AdminNavContext';
 import { useToast } from '../context/ToastContext';
@@ -123,9 +123,21 @@ export default function Header({ title, subtitle }: HeaderProps) {
         signal: ctrl.signal,
 
         onmessage(event) {
-          if (event.event === 'new_incident') {
+          let eventData: any = null;
+          try {
+            if (event.data) eventData = JSON.parse(event.data);
+          } catch { /* ignore */ }
+
+          // Invalidate cache and inform all listeners (Dashboard, Requests, RequestDetails)
+          invalidateCache('incidents');
+          invalidateCache('analytics');
+          window.dispatchEvent(new CustomEvent('incident-sse-update', {
+            detail: { event: event.event, data: eventData }
+          }));
+
+          if (event.event === 'new_incident' || event.event === 'incident_created') {
             try {
-              const data = JSON.parse(event.data);
+              const data = eventData || (event.data ? JSON.parse(event.data) : {});
               showBanner({
                 id: data.id,
                 type: data.aiDetectedType || 'Emergency',

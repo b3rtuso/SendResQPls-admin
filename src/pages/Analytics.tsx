@@ -38,7 +38,7 @@ import {
   generateReportPreview, type ReportPreviewData,
 } from '../utils/reportGenerator';
 import ReportPreviewModal from '../components/ReportPreviewModal';
-import { getIncidentsByRange } from '../api/client';
+import { getIncidentsByRange, getReportDownloadUrl } from '../api/client';
 import type { Incident } from '../types';
 
 // SVG Icon Incident Types (8 Official Types)
@@ -469,9 +469,40 @@ export default function Analytics() {
   const handleExecuteDownload = async (key: RangeKey, incs: Incident[], dateParam: string) => {
     setDownloading(key);
     try {
-      if (key === 'daily')   await downloadDailyReport(incs, dateParam);
-      if (key === 'weekly')  await downloadWeeklyReport(incs, dateParam);
-      if (key === 'monthly') await downloadMonthlyReport(incs, dateParam);
+      let downloadedViaServer = false;
+      try {
+        const token = localStorage.getItem('token');
+        const downloadUrl = getReportDownloadUrl(key, dateParam);
+        const res = await fetch(downloadUrl, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          const contentDisposition = res.headers.get('Content-Disposition');
+          let fileName = `MDRRMO_${key.toUpperCase()}_REPORT_${dateParam}.docx`;
+          if (contentDisposition && contentDisposition.includes('filename=')) {
+            const match = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (match && match[1]) fileName = match[1];
+          }
+          const blobUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(blobUrl);
+          downloadedViaServer = true;
+        }
+      } catch (serverErr) {
+        console.warn('Server-side report generation failed, falling back to client-side:', serverErr);
+      }
+
+      if (!downloadedViaServer) {
+        if (key === 'daily')   await downloadDailyReport(incs, dateParam);
+        if (key === 'weekly')  await downloadWeeklyReport(incs, dateParam);
+        if (key === 'monthly') await downloadMonthlyReport(incs, dateParam);
+      }
 
       // Record to download history
       const typeLabel = key === 'daily' ? 'Daily' : key === 'weekly' ? 'Weekly' : 'Monthly';
@@ -1084,15 +1115,9 @@ export default function Analytics() {
             <style>{`
               .analytics-reports-grid {
                 display: grid;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
                 gap: 18px;
                 margin-bottom: 24px;
-              }
-              @media (max-width: 1024px) {
-                .analytics-reports-grid {
-                  grid-template-columns: repeat(2, 1fr);
-                  gap: 14px;
-                }
               }
               @media (max-width: 640px) {
                 .analytics-reports-grid {

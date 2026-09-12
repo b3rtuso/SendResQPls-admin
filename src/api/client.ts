@@ -107,13 +107,40 @@ export const updateIncidentStatus = (id: string, data: { status?: string; adminN
     return res;
   });
 
+export const batchUpdateIncidents = (data: { ids: string[]; status?: string; assignedDepartment?: string }) =>
+  api.patch('/incidents/batch', data).then(res => {
+    invalidateCache('incidents');
+    return res;
+  });
+
 export const getIncidents = () => cachedGet('/incidents', 60000);
+export const getPaginatedIncidents = (params: { page?: number; limit?: number; status?: string; search?: string; sortBy?: string; sortDir?: string }) => {
+  const sp = new URLSearchParams();
+  if (params.page !== undefined) sp.set('page', String(params.page));
+  if (params.limit !== undefined) sp.set('limit', String(params.limit));
+  if (params.status && params.status !== 'ALL') sp.set('status', params.status);
+  if (params.search) sp.set('search', params.search);
+  if (params.sortBy) sp.set('sortBy', params.sortBy);
+  if (params.sortDir) sp.set('sortDir', params.sortDir);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
+  return cachedGet(`/incidents${qs}`, 5000);
+};
+
 export const getIncidentsByRange = (from: string, to: string) =>
   cachedGet(`/incidents?from=${from}&to=${to}`, 60000);
 export const getIncident = (id: string, skipCache = false) =>
   skipCache ? api.get(`/incidents/${id}`) : cachedGet(`/incidents/${id}`, 5000);
 export const getIncidentStats = () => cachedGet('/incidents/stats', 60000);
 export const getMyIncidents = (userId: string) => cachedGet(`/incidents/my/${userId}`, 30000);
+
+// === ANALYTICS & REPORTS (Backend-Powered) ===
+export const getAnalyticsSummary = () => cachedGet('/analytics/summary', 30000);
+export const getIncidentDistribution = () => cachedGet('/analytics/distribution', 30000);
+export const getTopHotspotLocations = () => cachedGet('/analytics/top-locations', 30000);
+
+export const getReportDownloadUrl = (range: 'daily' | 'weekly' | 'monthly', date: string) => {
+  return `${API_BASE}/reports/download?range=${range}&date=${encodeURIComponent(date)}`;
+};
 
 export const lockIncident = (id: string) =>
   api.post(`/incidents/${id}/lock`).then(res => {

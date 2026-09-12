@@ -9,7 +9,7 @@ import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { MdLandslide } from 'react-icons/md';
 import { IoBandage } from 'react-icons/io5';
 import type { Incident, Status, Department } from '../types';
-import { getIncidents, updateIncidentStatus, invalidateCache } from '../api/client';
+import { getIncidents, updateIncidentStatus, batchUpdateIncidents, invalidateCache } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -252,8 +252,19 @@ export default function Requests() {
 
   useEffect(() => {
     fetchIncidents();
-    const iv = setInterval(fetchIncidents, 10000);
-    return () => clearInterval(iv);
+
+    const handleSseUpdate = () => {
+      invalidateCache('incidents');
+      fetchIncidents();
+    };
+
+    window.addEventListener('incident-sse-update', handleSseUpdate);
+    const iv = setInterval(fetchIncidents, 60000); // 60s fallback heartbeat
+
+    return () => {
+      window.removeEventListener('incident-sse-update', handleSseUpdate);
+      clearInterval(iv);
+    };
   }, []);
 
   useEffect(() => {
@@ -285,10 +296,9 @@ export default function Requests() {
   const handleBatchAssign = async (dept: string) => {
     if (selectedIds.size === 0) return;
     setBatchLoading(true);
+    const ids = Array.from(selectedIds);
     try {
-      await Promise.all(
-        Array.from(selectedIds).map(id => updateIncidentStatus(id, { assignedDepartment: dept }))
-      );
+      await batchUpdateIncidents({ ids, assignedDepartment: dept });
       setIncidents(prev =>
         prev.map(inc => (selectedIds.has(inc.id) ? { ...inc, assignedDepartment: dept as Department, aiRecommendedDept: dept as Department } : inc))
       );
@@ -304,10 +314,9 @@ export default function Requests() {
   const handleBatchStatus = async (status: Status) => {
     if (selectedIds.size === 0) return;
     setBatchLoading(true);
+    const ids = Array.from(selectedIds);
     try {
-      await Promise.all(
-        Array.from(selectedIds).map(id => updateIncidentStatus(id, { status }))
-      );
+      await batchUpdateIncidents({ ids, status });
       setIncidents(prev =>
         prev.map(inc => (selectedIds.has(inc.id) ? { ...inc, status } : inc))
       );
@@ -333,7 +342,7 @@ export default function Requests() {
         inc.id.toLowerCase().includes(search.toLowerCase()) ||
         (inc.aiDetectedType || '').toLowerCase().includes(search.toLowerCase()) ||
         (inc.aiRecommendedDept || '').toLowerCase().includes(search.toLowerCase()) ||
-        (inc.latitude && inc.longitude && getNearestBarangay(inc.latitude, inc.longitude).toLowerCase().includes(search.toLowerCase()));
+        (inc.barangay ? inc.barangay.toLowerCase().includes(search.toLowerCase()) : (inc.latitude && inc.longitude && getNearestBarangay(inc.latitude, inc.longitude).toLowerCase().includes(search.toLowerCase())));
       return mStatus && mType && mSearch;
     });
 
@@ -351,8 +360,8 @@ export default function Requests() {
           valB = b.aiDetectedType || '';
           break;
         case 'location':
-          valA = a.latitude && a.longitude ? getNearestBarangay(a.latitude, a.longitude) : '';
-          valB = b.latitude && b.longitude ? getNearestBarangay(b.latitude, b.longitude) : '';
+          valA = a.barangay || (a.latitude && a.longitude ? getNearestBarangay(a.latitude, a.longitude) : '');
+          valB = b.barangay || (b.latitude && b.longitude ? getNearestBarangay(b.latitude, b.longitude) : '');
           break;
         case 'unit':
           valA = a.assignedDepartment || a.aiRecommendedDept || '';
@@ -830,7 +839,9 @@ export default function Requests() {
                       const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                       const normalized = normalizeIncidentType(inc.aiDetectedType);
                       const ti = TYPE_ICON[normalized] || { icon: HelpCircle, color: '#64748B' };
-                      const brgyName = inc.latitude && inc.longitude
+                      const brgyName = inc.barangay
+                        ? inc.barangay.split(',')[0]
+                        : inc.latitude && inc.longitude
                         ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                         : 'Balayan';
 
@@ -1054,7 +1065,9 @@ export default function Requests() {
                   const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                   const normalized = normalizeIncidentType(inc.aiDetectedType);
                   const ti = TYPE_ICON[normalized] || { icon: HelpCircle, color: '#64748B' };
-                  const brgyName = inc.latitude && inc.longitude
+                  const brgyName = inc.barangay
+                    ? inc.barangay.split(',')[0]
+                    : inc.latitude && inc.longitude
                     ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                     : 'Balayan';
                   const sev = (inc.severity || '').toUpperCase() || 'MEDIUM';

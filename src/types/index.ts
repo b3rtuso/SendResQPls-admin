@@ -68,6 +68,8 @@ export interface Incident {
   latitude: number;
   longitude: number;
   photoUrl: string;
+  barangay?: string;
+  formattedAddress?: string;
   description?: string;
   aiDetectedType?: string;
   aiRecommendedDept?: Department;

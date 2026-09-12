@@ -242,28 +242,57 @@ export default function RequestDetails() {
 
   useEffect(() => {
     loadIncident(true);
+
+    const handleSseUpdate = (e: Event) => {
+      const customEv = e as CustomEvent;
+      const data = customEv.detail?.data;
+      // If the SSE event is for this incident or a general incident update, reload
+      if (!data || !data.id || data.id === id || (customEv.detail?.event === 'incidents_batch_updated' && data.ids?.includes(id))) {
+        loadIncident(false);
+      }
+    };
+
+    window.addEventListener('incident-sse-update', handleSseUpdate);
+    // Relaxed fallback timer (60s safety heartbeat instead of 8s aggressive polling)
     const interval = setInterval(() => {
       loadIncident(false);
-    }, 8000); // 8s live polling to keep activity timeline & incident data synced
-    return () => clearInterval(interval);
-  }, [loadIncident]);
+    }, 60000);
+
+    return () => {
+      window.removeEventListener('incident-sse-update', handleSseUpdate);
+      clearInterval(interval);
+    };
+  }, [loadIncident, id]);
 
   useEffect(() => {
-    if (incident) {
-      setResolvingAddress(true);
-      reverseGeocode(incident.latitude, incident.longitude)
-        .then((res) => {
-          setResolvedAddress(res.data.formattedAddress);
-        })
-        .catch((err) => {
-          console.error('[Geocoding] Reverse geocoding failed:', err);
-          // Fallback to local nearest barangay
-          const localFallback = getNearestBarangay(incident.latitude, incident.longitude);
-          setResolvedAddress(localFallback);
-        })
-        .finally(() => setResolvingAddress(false));
+    if (!incident) return;
+
+    // Fast-path: use pre-geocoded address stored directly in the database
+    if (incident.formattedAddress) {
+      setResolvedAddress(incident.formattedAddress);
+      setResolvingAddress(false);
+      return;
     }
-  }, [incident?.latitude, incident?.longitude]);
+
+    if (incident.barangay) {
+      setResolvedAddress(`${incident.barangay}, Balayan, Batangas`);
+      setResolvingAddress(false);
+      return;
+    }
+
+    // Fallback: only geocode if the incident record does not already have a stored address
+    setResolvingAddress(true);
+    reverseGeocode(incident.latitude, incident.longitude)
+      .then((res) => {
+        setResolvedAddress(res.data.formattedAddress);
+      })
+      .catch((err) => {
+        console.error('[Geocoding] Reverse geocoding failed:', err);
+        const localFallback = getNearestBarangay(incident.latitude, incident.longitude);
+        setResolvedAddress(localFallback);
+      })
+      .finally(() => setResolvingAddress(false));
+  }, [incident?.id, incident?.formattedAddress, incident?.barangay, incident?.latitude, incident?.longitude]);
 
   const handleStatusUpdate = async (status: Status, resolutionForm?: ResolutionForm) => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -661,7 +690,7 @@ export default function RequestDetails() {
         </Button>
 
         {/* ── TOP: 2-Column Grid ────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 20, marginBottom: 20 }} className="fade-in">
+        <div className="request-details-grid fade-in">
 
           {/* ── LEFT COLUMN: Photo + Map + Badges ──────────────────────── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1168,7 +1197,7 @@ export default function RequestDetails() {
               <div className="card-header"><h3><Building2 size={18} style={{ marginRight: 6, verticalAlign: -3 }} /> Assign Department</h3></div>
               <div className="card-body">
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>Select a responding department. This will update the Assigned Dept and notify the team.</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                   {departments.map((dept) => {
                     const isSelected = incident.assignedDepartment === dept.key;
                     return (
