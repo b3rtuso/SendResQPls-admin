@@ -184,9 +184,12 @@ body {
   flex: 1;
 }
 
-@media (max-width: 1366px) {
+@media (min-width: 1025px) and (max-width: 1366px) {
+  .main-content {
+    margin-left: 220px;
+  }
   .page-content {
-    padding: 20px 24px;
+    padding: 16px 20px;
   }
 }
 

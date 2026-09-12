@@ -762,76 +762,166 @@ export default function Requests() {
             <>
               {/* Desktop Table View */}
               <div className="rq-desktop-table hidden lg:block" style={{ overflowX: 'auto' }}>
+                <style>{`
+                  .rq-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 13px;
+                    text-align: left;
+                  }
+                  .rq-th {
+                    padding: 12px 10px;
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #64748B;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    background: #F8FAFC;
+                    border-bottom: 1px solid #E2E8F0;
+                    white-space: nowrap;
+                  }
+                  .rq-td {
+                    padding: 12px 10px;
+                    border-bottom: 1px solid #F1F5F9;
+                    vertical-align: middle;
+                  }
+                  .rq-evidence-box {
+                    width: 38px;
+                    height: 30px;
+                    border-radius: 7px;
+                    overflow: hidden;
+                    border: 1px solid #E2E8F0;
+                    cursor: zoom-in;
+                    background: #F1F5F9;
+                    flex-shrink: 0;
+                    transition: transform 0.15s ease;
+                  }
+                  .rq-badge-brgy {
+                    background: #F1F5F9;
+                    color: #334155;
+                    padding: 3px 7px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    white-space: nowrap;
+                  }
+
+                  @media (max-width: 1366px) {
+                    .rq-th {
+                      padding: 9px 7px !important;
+                      font-size: 10.5px !important;
+                      letter-spacing: 0.03em !important;
+                    }
+                    .rq-td {
+                      padding: 9px 7px !important;
+                      font-size: 12px !important;
+                    }
+                    .rq-evidence-box {
+                      width: 32px;
+                      height: 26px;
+                    }
+                    .rq-badge-brgy {
+                      padding: 2px 5px;
+                      font-size: 11px;
+                    }
+                    .rq-btn-view {
+                      padding: 4px 9px !important;
+                      font-size: 11px !important;
+                    }
+                    .rq-btn-accept {
+                      padding: 4px 8px !important;
+                      font-size: 11px !important;
+                    }
+                  }
+
+                  @media (max-width: 1200px) {
+                    .rq-th {
+                      padding: 8px 5px !important;
+                      font-size: 10px !important;
+                      letter-spacing: 0.02em !important;
+                    }
+                    .rq-td {
+                      padding: 8px 5px !important;
+                      font-size: 11.5px !important;
+                    }
+                    .rq-badge-brgy {
+                      padding: 2px 4px;
+                      font-size: 10.5px;
+                    }
+                  }
+                `}</style>
                 <table className="rq-table" style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
                   <thead>
                     <tr>
-                      <th className="rq-th" style={{ width: 40, textAlign: 'center', padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap' }}>
+                      <th className="rq-th" style={{ width: 34, textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={paged.length > 0 && paged.every(inc => selectedIds.has(inc.id))}
                           onChange={() => toggleSelectAll(paged)}
                           aria-label="Select all incidents on page"
-                          style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
+                          style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#2563EB' }}
                         />
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('id')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('id')} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <span>Incident ID</span>
                           {sortKey === 'id' ? (
                             sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th" style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap' }}>Evidence</th>
-                      <th className="rq-th sortable" onClick={() => handleSort('type')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <th className="rq-th">Evidence</th>
+                      <th className="rq-th sortable" onClick={() => handleSort('type')} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <span>Hazard Type</span>
                           {sortKey === 'type' ? (
                             sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('location')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('location')} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <span>Barangay Location</span>
                           {sortKey === 'location' ? (
                             sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('unit')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('unit')} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <span>Assigned Unit</span>
                           {sortKey === 'unit' ? (
                             sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('status')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <span>Triage Status</span>
                           {sortKey === 'status' ? (
                             sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <span>Reported</span>
                           {sortKey === 'createdAt' ? (
                             sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                           <span>Severity</span>
                           {sortKey === 'urgency' ? (
                             sortDir === 'asc' ? <ArrowUp size={13} color="#DC2626" /> : <ArrowDown size={13} color="#DC2626" />
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
-                      <th className="rq-th" style={{ textAlign: 'right', padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', whiteSpace: 'nowrap' }}>Actions</th>
+                      <th className="rq-th" style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -857,52 +947,47 @@ export default function Requests() {
                           }}
                         >
                           {/* Selection Checkbox */}
-                          <td className="rq-td" style={{ textAlign: 'center', padding: '14px 18px' }} onClick={e => e.stopPropagation()}>
+                          <td className="rq-td" style={{ textAlign: 'center', width: 34 }} onClick={e => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={selectedIds.has(inc.id)}
                               onChange={e => toggleSelectOne(inc.id, e as any)}
                               aria-label={`Select incident ${inc.id}`}
-                              style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
+                              style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#2563EB' }}
                             />
                           </td>
 
                           {/* Incident ID */}
-                          <td className="rq-td" style={{ padding: '14px 18px', fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: '#2563EB' }}>
+                          <td className="rq-td" style={{ fontFamily: 'monospace', fontWeight: 700, color: '#2563EB', whiteSpace: 'nowrap' }}>
                             #{inc.id.slice(0, 8).toUpperCase()}
                           </td>
 
                           {/* Evidence Photo */}
-                          <td className="rq-td" style={{ padding: '14px 18px' }} onClick={e => e.stopPropagation()}>
+                          <td className="rq-td" onClick={e => e.stopPropagation()}>
                             {inc.photoUrl ? (
                               <div
                                 onClick={e => { e.stopPropagation(); setPreviewUrl(inc.photoUrl); }}
                                 title="Click to view photo evidence"
-                                style={{
-                                  width: 42, height: 34, borderRadius: 8, overflow: 'hidden',
-                                  border: '1px solid #E2E8F0', cursor: 'zoom-in',
-                                  background: '#F1F5F9', flexShrink: 0,
-                                  transition: 'transform 0.15s ease',
-                                }}
+                                className="rq-evidence-box"
                                 onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
                                 onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                               >
                                 <img src={inc.photoUrl} alt="Evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               </div>
                             ) : (
-                              <div style={{ width: 42, height: 34, borderRadius: 8, background: '#F8FAFC', border: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <ImageIcon size={15} color="#94A3B8" />
+                              <div className="rq-evidence-box" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'default' }}>
+                                <ImageIcon size={14} color="#94A3B8" />
                               </div>
                             )}
                           </td>
 
                           {/* Type */}
-                          <td className="rq-td" style={{ padding: '14px 18px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <td className="rq-td" style={{ whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                               {ti.icon ? (
-                                <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
+                                <ti.icon size={15} style={{ color: ti.color, flexShrink: 0 }} />
                               ) : (
-                                <HelpCircle size={16} style={{ color: '#64748B', flexShrink: 0 }} />
+                                <HelpCircle size={15} style={{ color: '#64748B', flexShrink: 0 }} />
                               )}
                               <strong style={{ color: '#0F172A', fontWeight: 700 }}>
                                 {inc.aiDetectedType || 'Emergency'}
@@ -911,47 +996,39 @@ export default function Requests() {
                           </td>
 
                           {/* Location */}
-                          <td className="rq-td" style={{ padding: '14px 18px' }}>
-                            <span style={{
-                              background: '#F1F5F9',
-                              color: '#334155',
-                              padding: '3px 8px',
-                              borderRadius: 6,
-                              fontSize: 12,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 5,
-                            }}>
-                              <FaLocationDot size={11} color="#EF4444" style={{ flexShrink: 0 }} />
+                          <td className="rq-td" style={{ whiteSpace: 'nowrap' }}>
+                            <span className="rq-badge-brgy">
+                              <FaLocationDot size={10} color="#EF4444" style={{ flexShrink: 0 }} />
                               <span>{brgyName}</span>
                             </span>
                           </td>
 
                           {/* Unit */}
-                          <td className="rq-td" style={{ padding: '14px 18px', fontWeight: 600, color: '#1E293B' }}>
+                          <td className="rq-td" style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>
                             {inc.assignedDepartment ? (
                               <span>{DEPT_NAMES[inc.assignedDepartment] || inc.assignedDepartment}</span>
                             ) : inc.aiRecommendedDept ? (
-                              <span style={{ color: '#64748B', fontSize: 12 }}>
+                              <span style={{ color: '#64748B', fontSize: 11.5 }}>
                                 Rec: {DEPT_NAMES[inc.aiRecommendedDept] || inc.aiRecommendedDept}
                               </span>
                             ) : (
-                              <span style={{ color: '#94A3B8', fontSize: 12 }}>MDRRMO</span>
+                              <span style={{ color: '#94A3B8', fontSize: 11.5 }}>MDRRMO</span>
                             )}
                           </td>
 
                           {/* Status */}
-                          <td className="rq-td" style={{ padding: '14px 18px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                          <td className="rq-td">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
                               <Badge style={{
-                                padding: '4px 10px',
+                                padding: '3px 8px',
                                 borderRadius: 999,
                                 background: ss.bg,
                                 color: ss.color,
                                 border: `1px solid ${ss.border}`,
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fontWeight: 800,
                                 letterSpacing: '0.04em',
+                                whiteSpace: 'nowrap',
                               }}>
                                 <span>{inc.status}</span>
                               </Badge>
@@ -960,28 +1037,28 @@ export default function Requests() {
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: 3,
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: 700,
                                   color: '#B91C1C',
                                   background: '#FEF2F2',
                                   border: '1px solid #FECDD3',
                                   borderRadius: 4,
-                                  padding: '2px 5px',
+                                  padding: '1px 4px',
                                   whiteSpace: 'nowrap',
                                 }} title={`Locked by ${inc.lockedByAdminName}`}>
-                                  <Lock size={10} /> {inc.lockedByAdminName}
+                                  <Lock size={9} /> {inc.lockedByAdminName}
                                 </span>
                               )}
                             </div>
                           </td>
 
                           {/* Reported time */}
-                          <td className="rq-td" style={{ padding: '14px 18px', color: '#94A3B8', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+                          <td className="rq-td" style={{ color: '#94A3B8', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                             {timeAgo(inc.createdAt)}
                           </td>
 
                           {/* Urgency/Severity Badge (Standardized: Low=Green, Med=Amber, High/Critical=Red) */}
-                          <td className="rq-td" style={{ padding: '14px 18px' }}>
+                          <td className="rq-td" style={{ whiteSpace: 'nowrap' }}>
                             {(() => {
                               const sev = (inc.severity || '').toUpperCase() || 'MEDIUM';
                               const isTerminal = inc.status === 'RESOLVED' || inc.status === 'REJECTED';
@@ -995,13 +1072,13 @@ export default function Requests() {
                               if (isTerminal) return <span style={{ fontSize: 11, color: '#94A3B8' }}>—</span>;
                               return (
                                 <Badge style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                                  padding: '4px 9px', borderRadius: 6, fontSize: 11, fontWeight: 800,
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  padding: '3px 7px', borderRadius: 6, fontSize: 10.5, fontWeight: 800,
                                   background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
                                   whiteSpace: 'nowrap',
                                 }}>
                                   <span style={{
-                                    width: 6, height: 6, borderRadius: '50%',
+                                    width: 5, height: 5, borderRadius: '50%',
                                     background: s.dot, display: 'inline-block',
                                   }} />
                                   <span>{sev}</span>
@@ -1011,37 +1088,39 @@ export default function Requests() {
                           </td>
 
                           {/* Actions */}
-                          <td className="rq-td" style={{ padding: '14px 18px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
-                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <td className="rq-td" style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', alignItems: 'center' }}>
                               {inc.status === 'PENDING' && (
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  className="rq-btn-accept"
                                   onClick={e => quickAction(e, inc.id, 'REVIEWING')}
                                   disabled={actionLoading === inc.id + 'REVIEWING'}
                                   title="Accept report for review"
                                   style={{
-                                    padding: '5px 10px', borderRadius: 7, border: '1px solid #BBF7D0',
-                                    background: '#F0FDF4', color: '#16A34A', fontSize: 12, fontWeight: 700,
-                                    height: 'auto', display: 'flex', alignItems: 'center', gap: 4,
+                                    padding: '4px 8px', borderRadius: 6, border: '1px solid #BBF7D0',
+                                    background: '#F0FDF4', color: '#16A34A', fontSize: 11.5, fontWeight: 700,
+                                    height: 'auto', display: 'flex', alignItems: 'center', gap: 3,
                                   }}
                                 >
-                                  <CheckCircle2 size={13} /> Accept
+                                  <CheckCircle2 size={12} /> Accept
                                 </Button>
                               )}
 
                               <Button
                                 size="sm"
                                 variant="outline"
+                                className="rq-btn-view"
                                 onClick={() => navigate(`/requests/${inc.id}`)}
                                 style={{
-                                  padding: '5px 12px',
-                                  borderRadius: 7,
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
                                   height: 'auto',
                                   background: 'var(--primary-bg)',
                                   color: 'var(--primary)',
                                   border: '1px solid rgba(37,99,235,0.2)',
-                                  fontSize: 11.5,
+                                  fontSize: 11,
                                   fontWeight: 700,
                                   transition: 'all 0.15s',
                                 }}

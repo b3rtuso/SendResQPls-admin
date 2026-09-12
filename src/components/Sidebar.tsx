@@ -82,6 +82,57 @@ export default function Sidebar() {
             display: none;
           }
 
+          @media (min-width: 1025px) and (max-width: 1366px) {
+            .app-sidebar {
+              width: 220px;
+            }
+            .sb-brand {
+              padding: 16px 14px 14px;
+              gap: 10px;
+            }
+            .sb-brand-title {
+              font-size: 13.5px;
+            }
+            .sb-brand-sub {
+              font-size: 10px;
+            }
+            .sb-nav-container {
+              padding: 4px 8px;
+            }
+            .sb-nav-item {
+              padding: 8px 10px;
+              font-size: 12.5px;
+              gap: 9px;
+            }
+            .sb-nav-icon-box {
+              width: 26px;
+              height: 26px;
+            }
+            .sb-section-label {
+              padding: 12px 10px 4px;
+              font-size: 9.5px;
+            }
+            .sb-footer {
+              padding: 10px 10px 14px;
+            }
+            .sb-signout-btn {
+              padding: 8px 10px;
+              font-size: 12px;
+              margin-bottom: 8px;
+            }
+            .sb-user-card {
+              padding: 8px 10px;
+            }
+            .sb-user-avatar {
+              width: 32px;
+              height: 32px;
+              font-size: 12px;
+            }
+            .sb-user-name {
+              font-size: 12px;
+            }
+          }
+
           @media (max-width: 1024px) {
             .app-sidebar {
               transform: translateX(-100%);
