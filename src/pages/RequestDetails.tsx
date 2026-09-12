@@ -994,63 +994,52 @@ export default function RequestDetails() {
           {/* ── RIGHT COLUMN: Incident Details + CLT Reclassify + Assign Dept + Status ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* ── Tactical Emergency Quick Call Command Center ── */}
-            <div className="card" style={{
-              background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-              color: 'white',
-              border: '1.5px solid rgba(255, 255, 255, 0.1)',
-              boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.3)',
-              overflow: 'hidden',
-            }}>
-              <div className="card-header" style={{
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                padding: '12px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}>
+            {/* ── Emergency Quick Call (Matching Theme) ── */}
+            <div className="card">
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: '#22C55E',
-                    boxShadow: '0 0 10px #22C55E',
-                    animation: 'pulse-emergency 2s infinite',
-                  }} />
-                  <span style={{ fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#E2E8F0' }}>
-                    Emergency Quick Call
-                  </span>
+                  <FiPhone size={16} style={{ color: 'var(--primary)' }} />
+                  <h3 style={{ margin: 0 }}>Emergency Quick Call</h3>
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'var(--primary)',
+                  background: 'var(--primary-bg)',
+                  border: '1px solid rgba(37, 99, 235, 0.2)',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                }}>
                   Auto Call-Logged
                 </span>
               </div>
 
-              <div className="card-body" style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {/* 1. Citizen Reporter Call Box */}
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'var(--bg-subtle, #F8FAFC)',
+                  border: '1px solid var(--border)',
                   borderRadius: 12,
-                  padding: '12px 14px',
+                  padding: '14px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  gap: 8,
+                  gap: 10,
                 }}>
                   <div>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       Citizen Reporter
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {incident.reporter?.name || 'Anonymous Citizen'}
                     </div>
                   </div>
 
                   <div style={{
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
                     fontSize: 15,
                     fontWeight: 800,
-                    color: incident.reporter?.phoneNumber ? '#38BDF8' : '#64748B',
+                    color: incident.reporter?.phoneNumber ? 'var(--primary)' : 'var(--text-muted)',
                     letterSpacing: '0.04em',
                   }}>
                     {incident.reporter?.phoneNumber || 'No phone recorded'}
@@ -1064,8 +1053,8 @@ export default function RequestDetails() {
                       style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         padding: '8px 0', borderRadius: 8, fontSize: 12, fontWeight: 700,
-                        background: incident.reporter?.phoneNumber ? '#0284C7' : 'rgba(255, 255, 255, 0.1)',
-                        color: incident.reporter?.phoneNumber ? 'white' : '#64748B',
+                        background: incident.reporter?.phoneNumber ? 'var(--primary)' : 'var(--border)',
+                        color: incident.reporter?.phoneNumber ? 'white' : 'var(--text-muted)',
                         border: 'none', cursor: incident.reporter?.phoneNumber ? 'pointer' : 'not-allowed',
                         transition: 'opacity 0.15s',
                         fontFamily: 'inherit',
@@ -1084,8 +1073,8 @@ export default function RequestDetails() {
                         title="Copy phone number"
                         style={{
                           padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                          background: 'rgba(255, 255, 255, 0.1)', color: '#CBD5E1',
-                          border: '1px solid rgba(255, 255, 255, 0.15)', cursor: 'pointer',
+                          background: 'var(--bg-card, #FFFFFF)', color: 'var(--text-secondary)',
+                          border: '1px solid var(--border)', cursor: 'pointer',
                           fontFamily: 'inherit',
                         }}
                       >
@@ -1106,37 +1095,37 @@ export default function RequestDetails() {
 
                   return (
                     <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: isAssigned ? `1.5px solid ${targetTheme.color}50` : '1px solid rgba(255, 255, 255, 0.1)',
+                      background: isAssigned ? `${targetTheme.color}08` : 'var(--bg-subtle, #F8FAFC)',
+                      border: isAssigned ? `1.5px solid ${targetTheme.color}40` : '1px solid var(--border)',
                       borderRadius: 12,
-                      padding: '12px 14px',
+                      padding: '14px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
-                      gap: 8,
+                      gap: 10,
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             {isAssigned ? 'ASSIGNED RESPONDER' : 'AI RECOMMENDED UNIT'}
                           </div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <DeptIcon size={14} color={targetTheme.color} />
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <DeptIcon size={15} color={targetTheme.color} />
                             {targetDeptName}
                           </div>
                         </div>
                         <span style={{
-                          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
-                          background: `${targetTheme.color}25`,
+                          fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 6,
+                          background: `${targetTheme.color}15`,
                           color: targetTheme.color,
-                          border: `1.5px solid ${targetTheme.color}40`,
+                          border: `1px solid ${targetTheme.color}35`,
                         }}>
                           {targetDeptCode || 'UNASSIGNED'}
                         </span>
                       </div>
 
                       <div style={{
-                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                        fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
                         fontSize: 15,
                         fontWeight: 800,
                         color: targetTheme.color,
@@ -1172,8 +1161,8 @@ export default function RequestDetails() {
                             title="Copy phone number"
                             style={{
                               padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                              background: 'rgba(255, 255, 255, 0.1)', color: '#CBD5E1',
-                              border: '1px solid rgba(255, 255, 255, 0.15)', cursor: 'pointer',
+                              background: 'var(--bg-card, #FFFFFF)', color: 'var(--text-secondary)',
+                              border: '1px solid var(--border)', cursor: 'pointer',
                               fontFamily: 'inherit',
                             }}
                           >
