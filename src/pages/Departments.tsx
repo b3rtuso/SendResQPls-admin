@@ -2,14 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import { DepartmentsSkeleton } from '../components/PageLoader';
 import {
-  Users, Search, Ambulance, Copy, Check, Info,
+  Users, Search, Copy, Check, Info,
   Plus, Edit2, Trash2,
 } from 'lucide-react';
-import { FaFire } from 'react-icons/fa6';
-import { FaBriefcaseMedical, FaEnvelope, FaBuilding, FaUsers, FaUserCheck } from 'react-icons/fa';
+import { FaEnvelope, FaBuilding, FaUsers, FaUserCheck } from 'react-icons/fa';
 import { FiPhone } from 'react-icons/fi';
-import { MdEngineering, MdLocalShipping } from 'react-icons/md';
-import { GiPoliceOfficerHead } from 'react-icons/gi';
+import { MdLocalShipping } from 'react-icons/md';
 import type { DepartmentInfo } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,25 +22,12 @@ import {
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { detectFieldChanges } from '../utils/changeDetector';
+import { getDeptTheme } from '../utils/departmentUtils';
 
 const statusClass: Record<string, string> = {
   Available: 'available',
   'On Standby': 'standby',
   Deployed: 'deployed',
-};
-
-const DEPT_THEME: Record<string, { icon: any; color: string; bg: string }> = {
-  BFP: { icon: FaFire, color: '#EF4444', bg: '#FEF2F2' },
-  PNP: { icon: GiPoliceOfficerHead, color: '#3B82F6', bg: '#EFF6FF' },
-  MEDICAL: { icon: FaBriefcaseMedical, color: '#22C55E', bg: '#ECFDF5' },
-  ENGINEERING: { icon: MdEngineering, color: '#F59E0B', bg: '#FEFCE8' },
-  RESCUE: { icon: Ambulance, color: '#8B5CF6', bg: '#F5F3FF' },
-};
-
-const getDeptTheme = (name: string) => {
-  const code = name.toUpperCase();
-  if (DEPT_THEME[code]) return DEPT_THEME[code];
-  return { icon: GiPoliceOfficerHead, color: '#64748B', bg: '#F1F5F9' }; // default fallback theme
 };
 
 type FilterStatus = 'ALL' | 'Available' | 'On Standby' | 'Deployed';

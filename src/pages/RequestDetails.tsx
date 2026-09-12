@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation, Copy, Phone } from 'lucide-react';
 import { FaLocationDot } from 'react-icons/fa6';
 import { FiPhone } from 'react-icons/fi';
-import type { Status, Incident, Department, ResolutionForm } from '../types';
+import type { Status, Incident, Department, ResolutionForm, DepartmentInfo } from '../types';
 import {
   updateIncidentStatus,
   getIncident as fetchIncident,
@@ -16,7 +16,9 @@ import {
   unlockIncident,
   heartbeatIncident,
   forceUnlockIncident,
+  getDepartments,
 } from '../api/client';
+import { getDeptTheme, getDeptDisplayName, getDeptContact, getDeptAbbr } from '../utils/departmentUtils';
 import ResolutionFormModal from '../components/ResolutionFormModal';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '../context/ConfirmContext';
@@ -128,6 +130,41 @@ export default function RequestDetails() {
     lockedAt?: string;
   }>({ isLockedByOther: false });
   const [isTakingOver, setIsTakingOver] = useState(false);
+
+  const [departmentsList, setDepartmentsList] = useState<DepartmentInfo[]>([]);
+
+  useEffect(() => {
+    getDepartments()
+      .then(res => {
+        if (Array.isArray(res.data)) setDepartmentsList(res.data);
+      })
+      .catch(err => console.warn('[RequestDetails] Failed to load departments:', err));
+  }, []);
+
+  const activeDepartments = useMemo(() => {
+    if (departmentsList.length > 0) {
+      return departmentsList.map(d => {
+        const theme = getDeptTheme(d.name, departmentsList);
+        return {
+          key: d.name,
+          name: d.fullName || d.name,
+          abbr: getDeptAbbr(d.name),
+          contact: d.contact || '(043) 740-0000',
+          color: theme.color,
+          bg: theme.bg,
+          icon: theme.icon,
+        };
+      });
+    }
+    return departments.map(d => {
+      const theme = getDeptTheme(d.key);
+      return {
+        ...d,
+        bg: theme.bg,
+        icon: theme.icon,
+      };
+    });
+  }, [departmentsList]);
 
   const showToast = useCallback((type: ToastType, message: string, detail?: string) => {
     setToast({ show: true, message, detail, type });
@@ -952,88 +989,204 @@ export default function RequestDetails() {
               );
             })()}
 
-            {/* ── Emergency Quick Call (below AI Alert / Badges) ── */}
-            <div className="card">
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: 13.5, fontWeight: 800, margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-primary)' }}>
-                  📞 Emergency Quick Call
-                </h3>
-              </div>
-              <div className="card-body" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {/* Call Assigned / Recommended Dept Hero Button */}
-                {(() => {
-                  const targetDeptKey = incident.assignedDepartment || incident.aiRecommendedDept;
-                  const targetDept = departments.find(d => d.key === targetDeptKey);
-                  if (!targetDept) return null;
-                  return (
-                    <a
-                      href={`tel:${targetDept.contact.replace(/[^0-9+]/g, '')}`}
-                      onClick={(e) => handleCallDept(e, targetDept)}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                        padding: '13px 18px', borderRadius: 12,
-                        background: `linear-gradient(135deg, ${targetDept.color}, ${targetDept.color}cc)`,
-                        color: 'white', fontWeight: 800, fontSize: 14.5,
-                        textDecoration: 'none', fontFamily: 'var(--font)',
-                        boxShadow: `0 4px 16px ${targetDept.color}35`,
-                        transition: 'opacity 0.15s',
-                        textAlign: 'center',
-                      }}
-                    >
-                      <FiPhone size={18} />
-                      Call {targetDept.name} — {targetDept.contact}
-                    </a>
-                  );
-                })()}
-
-                {/* Call Reporter */}
-                {incident.reporter?.phoneNumber && (
-                  <a
-                    href={`tel:${incident.reporter.phoneNumber}`}
-                    onClick={() => handleCallReporter()}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                      padding: '11px 16px', borderRadius: 10,
-                      background: 'var(--bg-body)', color: 'var(--text-primary)',
-                      fontWeight: 700, fontSize: 13.5,
-                      border: '1.5px solid var(--border)',
-                      textDecoration: 'none', fontFamily: 'var(--font)',
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    <User size={15} />
-                    Call Citizen Reporter — {incident.reporter.phoneNumber}
-                  </a>
-                )}
-
-                {/* Other partner departments grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8, marginTop: 4 }}>
-                  {departments.filter(d => d.key !== (incident.assignedDepartment || incident.aiRecommendedDept)).map(dept => (
-                    <a
-                      key={dept.key}
-                      href={`tel:${dept.contact.replace(/[^0-9+]/g, '')}`}
-                      onClick={(e) => handleCallDept(e, dept)}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                        padding: '9px 10px', borderRadius: 8,
-                        background: 'var(--bg-body)', color: 'var(--text-primary)',
-                        fontWeight: 600, fontSize: 12,
-                        border: '1px solid var(--border)',
-                        textDecoration: 'none', fontFamily: 'var(--font)',
-                        transition: 'background 0.15s',
-                      }}
-                    >
-                      <FiPhone size={12} color={dept.color} />
-                      {dept.abbr} ({dept.contact})
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* ── RIGHT COLUMN: Incident Details + CLT Reclassify + Assign Dept + Status ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* ── Tactical Emergency Quick Call Command Center ── */}
+            <div className="card" style={{
+              background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+              color: 'white',
+              border: '1.5px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.3)',
+              overflow: 'hidden',
+            }}>
+              <div className="card-header" style={{
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: '#22C55E',
+                    boxShadow: '0 0 10px #22C55E',
+                    animation: 'pulse-emergency 2s infinite',
+                  }} />
+                  <span style={{ fontSize: 11.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#E2E8F0' }}>
+                    Emergency Quick Call
+                  </span>
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Auto Call-Logged
+                </span>
+              </div>
+
+              <div className="card-body" style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {/* 1. Citizen Reporter Call Box */}
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Citizen Reporter
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {incident.reporter?.name || 'Anonymous Citizen'}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    fontSize: 15,
+                    fontWeight: 800,
+                    color: incident.reporter?.phoneNumber ? '#38BDF8' : '#64748B',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {incident.reporter?.phoneNumber || 'No phone recorded'}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                    <button
+                      type="button"
+                      disabled={!incident.reporter?.phoneNumber}
+                      onClick={() => handleCallReporter()}
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        padding: '8px 0', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                        background: incident.reporter?.phoneNumber ? '#0284C7' : 'rgba(255, 255, 255, 0.1)',
+                        color: incident.reporter?.phoneNumber ? 'white' : '#64748B',
+                        border: 'none', cursor: incident.reporter?.phoneNumber ? 'pointer' : 'not-allowed',
+                        transition: 'opacity 0.15s',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      <Phone size={13} /> Call Reporter
+                    </button>
+                    {incident.reporter?.phoneNumber && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(incident.reporter!.phoneNumber!).then(() => {
+                            showToast('info', `Copied: ${incident.reporter!.phoneNumber}`, 'Reporter phone copied to clipboard.');
+                          });
+                        }}
+                        title="Copy phone number"
+                        style={{
+                          padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                          background: 'rgba(255, 255, 255, 0.1)', color: '#CBD5E1',
+                          border: '1px solid rgba(255, 255, 255, 0.15)', cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        <Copy size={12} style={{ marginRight: 3, verticalAlign: -1, display: 'inline-block' }} /> Copy
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Responding Agency / Unit Call Box */}
+                {(() => {
+                  const targetDeptCode = incident.assignedDepartment || incident.aiRecommendedDept;
+                  const targetDeptName = getDeptDisplayName(targetDeptCode, departmentsList);
+                  const targetDeptContact = getDeptContact(targetDeptCode, departmentsList);
+                  const targetTheme = getDeptTheme(targetDeptCode, departmentsList);
+                  const isAssigned = !!incident.assignedDepartment;
+                  const DeptIcon = targetTheme.icon || Building2;
+
+                  return (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: isAssigned ? `1.5px solid ${targetTheme.color}50` : '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: 12,
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {isAssigned ? 'ASSIGNED RESPONDER' : 'AI RECOMMENDED UNIT'}
+                          </div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <DeptIcon size={14} color={targetTheme.color} />
+                            {targetDeptName}
+                          </div>
+                        </div>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+                          background: `${targetTheme.color}25`,
+                          color: targetTheme.color,
+                          border: `1.5px solid ${targetTheme.color}40`,
+                        }}>
+                          {targetDeptCode || 'UNASSIGNED'}
+                        </span>
+                      </div>
+
+                      <div style={{
+                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                        fontSize: 15,
+                        fontWeight: 800,
+                        color: targetTheme.color,
+                        letterSpacing: '0.04em',
+                      }}>
+                        {targetDeptContact || '(043) 211-1234'}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                        <button
+                          type="button"
+                          onClick={(e) => handleCallDept(e, { key: targetDeptCode || 'RESCUE', name: targetDeptName, contact: targetDeptContact })}
+                          style={{
+                            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                            padding: '8px 0', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                            background: targetTheme.color,
+                            color: 'white',
+                            border: 'none', cursor: 'pointer',
+                            transition: 'opacity 0.15s',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <Phone size={13} /> Call {getDeptAbbr(targetDeptCode) || 'Unit'}
+                        </button>
+                        {targetDeptContact && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(targetDeptContact).then(() => {
+                                showToast('info', `Copied: ${targetDeptContact}`, `${targetDeptName} phone copied to clipboard.`);
+                              });
+                            }}
+                            title="Copy phone number"
+                            style={{
+                              padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                              background: 'rgba(255, 255, 255, 0.1)', color: '#CBD5E1',
+                              border: '1px solid rgba(255, 255, 255, 0.15)', cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            <Copy size={12} style={{ marginRight: 3, verticalAlign: -1, display: 'inline-block' }} /> Copy
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+              </div>
+            </div>
 
             {/* Incident Details */}
             <div className="card">
@@ -1061,21 +1214,6 @@ export default function RequestDetails() {
                         </span>
                       </div>
                     </div>
-                  </div>
-                  <div className="dept-detail">
-                    <Camera size={16} />
-                    <strong>Photo:</strong>
-                    {incident.photoUrl ? (
-                      <span
-                        className="table-link"
-                        onClick={() => setShowPhoto(true)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        View uploaded image
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>No photo available</span>
-                    )}
                   </div>
                   <div className="dept-detail" style={{ alignItems: 'flex-start' }}>
                     <MessageSquare size={16} style={{ marginTop: 2, flexShrink: 0, color: '#2563EB' }} />
@@ -1124,12 +1262,6 @@ export default function RequestDetails() {
                     <Clock size={16} />
                     <strong>Reported:</strong> {new Date(incident.createdAt).toLocaleString()}
                   </div>
-                  {incident.updatedAt !== incident.createdAt && (
-                    <div className="dept-detail">
-                      <Clock size={16} />
-                      <strong>Last Updated:</strong> {new Date(incident.updatedAt).toLocaleString()}
-                    </div>
-                  )}
                   {incident.aiRecommendedDept && (
                     <div className="dept-detail">
                       <Brain size={16} />
@@ -1198,8 +1330,9 @@ export default function RequestDetails() {
               <div className="card-body">
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>Select a responding department. This will update the Assigned Dept and notify the team.</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-                  {departments.map((dept) => {
+                  {activeDepartments.map((dept) => {
                     const isSelected = incident.assignedDepartment === dept.key;
+                    const DeptIcon = dept.icon || Building2;
                     return (
                       <div
                         key={dept.key}
@@ -1220,10 +1353,12 @@ export default function RequestDetails() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                           <div style={{
                             width: 34, height: 34, borderRadius: 10,
-                            background: `${dept.color}15`, display: 'flex',
+                            background: dept.bg || `${dept.color}15`, display: 'flex',
                             alignItems: 'center', justifyContent: 'center',
                             color: dept.color, fontWeight: 800, fontSize: 12,
-                          }}>{dept.abbr}</div>
+                          }}>
+                            <DeptIcon size={16} color={dept.color} />
+                          </div>
                           <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>{dept.name}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
