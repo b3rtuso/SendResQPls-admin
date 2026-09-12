@@ -1,21 +1,21 @@
+import type React from 'react';
 import {
-  Flame,
-  ShieldCheck,
-  Stethoscope,
   HardHat,
-  Ambulance,
   ShieldAlert,
   Building2,
   Anchor,
   HeartHandshake,
   Users,
   Radio,
-  type LucideIcon,
 } from 'lucide-react';
+import { FaFire } from 'react-icons/fa6';
+import { FaBriefcaseMedical } from 'react-icons/fa';
+import { RiCriminalFill } from 'react-icons/ri';
+import { IoBandage } from 'react-icons/io5';
 import type { DepartmentInfo } from '../types';
 
 export interface DeptTheme {
-  icon: LucideIcon;
+  icon: React.ElementType;
   color: string;
   bg: string;
   border: string;
@@ -24,19 +24,19 @@ export interface DeptTheme {
 // Predefined themes for known municipal response units
 export const KNOWN_DEPT_THEMES: Record<string, DeptTheme> = {
   BFP: {
-    icon: Flame,
+    icon: FaFire,
     color: '#EF4444',
     bg: 'rgba(239, 68, 68, 0.08)',
     border: 'rgba(239, 68, 68, 0.25)',
   },
   PNP: {
-    icon: ShieldCheck,
+    icon: RiCriminalFill,
     color: '#3B82F6',
     bg: 'rgba(59, 130, 246, 0.08)',
     border: 'rgba(59, 130, 246, 0.25)',
   },
   MEDICAL: {
-    icon: Stethoscope,
+    icon: FaBriefcaseMedical,
     color: '#22C55E',
     bg: 'rgba(34, 197, 94, 0.08)',
     border: 'rgba(34, 197, 94, 0.25)',
@@ -48,7 +48,7 @@ export const KNOWN_DEPT_THEMES: Record<string, DeptTheme> = {
     border: 'rgba(245, 158, 11, 0.25)',
   },
   RESCUE: {
-    icon: Ambulance,
+    icon: IoBandage,
     color: '#8B5CF6',
     bg: 'rgba(139, 92, 246, 0.08)',
     border: 'rgba(139, 92, 246, 0.25)',
@@ -56,7 +56,7 @@ export const KNOWN_DEPT_THEMES: Record<string, DeptTheme> = {
 };
 
 // Curated high-contrast palette for dynamically added departments
-const DYNAMIC_PALETTE: { color: string; bg: string; border: string; icon: LucideIcon }[] = [
+const DYNAMIC_PALETTE: { color: string; bg: string; border: string; icon: React.ElementType }[] = [
   { color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.08)', border: 'rgba(14, 165, 233, 0.25)', icon: Anchor },
   { color: '#EC4899', bg: 'rgba(236, 72, 153, 0.08)', border: 'rgba(236, 72, 153, 0.25)', icon: HeartHandshake },
   { color: '#14B8A6', bg: 'rgba(20, 184, 166, 0.08)', border: 'rgba(20, 184, 166, 0.25)', icon: ShieldAlert },
@@ -84,7 +84,7 @@ export function getDeptTheme(deptCode?: string | null, _departments?: Department
   }
 
   // Keyword-based icon matching for newly added departments
-  let matchedIcon: LucideIcon = Building2;
+  let matchedIcon: React.ElementType = Building2;
   if (code.includes('COAST') || code.includes('PCG') || code.includes('MARITIME') || code.includes('PORT')) {
     matchedIcon = Anchor;
   } else if (code.includes('DSWD') || code.includes('RELIEF') || code.includes('RED CROSS') || code.includes('CHARITY')) {
