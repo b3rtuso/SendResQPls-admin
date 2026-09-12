@@ -989,6 +989,147 @@ export default function RequestDetails() {
               );
             })()}
 
+            {/* ── Compact Vertical Activity Timeline (Below AI Alert) ── */}
+            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="card-header" style={{
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Clock size={15} style={{ color: 'var(--primary)' }} />
+                  <h3 style={{ margin: 0, fontSize: 13.5, fontWeight: 700 }}>Activity Timeline</h3>
+                </div>
+                <span style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: '#2563EB',
+                  background: '#EFF6FF',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  border: '1px solid #DBEAFE',
+                }}>
+                  {(() => {
+                    const activities = incident.activities && incident.activities.length > 0
+                      ? incident.activities
+                      : [
+                          { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, createdAt: incident.createdAt },
+                          ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
+                          ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
+                          ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, createdAt: incident.updatedAt }] : []),
+                          ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, createdAt: incident.updatedAt }] : []),
+                        ];
+                    return `${activities.length} Events`;
+                  })()}
+                </span>
+              </div>
+              <div className="card-body" style={{
+                padding: '14px 16px',
+                maxHeight: '260px',
+                overflowY: 'auto',
+                position: 'relative',
+              }}>
+                {(() => {
+                  const formatTimelineDate = (dateInput: string | Date) => {
+                    const d = new Date(dateInput);
+                    if (isNaN(d.getTime())) return '';
+                    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    return `${datePart} • ${timePart}`;
+                  };
+
+                  const activities = incident.activities && incident.activities.length > 0
+                    ? incident.activities
+                    : [
+                        { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, description: undefined, createdAt: incident.createdAt },
+                        ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
+                        ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
+                        ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, description: undefined, createdAt: incident.updatedAt }] : []),
+                        ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, description: undefined, createdAt: incident.updatedAt }] : []),
+                      ];
+
+                  return (
+                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {/* Continuous vertical timeline connector line */}
+                      <div style={{
+                        position: 'absolute',
+                        left: 5,
+                        top: 6,
+                        bottom: 6,
+                        width: 2,
+                        background: '#E2E8F0',
+                        zIndex: 0,
+                      }} />
+
+                      {activities.map((item: any, idx: number) => {
+                        const isLatest = idx === activities.length - 1;
+                        return (
+                          <div key={item.id || idx} style={{
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            paddingLeft: 18,
+                          }}>
+                            {/* Dot on track */}
+                            <div style={{
+                              position: 'absolute',
+                              left: 2,
+                              top: 4,
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              background: isLatest ? '#2563EB' : '#94A3B8',
+                              border: '2px solid #FFFFFF',
+                              boxShadow: isLatest ? '0 0 0 2px rgba(37,99,235,0.25)' : 'none',
+                              zIndex: 1,
+                            }} />
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{
+                                  fontSize: 12.5,
+                                  fontWeight: 700,
+                                  color: 'var(--text-primary)',
+                                  lineHeight: 1.35,
+                                }}>
+                                  {item.title}
+                                </span>
+                                <span style={{
+                                  fontSize: 10.5,
+                                  fontWeight: 600,
+                                  color: 'var(--text-muted)',
+                                  whiteSpace: 'nowrap',
+                                  fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                                }}>
+                                  {formatTimelineDate(item.createdAt)}
+                                </span>
+                              </div>
+                              {item.description && (
+                                <div style={{
+                                  fontSize: 11,
+                                  color: 'var(--text-secondary)',
+                                  marginTop: 3,
+                                  background: '#F8FAFC',
+                                  border: '1px solid #E2E8F0',
+                                  borderRadius: 6,
+                                  padding: '3px 8px',
+                                  lineHeight: 1.4,
+                                }}>
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
           </div>
 
           {/* ── RIGHT COLUMN: Incident Details + CLT Reclassify + Assign Dept + Status ── */}
@@ -1452,69 +1593,6 @@ export default function RequestDetails() {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── FULL-WIDTH: ACTIVITY TIMELINE ─────────────────────────────── */}
-        <div className="card fade-in" style={{ marginBottom: 24 }}>
-          <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
-              📋 Activity Timeline
-            </h3>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '2px 8px', borderRadius: 6, border: '1px solid #DBEAFE' }}>
-              {(() => {
-                const activities = incident.activities && incident.activities.length > 0
-                  ? incident.activities
-                  : [
-                      { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, createdAt: incident.createdAt },
-                      ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
-                      ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
-                      ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, createdAt: incident.updatedAt }] : []),
-                      ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, createdAt: incident.updatedAt }] : []),
-                    ];
-                return `${activities.length} Events`;
-              })()}
-            </span>
-          </div>
-          <div className="card-body">
-            <div className="timeline" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '4px 24px' }}>
-              {(() => {
-                const formatTimelineDate = (dateInput: string | Date) => {
-                  const d = new Date(dateInput);
-                  if (isNaN(d.getTime())) return '';
-                  const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                  const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                  return `${datePart} • ${timePart}`;
-                };
-
-                const activities = incident.activities && incident.activities.length > 0
-                  ? incident.activities
-                  : [
-                      { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, description: undefined, createdAt: incident.createdAt },
-                      ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
-                      ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
-                      ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, description: undefined, createdAt: incident.updatedAt }] : []),
-                      ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, description: undefined, createdAt: incident.updatedAt }] : []),
-                    ];
-
-                return activities.map((item: any, idx: number) => (
-                  <div className="timeline-item" key={item.id || idx}>
-                    <div className="tl-time" style={{ fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                      <span style={{ color: '#2563EB', fontSize: 14 }}>●</span>
-                      <span>{formatTimelineDate(item.createdAt)}</span>
-                    </div>
-                    <div className="tl-text" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 600 }}>
-                      <span>{item.title}</span>
-                    </div>
-                    {item.description && (
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, fontStyle: 'italic' }}>
-                        {item.description}
-                      </div>
-                    )}
-                  </div>
-                ));
-              })()}
             </div>
           </div>
         </div>
