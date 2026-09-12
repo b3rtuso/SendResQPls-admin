@@ -3,8 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation, Copy, Phone, ChevronRight } from 'lucide-react';
-import { FaLocationDot } from 'react-icons/fa6';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation, Copy, Phone, ChevronRight, Search, Car } from 'lucide-react';
+import { FaLocationDot, FaFire, FaHouseFloodWater } from 'react-icons/fa6';
+import { FaBriefcaseMedical } from 'react-icons/fa';
+import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
+import { MdLandslide } from 'react-icons/md';
+import { IoBandage } from 'react-icons/io5';
 import { FiPhone } from 'react-icons/fi';
 import type { Status, Incident, Department, ResolutionForm, DepartmentInfo } from '../types';
 import {
@@ -92,6 +96,21 @@ const departments = [
 ];
 
 const OFFICIAL_TYPES = ['Fire', 'Flood', 'Medical', 'Vehicular Accident', 'Trauma', 'Crime', 'Typhoon', 'Landslide'];
+
+type TypeIconEntry = { icon: React.ElementType | null; color: string };
+const TYPE_ICON: Record<string, TypeIconEntry> = {
+  Fire:         { icon: FaFire,             color: '#EF4444' },
+  Flood:        { icon: FaHouseFloodWater,  color: '#3B82F6' },
+  Medical:      { icon: FaBriefcaseMedical, color: '#22C55E' },
+  Crime:        { icon: RiCriminalFill,     color: '#0F172A' },
+  Typhoon:      { icon: RiTyphoonFill,      color: '#8B5CF6' },
+  Landslide:    { icon: MdLandslide,        color: '#78716C' },
+  Trauma:       { icon: IoBandage,          color: '#F59E0B' },
+  Accident:     { icon: Car,               color: '#3B82F6' },
+  Unrecognized: { icon: HelpCircle,         color: '#64748B' },
+  Unknown:      { icon: HelpCircle,         color: '#64748B' },
+};
+
 const TYPE_DEPT_MAP: Record<string, Department> = {
   'Fire': 'BFP',
   'Flood': 'RESCUE',
@@ -861,16 +880,25 @@ export default function RequestDetails() {
                 {/* Detected Type */}
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Brain size={13} /> Detected Type
+                    <Search size={13} /> Detected Type
                   </div>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    padding: '8px 14px', borderRadius: 10,
-                    background: 'rgba(37,99,235,0.08)', border: '1.5px solid rgba(37,99,235,0.2)',
-                    fontSize: 15, fontWeight: 800, color: '#1D4ED8',
-                  }}>
-                    <Brain size={15} style={{ flexShrink: 0 }} /> {incident.aiDetectedType || 'Pending Analysis'}
-                  </div>
+                  {(() => {
+                    const normalizedType = incident.aiDetectedType?.includes('Vehicular') ? 'Accident' : (incident.aiDetectedType || '');
+                    const typeEntry = TYPE_ICON[normalizedType] || TYPE_ICON['Unknown'];
+                    const HazardIcon = typeEntry?.icon;
+                    const hazardColor = typeEntry?.color || '#1D4ED8';
+                    return (
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 8,
+                        padding: '8px 14px', borderRadius: 10,
+                        background: `${hazardColor}12`, border: `1.5px solid ${hazardColor}33`,
+                        fontSize: 15, fontWeight: 800, color: hazardColor,
+                      }}>
+                        {HazardIcon && <HazardIcon size={15} style={{ flexShrink: 0 }} />}
+                        {incident.aiDetectedType || 'Pending Analysis'}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Severity Rating */}
