@@ -12,6 +12,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AdminNavProvider } from './context/AdminNavContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
+import { SSEProvider } from './context/SSEContext';
 import { useEffect } from 'react';
 import './App.css';
 
@@ -62,21 +63,23 @@ function App() {
                 <ToastProvider>
                   <ConfirmProvider>
                     <AdminNavProvider>
-                      <div className="app-layout">
-                        <Sidebar />
-                        <main className="main-content">
-                          <Routes>
-                            <Route path="/dashboard" element={<Dashboard />} />
-                            <Route path="/requests" element={<Requests />} />
-                            <Route path="/requests/:id" element={<RequestDetails />} />
-                            <Route path="/call-logs" element={<CallLogs />} />
-                            <Route path="/analytics" element={<Analytics />} />
-                            <Route path="/departments" element={<Departments />} />
-                            <Route path="/settings" element={<SettingsPage />} />
-                            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                          </Routes>
-                        </main>
-                      </div>
+                      <SSEProvider>
+                        <div className="app-layout">
+                          <Sidebar />
+                          <main className="main-content">
+                            <Routes>
+                              <Route path="/dashboard" element={<Dashboard />} />
+                              <Route path="/requests" element={<Requests />} />
+                              <Route path="/requests/:id" element={<RequestDetails />} />
+                              <Route path="/call-logs" element={<CallLogs />} />
+                              <Route path="/analytics" element={<Analytics />} />
+                              <Route path="/departments" element={<Departments />} />
+                              <Route path="/settings" element={<SettingsPage />} />
+                              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                            </Routes>
+                          </main>
+                        </div>
+                      </SSEProvider>
                     </AdminNavProvider>
                   </ConfirmProvider>
                 </ToastProvider>

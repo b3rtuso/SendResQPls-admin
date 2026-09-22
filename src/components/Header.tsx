@@ -5,6 +5,7 @@ import { getIncidents, updateIncidentStatus, lockIncident, invalidateCache } fro
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { useAdminNav } from '../context/AdminNavContext';
 import { useToast } from '../context/ToastContext';
+import { useSSE } from '../context/SSEContext';
 
 interface HeaderProps {
   title: string;
@@ -56,16 +57,20 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const location = useLocation();
   const { showToast } = useToast();
   const { toggleSidebar } = useAdminNav();
-  const [notifications, setNotifications] = useState<NotifItem[]>([]);
+  const {
+    notifications,
+    setNotifications,
+    unseenCount,
+    setUnseenCount,
+    newReportBanner,
+    unrecognizedQueue,
+    setUnrecognizedQueue,
+    currentUnrecognized,
+    fetchNotifications,
+  } = useSSE();
   const [showPanel, setShowPanel] = useState(false);
-  const [unseenCount, setUnseenCount] = useState(0);
-  const [newReportBanner, setNewReportBanner] = useState<NewReportBanner | null>(null);
-  const [unrecognizedQueue, setUnrecognizedQueue] = useState<UnrecognizedIncident[]>([]);
-  const currentUnrecognized = unrecognizedQueue[0] || null;
   const [decidingIncident, setDecidingIncident] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sseRef = useRef<AbortController | null>(null);
 
   // Check if admin is currently in the middle of working on an incident
   const isWorkingOnIncident = location.pathname.startsWith('/requests/') && location.pathname !== '/requests';
@@ -75,150 +80,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [incidentsList, setIncidentsList] = useState<any[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
-
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await getIncidents();
-      const incidents: any[] = res.data || [];
-      const seen: string[] = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
-
-      const items: NotifItem[] = incidents
-        .slice(0, 20)
-        .map((inc: any) => ({
-          id: inc.id,
-          type: inc.aiDetectedType || 'Emergency',
-          status: inc.status,
-          time: new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isNew: !seen.includes(inc.id),
-        }));
-
-      const newCount = items.filter(n => n.isNew).length;
-      setNotifications(items);
-      setUnseenCount(newCount);
-    } catch {
-      // fail silently
-    }
-  }, []);
-
-  const showBanner = useCallback((banner: NewReportBanner) => {
-    setNewReportBanner(banner);
-    if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
-    bannerTimerRef.current = setTimeout(() => setNewReportBanner(null), 8000);
-  }, []);
-
-  // Real-time SSE listener
-  useEffect(() => {
-    let aborted = false;
-
-    const connect = () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      sseRef.current?.abort();
-      const ctrl = new AbortController();
-      sseRef.current = ctrl;
-
-      fetchEventSource(`${API_BASE}/incidents/sse`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: ctrl.signal,
-
-        onmessage(event) {
-          let eventData: any = null;
-          try {
-            if (event.data) eventData = JSON.parse(event.data);
-          } catch { /* ignore */ }
-
-          // Invalidate cache and inform all listeners (Dashboard, Requests, RequestDetails)
-          invalidateCache('incidents');
-          invalidateCache('analytics');
-          window.dispatchEvent(new CustomEvent('incident-sse-update', {
-            detail: { event: event.event, data: eventData }
-          }));
-
-          if (event.event === 'new_incident' || event.event === 'incident_created') {
-            try {
-              const data = eventData || (event.data ? JSON.parse(event.data) : {});
-              showBanner({
-                id: data.id,
-                type: data.aiDetectedType || 'Emergency',
-                dept: data.aiRecommendedDept || 'MDRRMO',
-              });
-              const newItem: NotifItem = {
-                id: data.id,
-                type: data.aiDetectedType || 'Emergency',
-                status: 'PENDING',
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                isNew: true,
-              };
-              setNotifications(prev => [newItem, ...prev].slice(0, 20));
-              setUnseenCount(prev => prev + 1);
-            } catch { /* ignore */ }
-          }
-
-          if (event.event === 'unrecognized_incident') {
-            try {
-              const data = JSON.parse(event.data);
-              setUnrecognizedQueue(prev => {
-                if (prev.some(item => item.id === data.id)) return prev;
-                return [...prev, {
-                  id: data.id,
-                  type: data.aiDetectedType || 'Unknown',
-                  confidence: data.aiConfidence || 'low',
-                }];
-              });
-              const newItem: NotifItem = {
-                id: data.id,
-                type: `⚠️ ${data.aiDetectedType || 'Unrecognized'}`,
-                status: 'REVIEWING',
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                isNew: true,
-              };
-              setNotifications(prev => [newItem, ...prev].slice(0, 20));
-              setUnseenCount(prev => prev + 1);
-
-              // If currently working on an incident, show non-blocking toast so dispatcher isn't interrupted
-              if (location.pathname.startsWith('/requests/') && location.pathname !== '/requests') {
-                showToast({
-                  type: 'warning',
-                  message: 'Unrecognized Incident Reported',
-                  detail: `A new unrecognized emergency (${data.aiDetectedType || 'Unspecified'}) was reported. Queued for review.`,
-                  duration: 5000,
-                });
-              }
-            } catch { /* ignore */ }
-          }
-
-          if (event.event === 'incident_locked') {
-            try {
-              const data = JSON.parse(event.data);
-              // If another admin locked an unrecognized incident, remove it from this admin's queue
-              if (data.lockedByAdminId && data.lockedByAdminId !== localStorage.getItem('userId')) {
-                setUnrecognizedQueue(prev => prev.filter(item => item.id !== data.incidentId));
-              }
-            } catch { /* ignore */ }
-          }
-        },
-
-        onerror(err) {
-          if (!aborted) {
-            setTimeout(connect, 5000);
-          }
-          throw err;
-        },
-
-        openWhenHidden: true,
-      }).catch(() => {});
-    };
-
-    connect();
-    fetchNotifications();
-
-    return () => {
-      aborted = true;
-      sseRef.current?.abort();
-      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
-    };
-  }, [fetchNotifications, showBanner]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
