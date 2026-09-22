@@ -1,8 +1,7 @@
 import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Building2, FileText, PhoneCall, LayoutDashboard, Settings as SettingsIcon } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getIncidents, updateIncidentStatus, lockIncident, invalidateCache } from '../api/client';
-import { fetchEventSource } from '@microsoft/fetch-event-source';
+import { getIncidents, updateIncidentStatus, lockIncident } from '../api/client';
 import { useAdminNav } from '../context/AdminNavContext';
 import { useToast } from '../context/ToastContext';
 import { useSSE } from '../context/SSEContext';
@@ -12,28 +11,7 @@ interface HeaderProps {
   subtitle?: string;
 }
 
-interface NotifItem {
-  id: string;
-  type: string;
-  status: string;
-  time: string;
-  isNew: boolean;
-}
-
-interface NewReportBanner {
-  id: string;
-  type: string;
-  dept: string;
-}
-
-interface UnrecognizedIncident {
-  id: string;
-  type: string;
-  confidence: string;
-}
-
 const SEEN_KEY = 'admin_seen_incident_ids';
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const QUICK_PAGES = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -63,10 +41,10 @@ export default function Header({ title, subtitle }: HeaderProps) {
     unseenCount,
     setUnseenCount,
     newReportBanner,
+    setNewReportBanner,
     unrecognizedQueue,
     setUnrecognizedQueue,
     currentUnrecognized,
-    fetchNotifications,
   } = useSSE();
   const [showPanel, setShowPanel] = useState(false);
   const [decidingIncident, setDecidingIncident] = useState(false);

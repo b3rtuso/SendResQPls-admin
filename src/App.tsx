@@ -13,11 +13,11 @@ import { AdminNavProvider } from './context/AdminNavContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
 import { SSEProvider } from './context/SSEContext';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import './App.css';
 
 // ── Admin auth guard ─────────────────────────────────────────────────────────
-function AdminRoute({ children }: { children: React.ReactNode }) {
+function AdminRoute({ children }: { children: ReactNode }) {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('userRole');
   const location = useLocation();
