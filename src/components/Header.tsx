@@ -11,8 +11,6 @@ interface HeaderProps {
   subtitle?: string;
 }
 
-const SEEN_KEY = 'admin_seen_incident_ids';
-
 const QUICK_PAGES = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Incident Requests', path: '/requests', icon: FileText },
@@ -37,9 +35,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const { toggleSidebar } = useAdminNav();
   const {
     notifications,
-    setNotifications,
     unseenCount,
-    setUnseenCount,
     newReportBanner,
     setNewReportBanner,
     unrecognizedQueue,
