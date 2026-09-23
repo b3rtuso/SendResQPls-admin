@@ -45,6 +45,9 @@ export default function Header({ title, subtitle }: HeaderProps) {
     unrecognizedQueue,
     setUnrecognizedQueue,
     currentUnrecognized,
+    markUnrecognizedHandled,
+    markAllNotificationsRead,
+    clearAllNotifications,
   } = useSSE();
   const [showPanel, setShowPanel] = useState(false);
   const [decidingIncident, setDecidingIncident] = useState(false);
@@ -72,10 +75,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const handleBellClick = () => {
     setShowPanel(prev => !prev);
     if (!showPanel) {
-      const allIds = notifications.map(n => n.id);
-      localStorage.setItem(SEEN_KEY, JSON.stringify(allIds));
-      setUnseenCount(0);
-      setNotifications(prev => prev.map(n => ({ ...n, isNew: false })));
+      markAllNotificationsRead();
     }
   };
 
@@ -101,48 +101,52 @@ export default function Header({ title, subtitle }: HeaderProps) {
     }
   };
 
-  const handleDecision = async (action: 'reject' | 'keep') => {
+  const handleDecision = async (action: 'reject' | 'keep' | 'skip', openImmediately = false) => {
     if (!currentUnrecognized) return;
     const targetIncident = currentUnrecognized;
+    const remainingCount = unrecognizedQueue.length - 1;
     setDecidingIncident(true);
+
+    // Optimistically advance the queue immediately so the stack count always decreases cleanly
+    markUnrecognizedHandled(targetIncident.id);
+
     try {
       if (action === 'reject') {
-        await updateIncidentStatus(targetIncident.id, {
+        updateIncidentStatus(targetIncident.id, {
           status: 'REJECTED',
           adminNotes: 'Rejected by admin — AI could not recognize the incident and admin determined it is not a valid emergency.'
+        }).catch(err => {
+          console.warn('Background reject update error:', err);
         });
-        setUnrecognizedQueue(prev => prev.slice(1));
+
         showToast({
           type: 'success',
           message: 'Report Rejected',
-          detail: 'Unrecognized incident marked as invalid and archived.',
+          detail: remainingCount > 0 ? `Report archived. ${remainingCount} left in review stack.` : 'Unrecognized incident marked as invalid and archived.',
         });
-      } else {
-        // Keep for review — acquire lock before opening
-        try {
-          await lockIncident(targetIncident.id);
-          await updateIncidentStatus(targetIncident.id, {
-            adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.'
-          });
-          const remaining = unrecognizedQueue.slice(1);
-          setUnrecognizedQueue(remaining);
+      } else if (action === 'keep') {
+        // Keep for review — acquire lock in background and update note
+        lockIncident(targetIncident.id).catch(() => {});
+        updateIncidentStatus(targetIncident.id, {
+          adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.'
+        }).catch(() => {});
+
+        showToast({
+          type: 'info',
+          message: 'Kept for Review',
+          detail: remainingCount > 0 ? `Incident added to review queue. ${remainingCount} left in stack.` : 'Incident added to review queue.',
+        });
+
+        // If explicitly requested or if it was the last item in the stack, navigate to details
+        if (openImmediately || remainingCount === 0) {
           navigate(`/requests/${targetIncident.id}`);
-        } catch (lockErr: any) {
-          if (lockErr.response?.status === 423) {
-            showToast({
-              type: 'warning',
-              message: 'Incident Already Claimed',
-              detail: lockErr.response?.data?.error || 'Another administrator has already claimed this incident for review.',
-            });
-            setUnrecognizedQueue(prev => prev.filter(i => i.id !== targetIncident.id));
-          } else {
-            showToast({
-              type: 'error',
-              message: 'Failed to Claim Incident',
-              detail: lockErr.response?.data?.error || 'Could not acquire lock on this incident.',
-            });
-          }
         }
+      } else if (action === 'skip') {
+        showToast({
+          type: 'info',
+          message: 'Skipped for Later',
+          detail: remainingCount > 0 ? `Report skipped. ${remainingCount} left in stack.` : 'Report skipped for later review.',
+        });
       }
     } catch (e) {
       console.error('Failed to process decision:', e);
@@ -202,6 +206,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
   };
 
   const handleDismissQueue = () => {
+    unrecognizedQueue.forEach(item => markUnrecognizedHandled(item.id));
     setUnrecognizedQueue([]);
   };
 
@@ -229,7 +234,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
           border-bottom: 1px solid #E2E8F0;
           position: sticky;
           top: 0;
-          z-index: 40;
+          z-index: 100;
           gap: 16px;
         }
 
@@ -597,27 +602,58 @@ export default function Header({ title, subtitle }: HeaderProps) {
                 </button>
               </div>
 
-              {/* Dismiss Option */}
-              {unrecognizedQueue.length > 1 && (
-                <div style={{ textAlign: 'center', marginTop: 14 }}>
+              {/* Secondary Options */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 14, flexWrap: 'wrap' }}>
+                {unrecognizedQueue.length > 1 && (
+                  <button
+                    onClick={() => handleDecision('keep', true)}
+                    disabled={decidingIncident}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#2563EB',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      padding: '4px 6px',
+                    }}
+                  >
+                    Keep & Open Details →
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDecision('skip')}
+                  disabled={decidingIncident}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#64748B',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '4px 6px',
+                  }}
+                >
+                  Skip for later
+                </button>
+                {unrecognizedQueue.length > 1 && (
                   <button
                     onClick={handleDismissQueue}
                     disabled={decidingIncident}
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: '#64748B',
+                      color: '#94A3B8',
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: 'pointer',
-                      padding: '4px 8px',
-                      textDecoration: 'underline',
+                      padding: '4px 6px',
                     }}
                   >
-                    Dismiss Queue (Review remaining in Requests table)
+                    Dismiss Queue
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -876,12 +912,12 @@ export default function Header({ title, subtitle }: HeaderProps) {
             {showPanel && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                width: 'min(330px, calc(100vw - 24px))',
-                background: 'white',
+                width: 'min(360px, calc(100vw - 24px))',
+                background: '#FFFFFF',
                 border: '1px solid #E2E8F0',
-                borderRadius: 14, boxShadow: '0 12px 36px rgba(15,23,42,0.14)',
-                zIndex: 200, overflow: 'hidden',
-                maxHeight: 'min(420px, 75vh)',
+                borderRadius: 14, boxShadow: '0 16px 40px rgba(15,23,42,0.18)',
+                zIndex: 300, overflow: 'hidden',
+                maxHeight: 'min(460px, 80vh)',
                 display: 'flex',
                 flexDirection: 'column',
               }}>
@@ -894,15 +930,39 @@ export default function Header({ title, subtitle }: HeaderProps) {
                   <span style={{ fontWeight: 800, fontSize: 13.5, color: '#0F172A' }}>
                     Recent Incidents
                   </span>
-                  <button
-                    onClick={() => setShowPanel(false)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0 }}
-                  >
-                    <X size={16} />
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {notifications.length > 0 && unseenCount > 0 && (
+                      <button
+                        onClick={markAllNotificationsRead}
+                        style={{
+                          background: 'none', border: 'none', color: '#2563EB',
+                          fontSize: 11.5, fontWeight: 700, cursor: 'pointer', padding: 0
+                        }}
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={clearAllNotifications}
+                        style={{
+                          background: 'none', border: 'none', color: '#94A3B8',
+                          fontSize: 11.5, fontWeight: 600, cursor: 'pointer', padding: 0
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowPanel(false)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0, display: 'flex' }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
 
-                <div style={{ maxHeight: 320, overflowY: 'auto', flex: 1 }}>
+                <div style={{ maxHeight: 340, overflowY: 'auto', flex: 1 }}>
                   {notifications.length === 0 ? (
                     <div style={{ padding: '28px 16px', textAlign: 'center', color: '#94A3B8' }}>
                       <Bell size={24} style={{ marginBottom: 6, opacity: 0.3 }} />
@@ -929,19 +989,29 @@ export default function Header({ title, subtitle }: HeaderProps) {
                       >
                         <AlertCircle size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {n.type}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#2563EB', flexShrink: 0 }}>
+                              #{n.id.slice(0, 8).toUpperCase()}
+                            </span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {n.type}
+                            </span>
                             {n.isNew && (
                               <span style={{
-                                marginLeft: 6, fontSize: 9.5, fontWeight: 800, color: '#2563EB',
-                                background: 'rgba(37,99,235,0.1)', padding: '2px 6px', borderRadius: 6,
+                                marginLeft: 'auto', fontSize: 9.5, fontWeight: 800, color: '#2563EB',
+                                background: 'rgba(37,99,235,0.1)', padding: '2px 6px', borderRadius: 6, flexShrink: 0,
                               }}>NEW</span>
                             )}
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(n.status), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                               {statusLabel(n.status)}
                             </span>
+                            {n.barangay && (
+                              <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>
+                                • {n.barangay}
+                              </span>
+                            )}
                             <span style={{ fontSize: 11, color: '#94A3B8' }}>• {n.time}</span>
                           </div>
                         </div>

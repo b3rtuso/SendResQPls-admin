@@ -6,6 +6,26 @@ import { useLocation } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const SEEN_KEY = 'sendresqpls_seen_notifications';
+const HANDLED_UNRECOGNIZED_KEY = 'sendresqpls_handled_unrecognized_ids';
+
+const getHandledUnrecognizedIds = (): Set<string> => {
+  try {
+    const stored = sessionStorage.getItem(HANDLED_UNRECOGNIZED_KEY);
+    return new Set(stored ? JSON.parse(stored) : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const addHandledUnrecognizedId = (id: string) => {
+  try {
+    const ids = getHandledUnrecognizedIds();
+    ids.add(id);
+    sessionStorage.setItem(HANDLED_UNRECOGNIZED_KEY, JSON.stringify(Array.from(ids)));
+  } catch {
+    // fail silently
+  }
+};
 
 export interface UnrecognizedIncident {
   id: string;
@@ -19,6 +39,7 @@ export interface NotifItem {
   status: string;
   time: string;
   isNew: boolean;
+  barangay?: string;
 }
 
 export interface NewReportBanner {
@@ -38,6 +59,9 @@ interface SSEContextType {
   setUnrecognizedQueue: React.Dispatch<React.SetStateAction<UnrecognizedIncident[]>>;
   currentUnrecognized: UnrecognizedIncident | null;
   fetchNotifications: () => Promise<void>;
+  markUnrecognizedHandled: (id: string) => void;
+  markAllNotificationsRead: () => void;
+  clearAllNotifications: () => void;
   showBanner: (banner: NewReportBanner) => void;
   isConnected: boolean;
 }
@@ -54,7 +78,12 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sseRef = useRef<AbortController | null>(null);
   const location = useLocation();
+  const pathnameRef = useRef(location.pathname);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    pathnameRef.current = location.pathname;
+  }, [location.pathname]);
 
   const currentUnrecognized = unrecognizedQueue[0] || null;
 
@@ -64,6 +93,23 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     bannerTimerRef.current = setTimeout(() => setNewReportBanner(null), 8000);
   }, []);
 
+  const markAllNotificationsRead = useCallback(() => {
+    const allIds = notifications.map(n => n.id);
+    localStorage.setItem(SEEN_KEY, JSON.stringify(allIds));
+    setUnseenCount(0);
+    setNotifications(prev => prev.map(n => ({ ...n, isNew: false })));
+  }, [notifications]);
+
+  const clearAllNotifications = useCallback(() => {
+    setNotifications([]);
+    setUnseenCount(0);
+  }, []);
+
+  const markUnrecognizedHandled = useCallback((id: string) => {
+    addHandledUnrecognizedId(id);
+    setUnrecognizedQueue(prev => prev.filter(item => item.id !== id));
+  }, []);
+
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await getIncidents();
@@ -71,11 +117,12 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const seen: string[] = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
 
       const items: NotifItem[] = incidents
-        .slice(0, 20)
+        .slice(0, 30)
         .map((inc: any) => ({
           id: inc.id,
           type: inc.aiDetectedType || 'Emergency',
           status: inc.status,
+          barangay: inc.barangay || inc.locationName || undefined,
           time: new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isNew: !seen.includes(inc.id),
         }));
@@ -85,14 +132,20 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUnseenCount(newCount);
 
       // Populate unrecognized queue on page load/refresh from incidents needing review
+      const handledIds = getHandledUnrecognizedIds();
       const pendingUnrecognized = incidents.filter((inc: any) => {
         if (inc.status === 'RESOLVED' || inc.status === 'REJECTED') return false;
+        if (handledIds.has(inc.id)) return false;
+
         const type = (inc.aiDetectedType || '').toLowerCase();
         const notes = (inc.adminNotes || '').toLowerCase();
+
+        // Only include if explicitly flagged as unrecognized/unknown or low-confidence AI analysis
         return (
-          inc.status === 'REVIEWING' ||
           type.includes('unrecognized') ||
           type.includes('unknown') ||
+          type.includes('pending review') ||
+          type.includes('low confidence') ||
           notes.includes('could not recognize') ||
           notes.includes('low confidence') ||
           notes.includes('confidence: low')
@@ -103,7 +156,7 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUnrecognizedQueue(prev => {
           const existingIds = new Set(prev.map(i => i.id));
           const newItems = pendingUnrecognized
-            .filter((inc: any) => !existingIds.has(inc.id))
+            .filter((inc: any) => !existingIds.has(inc.id) && !handledIds.has(inc.id))
             .map((inc: any) => ({
               id: inc.id,
               type: inc.aiDetectedType || 'Unrecognized Incident',
@@ -163,11 +216,12 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const newItem: NotifItem = {
                 id: data.id,
                 type: data.aiDetectedType || 'Emergency',
-                status: 'PENDING',
+                status: data.status || 'PENDING',
+                barangay: data.barangay || undefined,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 isNew: true,
               };
-              setNotifications(prev => [newItem, ...prev].slice(0, 20));
+              setNotifications(prev => [newItem, ...prev.filter(n => n.id !== data.id)].slice(0, 30));
               setUnseenCount(prev => prev + 1);
             } catch { /* ignore */ }
           }
@@ -175,26 +229,30 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (event.event === 'unrecognized_incident') {
             try {
               const data = JSON.parse(event.data);
-              setUnrecognizedQueue(prev => {
-                if (prev.some(item => item.id === data.id)) return prev;
-                return [...prev, {
-                  id: data.id,
-                  type: data.aiDetectedType || 'Unknown',
-                  confidence: data.aiConfidence || 'low',
-                }];
-              });
+              const handledIds = getHandledUnrecognizedIds();
+              if (!handledIds.has(data.id)) {
+                setUnrecognizedQueue(prev => {
+                  if (prev.some(item => item.id === data.id)) return prev;
+                  return [...prev, {
+                    id: data.id,
+                    type: data.aiDetectedType || 'Unknown',
+                    confidence: data.aiConfidence || 'low',
+                  }];
+                });
+              }
               const newItem: NotifItem = {
                 id: data.id,
                 type: `⚠️ ${data.aiDetectedType || 'Unrecognized'}`,
                 status: 'REVIEWING',
+                barangay: data.barangay || undefined,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 isNew: true,
               };
-              setNotifications(prev => [newItem, ...prev].slice(0, 20));
+              setNotifications(prev => [newItem, ...prev.filter(n => n.id !== data.id)].slice(0, 30));
               setUnseenCount(prev => prev + 1);
 
               // If currently working on an incident, show non-blocking toast so dispatcher isn't interrupted
-              if (location.pathname.startsWith('/requests/') && location.pathname !== '/requests') {
+              if (pathnameRef.current.startsWith('/requests/') && pathnameRef.current !== '/requests') {
                 showToast({
                   type: 'warning',
                   message: 'Unrecognized Incident Reported',
@@ -235,7 +293,7 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       sseRef.current?.abort();
       if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
     };
-  }, [fetchNotifications, location.pathname, showBanner, showToast]);
+  }, [fetchNotifications, showBanner, showToast]);
 
   return (
     <SSEContext.Provider
@@ -250,6 +308,9 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUnrecognizedQueue,
         currentUnrecognized,
         fetchNotifications,
+        markUnrecognizedHandled,
+        markAllNotificationsRead,
+        clearAllNotifications,
         showBanner,
         isConnected,
       }}
