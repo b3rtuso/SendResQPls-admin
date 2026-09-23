@@ -1667,7 +1667,7 @@ export default function Dashboard() {
                   onMouseEnter={e => (e.currentTarget.style.borderColor = '#BFDBFE')}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = '#F1F5F9')}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10, width: '100%' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
                       <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Icon size={18} style={{ color }} />
@@ -1677,10 +1677,6 @@ export default function Dashboard() {
                         <div style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{sub}</div>
                       </div>
                     </div>
-                    <div
-                      className="status-pulse-dot"
-                      style={{ '--pulse-color': '#22C55E', background: '#22C55E', marginLeft: 'auto' } as any}
-                    />
                   </div>
                   <Button
                     type="button"
