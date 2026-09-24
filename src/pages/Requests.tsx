@@ -122,7 +122,7 @@ const TAB_THEMES: Record<string, {
 };
 
 const STATUS_TABS: (Status | 'ALL')[] = ['ALL', 'PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED', 'REJECTED'];
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 10;
 
 const DEPT_NAMES: Record<string, string> = {
   BFP: 'BFP (Fire)',
@@ -454,20 +454,20 @@ export default function Requests() {
           align-items: center;
           gap: 6px;
           overflow-x: auto;
-          padding-bottom: 4px;
-          margin-bottom: 16px;
+          padding-bottom: 2px;
+          margin-bottom: 8px;
         }
 
         .rq-tab-btn {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: 10px;
+          gap: 6px;
+          padding: 6px 13px;
+          border-radius: 9px;
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           color: #475569;
-          font-size: 13px;
+          font-size: 12.5px;
           font-weight: 600;
           cursor: pointer;
           font-family: inherit;
@@ -488,9 +488,9 @@ export default function Requests() {
         }
 
         .rq-tab-count {
-          padding: 2px 7px;
+          padding: 2px 6px;
           border-radius: 999px;
-          font-size: 11px;
+          font-size: 10.5px;
           font-weight: 800;
           background: rgba(0, 0, 0, 0.06);
           color: inherit;
@@ -503,16 +503,20 @@ export default function Requests() {
 
         .rq-card-container {
           background: #FFFFFF;
-          border-radius: 16px;
+          border-radius: 14px;
           border: 1px solid #E2E8F0;
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.02);
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
         }
 
         .rq-desktop-table {
           display: block !important;
           width: 100%;
           overflow-x: auto;
+          overflow-y: auto;
+          max-height: calc(100vh - 225px);
           -webkit-overflow-scrolling: touch;
         }
 
@@ -563,7 +567,7 @@ export default function Requests() {
 
       <Header title="Emergency Requests" subtitle="Real-time incident triage and dispatch operations queue" />
 
-      <div className="page-content" style={{ paddingTop: 12 }}>
+      <div className="page-content" style={{ paddingTop: 8, paddingBottom: 8 }}>
 
         {/* ── Segmented Status Filter Tabs ── */}
         <div className="rq-filter-tabs fade-in">
@@ -612,19 +616,19 @@ export default function Requests() {
           position: 'relative',
           zIndex: 40,
           background: '#FFFFFF',
-          borderRadius: 14,
-          padding: '14px 18px',
-          marginBottom: 16,
+          borderRadius: 12,
+          padding: '7px 14px',
+          marginBottom: 8,
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
+          gap: 10,
           flexWrap: 'wrap',
           border: '1px solid #E2E8F0',
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
         }}>
           {/* Search Box */}
           <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 220 }}>
-            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+            <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
               type="text"
               placeholder="Search by ID, type, location, or unit..."
@@ -632,10 +636,10 @@ export default function Requests() {
               onChange={e => setSearch(e.target.value)}
               style={{
                 width: '100%',
-                padding: '9px 12px 9px 36px',
+                padding: '6px 12px 6px 33px',
                 border: '1px solid #E2E8F0',
-                borderRadius: 9,
-                fontSize: 13,
+                borderRadius: 8,
+                fontSize: 12.5,
                 outline: 'none',
                 fontFamily: 'inherit',
                 color: '#0F172A',
@@ -654,11 +658,11 @@ export default function Requests() {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 8,
-                padding: '8px 12px',
+                gap: 7,
+                padding: '6px 11px',
                 border: showTypeDropdown ? '1px solid #2563EB' : '1px solid #CBD5E1',
-                borderRadius: 9,
-                fontSize: 13,
+                borderRadius: 8,
+                fontSize: 12.5,
                 fontWeight: 500,
                 color: filterType !== 'ALL' ? '#0F172A' : '#475569',
                 background: showTypeDropdown ? '#F8FAFC' : '#FFFFFF',
@@ -777,22 +781,22 @@ export default function Requests() {
             onClick={handleManualRefresh}
             disabled={refreshing || loading}
             style={{
-              padding: '9px 14px',
-              borderRadius: 9,
+              padding: '6px 12px',
+              borderRadius: 8,
               border: '1px solid #E2E8F0',
               background: '#FFFFFF',
               color: refreshing ? '#2563EB' : '#475569',
               cursor: refreshing || loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              fontSize: 13,
+              gap: 5,
+              fontSize: 12.5,
               fontWeight: 600,
               fontFamily: 'inherit',
               transition: 'all 0.15s',
             }}
           >
-            <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
+            <RefreshCw size={13} className={refreshing ? 'spin' : ''} />
             {refreshing ? 'Updating...' : 'Refresh'}
           </button>
         </div>
@@ -822,12 +826,12 @@ export default function Requests() {
                   .rq-table {
                     width: 100%;
                     border-collapse: collapse;
-                    font-size: 13px;
+                    font-size: 12.5px;
                     text-align: left;
                   }
                   .rq-th {
-                    padding: 13px 12px;
-                    font-size: 11px;
+                    padding: 8px 10px;
+                    font-size: 10.5px;
                     font-weight: 800;
                     color: #64748B;
                     text-transform: uppercase;
@@ -836,9 +840,12 @@ export default function Requests() {
                     border-bottom: 1px solid #E2E8F0;
                     white-space: nowrap;
                     user-select: none;
+                    position: sticky;
+                    top: 0;
+                    z-index: 5;
                   }
                   .rq-td {
-                    padding: 13px 12px;
+                    padding: 6px 10px;
                     border-bottom: 1px solid #F1F5F9;
                     vertical-align: middle;
                   }
@@ -849,9 +856,9 @@ export default function Requests() {
                     background: #F8FAFC;
                   }
                   .rq-evidence-box {
-                    width: 38px;
-                    height: 30px;
-                    border-radius: 7px;
+                    width: 36px;
+                    height: 28px;
+                    border-radius: 6px;
                     overflow: hidden;
                     border: 1px solid #E2E8F0;
                     cursor: zoom-in;
@@ -862,9 +869,9 @@ export default function Requests() {
                   .rq-badge-brgy {
                     background: #F1F5F9;
                     color: #334155;
-                    padding: 3px 8px;
+                    padding: 2px 7px;
                     border-radius: 6px;
-                    font-size: 12px;
+                    font-size: 11.5px;
                     font-weight: 600;
                     display: inline-flex;
                     align-items: center;
@@ -872,12 +879,12 @@ export default function Requests() {
                     white-space: nowrap;
                   }
                   .rq-btn-view {
-                    padding: 5px 14px !important;
-                    border-radius: 7px !important;
+                    padding: 3.5px 10px !important;
+                    border-radius: 6px !important;
                     background: rgba(37, 99, 235, 0.06) !important;
                     color: #2563EB !important;
                     border: 1px solid rgba(37, 99, 235, 0.25) !important;
-                    font-size: 12px !important;
+                    font-size: 11px !important;
                     font-weight: 700 !important;
                     height: auto !important;
                     letter-spacing: 0.02em !important;
@@ -888,57 +895,33 @@ export default function Requests() {
                     color: #FFFFFF !important;
                   }
                   .rq-btn-accept {
-                    padding: 4px 8px !important;
+                    padding: 3px 7px !important;
                     font-size: 11px !important;
                   }
 
                   @media (max-width: 1440px) {
                     .rq-th {
-                      padding: 11px 9px !important;
-                      font-size: 10.5px !important;
+                      padding: 7px 8px !important;
+                      font-size: 10px !important;
                     }
                     .rq-td {
-                      padding: 11px 9px !important;
-                      font-size: 12.5px !important;
+                      padding: 5.5px 8px !important;
+                      font-size: 12px !important;
                     }
                     .rq-evidence-box {
-                      width: 35px;
-                      height: 28px;
+                      width: 32px;
+                      height: 25px;
                     }
                   }
 
                   @media (max-width: 1280px) {
                     .rq-th {
-                      padding: 10px 7px !important;
-                      font-size: 10px !important;
+                      padding: 6.5px 7px !important;
+                      font-size: 9.5px !important;
                       letter-spacing: 0.03em !important;
                     }
                     .rq-td {
-                      padding: 10px 7px !important;
-                      font-size: 12px !important;
-                    }
-                    .rq-evidence-box {
-                      width: 32px;
-                      height: 26px;
-                    }
-                    .rq-badge-brgy {
-                      padding: 2.5px 6px;
-                      font-size: 11px;
-                    }
-                    .rq-btn-view {
-                      padding: 4px 10px !important;
-                      font-size: 11px !important;
-                    }
-                  }
-
-                  @media (max-width: 1024px) {
-                    .rq-th {
-                      padding: 9px 6px !important;
-                      font-size: 9.5px !important;
-                      letter-spacing: 0.02em !important;
-                    }
-                    .rq-td {
-                      padding: 9px 6px !important;
+                      padding: 5px 7px !important;
                       font-size: 11.5px !important;
                     }
                     .rq-evidence-box {
@@ -946,12 +929,36 @@ export default function Requests() {
                       height: 24px;
                     }
                     .rq-badge-brgy {
-                      padding: 2px 5px;
-                      font-size: 10.5px;
+                      padding: 2px 6px;
+                      font-size: 11px;
                     }
                     .rq-btn-view {
-                      padding: 3.5px 8px !important;
+                      padding: 3px 8px !important;
                       font-size: 10.5px !important;
+                    }
+                  }
+
+                  @media (max-width: 1024px) {
+                    .rq-th {
+                      padding: 6px 5px !important;
+                      font-size: 9px !important;
+                      letter-spacing: 0.02em !important;
+                    }
+                    .rq-td {
+                      padding: 4.5px 5px !important;
+                      font-size: 11px !important;
+                    }
+                    .rq-evidence-box {
+                      width: 28px;
+                      height: 22px;
+                    }
+                    .rq-badge-brgy {
+                      padding: 1.5px 5px;
+                      font-size: 10px;
+                    }
+                    .rq-btn-view {
+                      padding: 2.5px 7px !important;
+                      font-size: 10px !important;
                     }
                   }
                 `}</style>
@@ -1422,25 +1429,29 @@ export default function Requests() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '14px 20px',
+                padding: '7px 16px',
                 borderTop: '1px solid #E2E8F0',
                 background: '#FAFBFC',
-                fontSize: 13,
+                fontSize: 12,
                 color: '#64748B',
                 flexWrap: 'wrap',
-                gap: 12,
+                gap: 8,
+                position: 'sticky',
+                bottom: 0,
+                zIndex: 10,
+                boxShadow: '0 -2px 6px rgba(0,0,0,0.03)',
               }}>
                 <div style={{ whiteSpace: 'nowrap' }}>
                   Showing <strong>{Math.min(sortedAndFiltered.length, (page - 1) * PAGE_SIZE + 1)}</strong> to <strong>{Math.min(sortedAndFiltered.length, page * PAGE_SIZE)}</strong> of <strong>{sortedAndFiltered.length}</strong> reports
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
                     style={{
-                      padding: '6px 14px',
-                      borderRadius: 8,
+                      padding: '5px 12px',
+                      borderRadius: 7,
                       border: '1px solid #E2E8F0',
                       background: page === 1 ? '#F1F5F9' : '#FFFFFF',
                       color: page === 1 ? '#94A3B8' : '#0F172A',
@@ -1448,28 +1459,28 @@ export default function Requests() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 4,
-                      fontSize: 12,
+                      fontSize: 11.5,
                       fontWeight: 700,
                       whiteSpace: 'nowrap',
                       flexShrink: 0,
                     }}
                   >
-                    <ChevronLeft size={14} /> Previous
+                    <ChevronLeft size={13} /> Previous
                   </button>
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '5px 12px',
-                    borderRadius: 8,
+                    padding: '4px 10px',
+                    borderRadius: 7,
                     background: '#F1F5F9',
                     border: '1px solid #E2E8F0',
                     fontWeight: 800,
                     color: '#0F172A',
-                    fontSize: 12,
+                    fontSize: 11.5,
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
-                    minWidth: '60px',
+                    minWidth: '55px',
                   }}>
                     {page} / {totalPages}
                   </span>
@@ -1477,8 +1488,8 @@ export default function Requests() {
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     style={{
-                      padding: '6px 14px',
-                      borderRadius: 8,
+                      padding: '5px 12px',
+                      borderRadius: 7,
                       border: '1px solid #E2E8F0',
                       background: page === totalPages ? '#F1F5F9' : '#FFFFFF',
                       color: page === totalPages ? '#94A3B8' : '#0F172A',
@@ -1486,13 +1497,13 @@ export default function Requests() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 4,
-                      fontSize: 12,
+                      fontSize: 11.5,
                       fontWeight: 700,
                       whiteSpace: 'nowrap',
                       flexShrink: 0,
                     }}
                   >
-                    Next <ChevronRight size={14} />
+                    Next <ChevronRight size={13} />
                   </button>
                 </div>
               </div>
