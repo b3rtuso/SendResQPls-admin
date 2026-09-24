@@ -229,18 +229,23 @@ export default function Requests() {
 
   const handleManualRefresh = async () => {
     setRefreshing(true);
-    invalidateCache('incidents');
-    await fetchIncidents();
+    await fetchIncidents(true);
     setRefreshing(false);
   };
 
-  const fetchIncidents = async () => {
-    setLoading(true);
+  const fetchIncidents = async (forceNetwork = false) => {
+    setIncidents(prev => {
+      if (prev.length === 0) setLoading(true);
+      return prev;
+    });
     try {
-      const res = await getIncidents();
-      setIncidents(res.data);
+      if (forceNetwork) invalidateCache('incidents');
+      const res = await getIncidents(forceNetwork);
+      if (Array.isArray(res?.data)) {
+        setIncidents(res.data);
+      }
     } catch {
-      setIncidents([]);
+      // Retain existing state on transient failure
     } finally {
       setLoading(false);
     }
@@ -262,13 +267,54 @@ export default function Requests() {
   useEffect(() => {
     fetchIncidents();
 
-    const handleSseUpdate = () => {
-      invalidateCache('incidents');
-      fetchIncidents();
+    const handleSseUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const eventName = detail?.event;
+      const data = detail?.data;
+
+      // Optimistically insert new report into state immediately
+      if (data && (eventName === 'new_incident' || eventName === 'incident_created')) {
+        const id = data.id || data.incidentId;
+        if (id) {
+          setIncidents(prev => {
+            const exists = prev.some(inc => inc.id === id);
+            if (exists) {
+              return prev.map(inc => inc.id === id ? { ...inc, ...data, id } : inc);
+            }
+            const optimisticIncident: Incident = {
+              id,
+              reporterId: data.reporterId || 'citizen',
+              status: data.status || 'PENDING',
+              latitude: data.latitude,
+              longitude: data.longitude,
+              barangay: data.barangay || '',
+              formattedAddress: data.formattedAddress || '',
+              photoUrl: data.photoUrl || '',
+              description: data.description || '',
+              aiDetectedType: data.aiDetectedType || 'Emergency',
+              aiRecommendedDept: data.aiRecommendedDept || 'RESCUE',
+              assignedDepartment: data.assignedDepartment || undefined,
+              severity: data.severity || 'MEDIUM',
+              urgencyScore: data.urgencyScore || 50,
+              createdAt: data.createdAt || new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            return [optimisticIncident, ...prev];
+          });
+        }
+      } else if (data && eventName === 'status_updated') {
+        const id = data.id || data.incidentId;
+        if (id && data.status) {
+          setIncidents(prev => prev.map(inc => inc.id === id ? { ...inc, status: data.status, assignedDepartment: data.assignedDepartment ?? inc.assignedDepartment } : inc));
+        }
+      }
+
+      // Re-sync with network in background
+      fetchIncidents(true);
     };
 
     window.addEventListener('incident-sse-update', handleSseUpdate);
-    const iv = setInterval(fetchIncidents, 60000); // 60s fallback heartbeat
+    const iv = setInterval(() => fetchIncidents(true), 30000); // 30s background sync
 
     return () => {
       window.removeEventListener('incident-sse-update', handleSseUpdate);

@@ -208,48 +208,54 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (event.event === 'new_incident' || event.event === 'incident_created') {
             try {
               const data = eventData || (event.data ? JSON.parse(event.data) : {});
-              showBanner({
-                id: data.id,
-                type: data.aiDetectedType || 'Emergency',
-                dept: data.aiRecommendedDept || 'MDRRMO',
-              });
-              const newItem: NotifItem = {
-                id: data.id,
-                type: data.aiDetectedType || 'Emergency',
-                status: data.status || 'PENDING',
-                barangay: data.barangay || undefined,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                isNew: true,
-              };
-              setNotifications(prev => [newItem, ...prev.filter(n => n.id !== data.id)].slice(0, 30));
-              setUnseenCount(prev => prev + 1);
+              const effectiveId = data.id || data.incidentId || '';
+              if (effectiveId) {
+                showBanner({
+                  id: effectiveId,
+                  type: data.aiDetectedType || 'Emergency',
+                  dept: data.aiRecommendedDept || 'MDRRMO',
+                });
+                const newItem: NotifItem = {
+                  id: effectiveId,
+                  type: data.aiDetectedType || 'Emergency',
+                  status: data.status || 'PENDING',
+                  barangay: data.barangay || undefined,
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  isNew: true,
+                };
+                setNotifications(prev => [newItem, ...prev.filter(n => n.id !== effectiveId)].slice(0, 30));
+                setUnseenCount(prev => prev + 1);
+              }
             } catch { /* ignore */ }
           }
 
           if (event.event === 'unrecognized_incident') {
             try {
-              const data = JSON.parse(event.data);
+              const data = eventData || (event.data ? JSON.parse(event.data) : {});
+              const effectiveId = data.id || data.incidentId || '';
               const handledIds = getHandledUnrecognizedIds();
-              if (!handledIds.has(data.id)) {
+              if (effectiveId && !handledIds.has(effectiveId)) {
                 setUnrecognizedQueue(prev => {
-                  if (prev.some(item => item.id === data.id)) return prev;
+                  if (prev.some(item => item.id === effectiveId)) return prev;
                   return [...prev, {
-                    id: data.id,
+                    id: effectiveId,
                     type: data.aiDetectedType || 'Unknown',
                     confidence: data.aiConfidence || 'low',
                   }];
                 });
               }
-              const newItem: NotifItem = {
-                id: data.id,
-                type: `⚠️ ${data.aiDetectedType || 'Unrecognized'}`,
-                status: 'REVIEWING',
-                barangay: data.barangay || undefined,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                isNew: true,
-              };
-              setNotifications(prev => [newItem, ...prev.filter(n => n.id !== data.id)].slice(0, 30));
-              setUnseenCount(prev => prev + 1);
+              if (effectiveId) {
+                const newItem: NotifItem = {
+                  id: effectiveId,
+                  type: `⚠️ ${data.aiDetectedType || 'Unrecognized'}`,
+                  status: 'REVIEWING',
+                  barangay: data.barangay || undefined,
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  isNew: true,
+                };
+                setNotifications(prev => [newItem, ...prev.filter(n => n.id !== effectiveId)].slice(0, 30));
+                setUnseenCount(prev => prev + 1);
+              }
 
               // If currently working on an incident, show non-blocking toast so dispatcher isn't interrupted
               if (pathnameRef.current.startsWith('/requests/') && pathnameRef.current !== '/requests') {
@@ -276,7 +282,7 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         onerror(err) {
           setIsConnected(false);
           if (!aborted) {
-            setTimeout(connect, 5000);
+            setTimeout(connect, 2000);
           }
           throw err;
         },

@@ -113,7 +113,8 @@ export const batchUpdateIncidents = (data: { ids: string[]; status?: string; ass
     return res;
   });
 
-export const getIncidents = () => cachedGet('/incidents', 60000);
+export const getIncidents = (skipCache = false) =>
+  skipCache ? api.get('/incidents') : cachedGet('/incidents', 60000);
 export const getPaginatedIncidents = (params: { page?: number; limit?: number; status?: string; search?: string; sortBy?: string; sortDir?: string }) => {
   const sp = new URLSearchParams();
   if (params.page !== undefined) sp.set('page', String(params.page));

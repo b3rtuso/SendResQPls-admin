@@ -292,9 +292,7 @@ export default function Dashboard() {
 
   const handleManualRefresh = async () => {
     setRefreshing(true);
-    invalidateCache('incidents');
-    invalidateCache('analytics');
-    await fetchData();
+    await fetchData(true);
     setRefreshing(false);
   };
 
@@ -311,13 +309,20 @@ export default function Dashboard() {
     .filter(y => YEAR_CHART_DATA[String(y.year)] !== undefined && y.total > 0)
     .map(y => y.year);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (forceNetwork = false) => {
+    setIncidents(prev => {
+      if (prev.length === 0) setLoading(true);
+      return prev;
+    });
     try {
+      if (forceNetwork) {
+        invalidateCache('incidents');
+        invalidateCache('analytics');
+      }
       const [summaryRes, distRes, incRes] = await Promise.all([
         getAnalyticsSummary().catch(() => null),
         getIncidentDistribution().catch(() => null),
-        getIncidents().catch(() => ({ data: [] })),
+        getIncidents(forceNetwork).catch(() => ({ data: [] })),
       ]);
 
       const incData: Incident[] = Array.isArray(incRes?.data) ? incRes.data : [];
@@ -348,7 +353,7 @@ export default function Dashboard() {
         setStats(next);
       }
     } catch {
-      setIncidents([]);
+      // Retain existing state on transient failure
     } finally {
       setLoading(false);
     }
@@ -358,13 +363,11 @@ export default function Dashboard() {
     fetchData();
 
     const handleSseUpdate = () => {
-      invalidateCache('incidents');
-      invalidateCache('analytics');
-      fetchData();
+      fetchData(true);
     };
 
     window.addEventListener('incident-sse-update', handleSseUpdate);
-    const iv = setInterval(fetchData, 60000); // 60s fallback heartbeat
+    const iv = setInterval(() => fetchData(true), 30000); // 30s background heartbeat
 
     return () => {
       window.removeEventListener('incident-sse-update', handleSseUpdate);
