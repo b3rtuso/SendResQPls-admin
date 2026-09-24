@@ -4,7 +4,7 @@ import { getIncidents, invalidateCache } from '../api/client';
 import { useToast } from './ToastContext';
 import { useLocation } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://sendresqpls.onrender.com/api');
 const SEEN_KEY = 'sendresqpls_seen_notifications';
 const HANDLED_UNRECOGNIZED_KEY = 'sendresqpls_handled_unrecognized_ids';
 

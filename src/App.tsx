@@ -37,7 +37,7 @@ function ScrollToTop() {
 function App() {
   useEffect(() => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://sendresqpls.onrender.com/api');
       const healthUrl = apiBase.replace(/\/api\/?$/, '') + '/health';
       fetch(healthUrl, { method: 'GET', mode: 'cors' }).catch(() => {});
     } catch {

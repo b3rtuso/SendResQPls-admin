@@ -2,7 +2,7 @@ import axios from 'axios';
 import { CacheManager } from './cacheManager';
 import type { ResolutionForm } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://sendresqpls.onrender.com/api');
 
 
 const api = axios.create({
