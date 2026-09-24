@@ -449,26 +449,54 @@ export default function Requests() {
   return (
     <>
       <style>{`
+        .rq-page-shell {
+          display: flex;
+          flex-direction: column;
+          height: calc(100vh - 72px);
+          max-height: calc(100vh - 72px);
+          overflow: hidden;
+          padding: 8px 24px 12px 24px;
+          box-sizing: border-box;
+          flex: 1;
+          min-width: 0;
+        }
+
+        @media (max-width: 1024px) {
+          .rq-page-shell {
+            padding: 8px 16px 12px 16px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .rq-page-shell {
+            height: auto;
+            max-height: none;
+            overflow: visible;
+            padding: 12px 14px;
+          }
+        }
+
         .rq-filter-tabs {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 7px;
           overflow-x: auto;
           padding-bottom: 2px;
           margin-bottom: 8px;
+          flex-shrink: 0;
         }
 
         .rq-tab-btn {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          padding: 6px 13px;
+          gap: 7px;
+          padding: 7px 14px;
           border-radius: 9px;
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           color: #475569;
-          font-size: 12.5px;
-          font-weight: 600;
+          font-size: 13.5px;
+          font-weight: 700;
           cursor: pointer;
           font-family: inherit;
           transition: all 0.15s ease;
@@ -488,17 +516,33 @@ export default function Requests() {
         }
 
         .rq-tab-count {
-          padding: 2px 6px;
+          padding: 2px 7px;
           border-radius: 999px;
-          font-size: 10.5px;
+          font-size: 11px;
           font-weight: 800;
-          background: rgba(0, 0, 0, 0.06);
+          background: rgba(0, 0, 0, 0.07);
           color: inherit;
         }
 
         .rq-tab-btn.active .rq-tab-count {
           background: rgba(255, 255, 255, 0.25);
           color: #FFFFFF;
+        }
+
+        .rq-search-bar {
+          position: relative;
+          z-index: 40;
+          background: #FFFFFF;
+          border-radius: 12px;
+          padding: 8px 14px;
+          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          border: 1px solid #E2E8F0;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+          flex-shrink: 0;
         }
 
         .rq-card-container {
@@ -509,6 +553,8 @@ export default function Requests() {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          flex: 1;
+          min-height: 0;
         }
 
         .rq-desktop-table {
@@ -516,8 +562,97 @@ export default function Requests() {
           width: 100%;
           overflow-x: auto;
           overflow-y: auto;
-          max-height: calc(100vh - 225px);
+          flex: 1;
+          min-height: 0;
           -webkit-overflow-scrolling: touch;
+        }
+
+        .rq-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 13px;
+          text-align: left;
+        }
+
+        .rq-th {
+          padding: 9px 10px;
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #475569;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          background: #F8FAFC;
+          border-bottom: 1px solid #E2E8F0;
+          white-space: nowrap;
+          user-select: none;
+          position: sticky;
+          top: 0;
+          z-index: 5;
+        }
+
+        .rq-td {
+          padding: 7px 10px;
+          border-bottom: 1px solid #F1F5F9;
+          vertical-align: middle;
+        }
+
+        .rq-tr {
+          transition: background 0.12s ease;
+        }
+
+        .rq-tr:hover {
+          background: #F8FAFC;
+        }
+
+        .rq-evidence-box {
+          width: 42px;
+          height: 32px;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid #E2E8F0;
+          cursor: zoom-in;
+          background: #F1F5F9;
+          flex-shrink: 0;
+          transition: transform 0.15s ease;
+        }
+
+        .rq-badge-brgy {
+          background: #F1F5F9;
+          color: #1E293B;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          white-space: nowrap;
+        }
+
+        .rq-btn-view {
+          padding: 5px 14px !important;
+          border-radius: 8px !important;
+          background: #EFF6FF !important;
+          color: #1D4ED8 !important;
+          border: 1.5px solid #93C5FD !important;
+          font-size: 12.5px !important;
+          font-weight: 800 !important;
+          height: auto !important;
+          letter-spacing: 0.02em !important;
+          transition: all 0.15s ease !important;
+        }
+
+        .rq-btn-view:hover {
+          background: #2563EB !important;
+          color: #FFFFFF !important;
+          border-color: #2563EB !important;
+        }
+
+        .rq-btn-accept {
+          padding: 4px 9px !important;
+          font-size: 12px !important;
+          font-weight: 700 !important;
+          border-radius: 7px !important;
         }
 
         .rq-mobile-cards {
@@ -567,7 +702,7 @@ export default function Requests() {
 
       <Header title="Emergency Requests" subtitle="Real-time incident triage and dispatch operations queue" />
 
-      <div className="page-content" style={{ paddingTop: 8, paddingBottom: 8 }}>
+      <div className="rq-page-shell">
 
         {/* ── Segmented Status Filter Tabs ── */}
         <div className="rq-filter-tabs fade-in">
@@ -612,23 +747,10 @@ export default function Requests() {
         </div>
 
         {/* ── Search & Filter Controls ── */}
-        <div className="fade-in" style={{
-          position: 'relative',
-          zIndex: 40,
-          background: '#FFFFFF',
-          borderRadius: 12,
-          padding: '7px 14px',
-          marginBottom: 8,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          flexWrap: 'wrap',
-          border: '1px solid #E2E8F0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-        }}>
+        <div className="rq-search-bar fade-in">
           {/* Search Box */}
-          <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 220 }}>
-            <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+          <div style={{ position: 'relative', flex: '1 1 260px', minWidth: 220 }}>
+            <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
               type="text"
               placeholder="Search by ID, type, location, or unit..."
@@ -636,17 +758,17 @@ export default function Requests() {
               onChange={e => setSearch(e.target.value)}
               style={{
                 width: '100%',
-                padding: '6px 12px 6px 33px',
-                border: '1px solid #E2E8F0',
+                padding: '7px 12px 7px 36px',
+                border: '1px solid #CBD5E1',
                 borderRadius: 8,
-                fontSize: 12.5,
+                fontSize: 13.5,
                 outline: 'none',
                 fontFamily: 'inherit',
                 color: '#0F172A',
                 background: '#F8FAFC',
               }}
               onFocus={e => { e.target.style.borderColor = '#2563EB'; e.target.style.background = '#FFFFFF'; }}
-              onBlur={e => { e.target.style.borderColor = '#E2E8F0'; e.target.style.background = '#F8FAFC'; }}
+              onBlur={e => { e.target.style.borderColor = '#CBD5E1'; e.target.style.background = '#F8FAFC'; }}
             />
           </div>
 
@@ -658,13 +780,13 @@ export default function Requests() {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 7,
-                padding: '6px 11px',
-                border: showTypeDropdown ? '1px solid #2563EB' : '1px solid #CBD5E1',
+                gap: 8,
+                padding: '7px 13px',
+                border: showTypeDropdown ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
                 borderRadius: 8,
-                fontSize: 12.5,
-                fontWeight: 500,
-                color: filterType !== 'ALL' ? '#0F172A' : '#475569',
+                fontSize: 13,
+                fontWeight: 600,
+                color: filterType !== 'ALL' ? '#0F172A' : '#334155',
                 background: showTypeDropdown ? '#F8FAFC' : '#FFFFFF',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
@@ -673,8 +795,8 @@ export default function Requests() {
             >
               <div
                 style={{
-                  width: 22,
-                  height: 22,
+                  width: 24,
+                  height: 24,
                   borderRadius: 6,
                   display: 'flex',
                   alignItems: 'center',
@@ -684,11 +806,11 @@ export default function Requests() {
                   flexShrink: 0,
                 }}
               >
-                {selectedHazardOption.icon && <selectedHazardOption.icon size={13} style={{ display: 'block' }} />}
+                {selectedHazardOption.icon && <selectedHazardOption.icon size={15} style={{ display: 'block' }} />}
               </div>
               <span>{selectedHazardOption.label}</span>
               <ChevronDown
-                size={14}
+                size={15}
                 style={{
                   color: '#94A3B8',
                   transform: showTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -781,22 +903,22 @@ export default function Requests() {
             onClick={handleManualRefresh}
             disabled={refreshing || loading}
             style={{
-              padding: '6px 12px',
+              padding: '7px 14px',
               borderRadius: 8,
-              border: '1px solid #E2E8F0',
+              border: '1px solid #CBD5E1',
               background: '#FFFFFF',
-              color: refreshing ? '#2563EB' : '#475569',
+              color: refreshing ? '#2563EB' : '#1E293B',
               cursor: refreshing || loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
-              fontSize: 12.5,
-              fontWeight: 600,
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 700,
               fontFamily: 'inherit',
               transition: 'all 0.15s',
             }}
           >
-            <RefreshCw size={13} className={refreshing ? 'spin' : ''} />
+            <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
             {refreshing ? 'Updating...' : 'Refresh'}
           </button>
         </div>
@@ -822,159 +944,19 @@ export default function Requests() {
             <>
               {/* Desktop Table View */}
               <div className="rq-desktop-table">
-                <style>{`
-                  .rq-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 12.5px;
-                    text-align: left;
-                  }
-                  .rq-th {
-                    padding: 8px 10px;
-                    font-size: 10.5px;
-                    font-weight: 800;
-                    color: #64748B;
-                    text-transform: uppercase;
-                    letter-spacing: 0.05em;
-                    background: #F8FAFC;
-                    border-bottom: 1px solid #E2E8F0;
-                    white-space: nowrap;
-                    user-select: none;
-                    position: sticky;
-                    top: 0;
-                    z-index: 5;
-                  }
-                  .rq-td {
-                    padding: 6px 10px;
-                    border-bottom: 1px solid #F1F5F9;
-                    vertical-align: middle;
-                  }
-                  .rq-tr {
-                    transition: background 0.12s ease;
-                  }
-                  .rq-tr:hover {
-                    background: #F8FAFC;
-                  }
-                  .rq-evidence-box {
-                    width: 36px;
-                    height: 28px;
-                    border-radius: 6px;
-                    overflow: hidden;
-                    border: 1px solid #E2E8F0;
-                    cursor: zoom-in;
-                    background: #F1F5F9;
-                    flex-shrink: 0;
-                    transition: transform 0.15s ease;
-                  }
-                  .rq-badge-brgy {
-                    background: #F1F5F9;
-                    color: #334155;
-                    padding: 2px 7px;
-                    border-radius: 6px;
-                    font-size: 11.5px;
-                    font-weight: 600;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 4px;
-                    white-space: nowrap;
-                  }
-                  .rq-btn-view {
-                    padding: 3.5px 10px !important;
-                    border-radius: 6px !important;
-                    background: rgba(37, 99, 235, 0.06) !important;
-                    color: #2563EB !important;
-                    border: 1px solid rgba(37, 99, 235, 0.25) !important;
-                    font-size: 11px !important;
-                    font-weight: 700 !important;
-                    height: auto !important;
-                    letter-spacing: 0.02em !important;
-                    transition: all 0.15s ease !important;
-                  }
-                  .rq-btn-view:hover {
-                    background: #2563EB !important;
-                    color: #FFFFFF !important;
-                  }
-                  .rq-btn-accept {
-                    padding: 3px 7px !important;
-                    font-size: 11px !important;
-                  }
-
-                  @media (max-width: 1440px) {
-                    .rq-th {
-                      padding: 7px 8px !important;
-                      font-size: 10px !important;
-                    }
-                    .rq-td {
-                      padding: 5.5px 8px !important;
-                      font-size: 12px !important;
-                    }
-                    .rq-evidence-box {
-                      width: 32px;
-                      height: 25px;
-                    }
-                  }
-
-                  @media (max-width: 1280px) {
-                    .rq-th {
-                      padding: 6.5px 7px !important;
-                      font-size: 9.5px !important;
-                      letter-spacing: 0.03em !important;
-                    }
-                    .rq-td {
-                      padding: 5px 7px !important;
-                      font-size: 11.5px !important;
-                    }
-                    .rq-evidence-box {
-                      width: 30px;
-                      height: 24px;
-                    }
-                    .rq-badge-brgy {
-                      padding: 2px 6px;
-                      font-size: 11px;
-                    }
-                    .rq-btn-view {
-                      padding: 3px 8px !important;
-                      font-size: 10.5px !important;
-                    }
-                  }
-
-                  @media (max-width: 1024px) {
-                    .rq-th {
-                      padding: 6px 5px !important;
-                      font-size: 9px !important;
-                      letter-spacing: 0.02em !important;
-                    }
-                    .rq-td {
-                      padding: 4.5px 5px !important;
-                      font-size: 11px !important;
-                    }
-                    .rq-evidence-box {
-                      width: 28px;
-                      height: 22px;
-                    }
-                    .rq-badge-brgy {
-                      padding: 1.5px 5px;
-                      font-size: 10px;
-                    }
-                    .rq-btn-view {
-                      padding: 2.5px 7px !important;
-                      font-size: 10px !important;
-                    }
-                  }
-                `}</style>
-                <table className="rq-table" style={{ width: '100%', minWidth: 840, borderCollapse: 'collapse', textAlign: 'left' }}>
+                <table className="rq-table" style={{ width: '100%', minWidth: 920, borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr>
-                      <th className="rq-th" style={{ width: 36, minWidth: 36, textAlign: 'center' }}>
+                      <th className="rq-th" style={{ width: 38, minWidth: 38, textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={paged.length > 0 && paged.every(inc => selectedIds.has(inc.id))}
                           onChange={() => toggleSelectAll(paged)}
                           aria-label="Select all incidents on page"
-                          style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#2563EB' }}
+                          style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
                         />
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('id')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('id')} style={{ width: 105, minWidth: 100, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Incident ID</span>
                           {sortKey === 'id' ? (
@@ -982,8 +964,8 @@ export default function Requests() {
                           ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th" style={{ width: 50, minWidth: 46 }}>Evidence</th>
-                      <th className="rq-th sortable" onClick={() => handleSort('type')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th className="rq-th" style={{ width: 56, minWidth: 54 }}>Evidence</th>
+                      <th className="rq-th sortable" onClick={() => handleSort('type')} style={{ minWidth: 140, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Hazard Type</span>
                           {sortKey === 'type' ? (
@@ -991,7 +973,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('location')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('location')} style={{ minWidth: 125, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Barangay Location</span>
                           {sortKey === 'location' ? (
@@ -999,7 +981,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('unit')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('unit')} style={{ minWidth: 125, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Assigned Unit</span>
                           {sortKey === 'unit' ? (
@@ -1007,7 +989,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('status')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('status')} style={{ width: 115, minWidth: 110, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Triage Status</span>
                           {sortKey === 'status' ? (
@@ -1015,7 +997,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')} style={{ width: 85, minWidth: 80, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Reported</span>
                           {sortKey === 'createdAt' ? (
@@ -1023,7 +1005,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ width: 95, minWidth: 90, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Severity</span>
                           {sortKey === 'urgency' ? (
@@ -1031,7 +1013,7 @@ export default function Requests() {
                           ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
                         </div>
                       </th>
-                      <th className="rq-th" style={{ textAlign: 'right', whiteSpace: 'nowrap', width: 68 }}>Actions</th>
+                      <th className="rq-th" style={{ textAlign: 'right', whiteSpace: 'nowrap', width: 145, minWidth: 140 }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1044,6 +1026,10 @@ export default function Requests() {
                         : inc.latitude && inc.longitude
                         ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                         : 'Balayan';
+                      const rawType = inc.aiDetectedType || 'Emergency';
+                      const cleanType = rawType.replace(/\s*\([^)]*\)/g, '').trim() || normalized || 'Emergency';
+                      const hasLowConfidence = /low confidence/i.test(rawType);
+                      const hasPendingReview = /pending review/i.test(rawType);
 
                       return (
                         <tr
@@ -1057,18 +1043,18 @@ export default function Requests() {
                           }}
                         >
                           {/* Selection Checkbox */}
-                          <td className="rq-td" style={{ textAlign: 'center', width: 34 }} onClick={e => e.stopPropagation()}>
+                          <td className="rq-td" style={{ textAlign: 'center', width: 38, minWidth: 38 }} onClick={e => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={selectedIds.has(inc.id)}
                               onChange={e => toggleSelectOne(inc.id, e as any)}
                               aria-label={`Select incident ${inc.id}`}
-                              style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#2563EB' }}
+                              style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
                             />
                           </td>
 
                           {/* Incident ID */}
-                          <td className="rq-td" style={{ fontFamily: 'monospace', fontWeight: 700, color: '#2563EB', whiteSpace: 'nowrap' }}>
+                          <td className="rq-td" style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 13.5, color: '#2563EB', whiteSpace: 'nowrap' }}>
                             #{inc.id.slice(0, 8).toUpperCase()}
                           </td>
 
@@ -1086,43 +1072,89 @@ export default function Requests() {
                               </div>
                             ) : (
                               <div className="rq-evidence-box" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'default' }}>
-                                <ImageIcon size={14} color="#94A3B8" />
+                                <ImageIcon size={15} color="#94A3B8" />
                               </div>
                             )}
                           </td>
 
                           {/* Type */}
-                          <td className="rq-td" style={{ whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              {ti.icon ? (
-                                <ti.icon size={15} style={{ color: ti.color, flexShrink: 0 }} />
-                              ) : (
-                                <HelpCircle size={15} style={{ color: '#64748B', flexShrink: 0 }} />
+                          <td className="rq-td" style={{ minWidth: 140 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, maxWidth: 180 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {ti.icon ? (
+                                  <ti.icon size={16} style={{ color: ti.color, flexShrink: 0 }} />
+                                ) : (
+                                  <HelpCircle size={16} style={{ color: '#64748B', flexShrink: 0 }} />
+                                )}
+                                <span
+                                  title={rawType}
+                                  style={{
+                                    color: '#0F172A',
+                                    fontWeight: 800,
+                                    fontSize: 13.5,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                  }}
+                                >
+                                  {cleanType}
+                                </span>
+                              </div>
+                              {(hasLowConfidence || hasPendingReview) && (
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                  {hasLowConfidence && (
+                                    <span style={{
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                      color: '#B45309',
+                                      background: '#FEF3C7',
+                                      border: '1px solid #FDE68A',
+                                      padding: '1px 5px',
+                                      borderRadius: 4,
+                                      lineHeight: 1.2,
+                                      whiteSpace: 'nowrap',
+                                    }}>
+                                      Low Conf
+                                    </span>
+                                  )}
+                                  {hasPendingReview && (
+                                    <span style={{
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                      color: '#1E40AF',
+                                      background: '#DBEAFE',
+                                      border: '1px solid #BFDBFE',
+                                      padding: '1px 5px',
+                                      borderRadius: 4,
+                                      lineHeight: 1.2,
+                                      whiteSpace: 'nowrap',
+                                    }}>
+                                      Pending Review
+                                    </span>
+                                  )}
+                                </div>
                               )}
-                              <strong style={{ color: '#0F172A', fontWeight: 700 }}>
-                                {inc.aiDetectedType || 'Emergency'}
-                              </strong>
                             </div>
                           </td>
 
                           {/* Location */}
                           <td className="rq-td" style={{ whiteSpace: 'nowrap' }}>
                             <span className="rq-badge-brgy">
-                              <FaLocationDot size={10} color="#EF4444" style={{ flexShrink: 0 }} />
+                              <FaLocationDot size={11} color="#EF4444" style={{ flexShrink: 0 }} />
                               <span>{brgyName}</span>
                             </span>
                           </td>
 
                           {/* Unit */}
-                          <td className="rq-td" style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>
+                          <td className="rq-td" style={{ fontWeight: 700, fontSize: 13, color: '#1E293B', whiteSpace: 'nowrap' }}>
                             {inc.assignedDepartment ? (
                               <span>{DEPT_NAMES[inc.assignedDepartment] || inc.assignedDepartment}</span>
                             ) : inc.aiRecommendedDept ? (
-                              <span style={{ color: '#64748B', fontSize: 11.5 }}>
+                              <span style={{ color: '#64748B', fontSize: 12 }}>
                                 Rec: {DEPT_NAMES[inc.aiRecommendedDept] || inc.aiRecommendedDept}
                               </span>
                             ) : (
-                              <span style={{ color: '#94A3B8', fontSize: 11.5 }}>MDRRMO</span>
+                              <span style={{ color: '#94A3B8', fontSize: 12 }}>MDRRMO</span>
                             )}
                           </td>
 
@@ -1130,12 +1162,12 @@ export default function Requests() {
                           <td className="rq-td">
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
                               <Badge style={{
-                                padding: '3px 8px',
+                                padding: '4px 10px',
                                 borderRadius: 999,
                                 background: ss.bg,
                                 color: ss.color,
                                 border: `1px solid ${ss.border}`,
-                                fontSize: 10.5,
+                                fontSize: 11.5,
                                 fontWeight: 800,
                                 letterSpacing: '0.04em',
                                 whiteSpace: 'nowrap',
@@ -1147,13 +1179,13 @@ export default function Requests() {
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: 3,
-                                  fontSize: 9.5,
+                                  fontSize: 10,
                                   fontWeight: 700,
                                   color: '#B91C1C',
                                   background: '#FEF2F2',
                                   border: '1px solid #FECDD3',
                                   borderRadius: 4,
-                                  padding: '1px 4px',
+                                  padding: '1px 5px',
                                   whiteSpace: 'nowrap',
                                 }} title={`Locked by ${inc.lockedByAdminName}`}>
                                   <Lock size={9} /> {inc.lockedByAdminName}
@@ -1163,7 +1195,7 @@ export default function Requests() {
                           </td>
 
                           {/* Reported time */}
-                          <td className="rq-td" style={{ color: '#94A3B8', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                          <td className="rq-td" style={{ color: '#64748B', fontSize: 12.5, fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                             {timeAgo(inc.createdAt)}
                           </td>
 
@@ -1179,16 +1211,16 @@ export default function Requests() {
                                 LOW:      { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981' },
                               };
                               const s = sevColors[sev] || sevColors.MEDIUM;
-                              if (isTerminal) return <span style={{ fontSize: 11, color: '#94A3B8' }}>—</span>;
+                              if (isTerminal) return <span style={{ fontSize: 12, color: '#94A3B8' }}>—</span>;
                               return (
                                 <Badge style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                                  padding: '3px 7px', borderRadius: 6, fontSize: 10.5, fontWeight: 800,
+                                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                                  padding: '4px 9px', borderRadius: 7, fontSize: 11.5, fontWeight: 800,
                                   background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
                                   whiteSpace: 'nowrap',
                                 }}>
                                   <span style={{
-                                    width: 5, height: 5, borderRadius: '50%',
+                                    width: 6, height: 6, borderRadius: '50%',
                                     background: s.dot, display: 'inline-block',
                                   }} />
                                   <span>{sev}</span>
@@ -1198,8 +1230,8 @@ export default function Requests() {
                           </td>
 
                           {/* Actions */}
-                          <td className="rq-td" style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
-                            <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <td className="rq-td" style={{ textAlign: 'right', whiteSpace: 'nowrap', width: 145, minWidth: 140 }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
                               {inc.status === 'PENDING' && (
                                 <Button
                                   size="sm"
@@ -1209,12 +1241,12 @@ export default function Requests() {
                                   disabled={actionLoading === inc.id + 'REVIEWING'}
                                   title="Accept report for review"
                                   style={{
-                                    padding: '4px 8px', borderRadius: 6, border: '1px solid #BBF7D0',
-                                    background: '#F0FDF4', color: '#16A34A', fontSize: 11.5, fontWeight: 700,
-                                    height: 'auto', display: 'flex', alignItems: 'center', gap: 3,
+                                    padding: '5px 10px', borderRadius: 7, border: '1px solid #BBF7D0',
+                                    background: '#F0FDF4', color: '#16A34A', fontSize: 12, fontWeight: 700,
+                                    height: 'auto', display: 'flex', alignItems: 'center', gap: 4,
                                   }}
                                 >
-                                  <CheckCircle2 size={12} /> Accept
+                                  <CheckCircle2 size={13} /> Accept
                                 </Button>
                               )}
 
@@ -1224,18 +1256,17 @@ export default function Requests() {
                                 className="rq-btn-view"
                                 onClick={() => navigate(`/requests/${inc.id}`)}
                                 style={{
-                                  padding: '4px 10px',
-                                  borderRadius: 6,
+                                  padding: '5px 14px',
+                                  borderRadius: 8,
                                   height: 'auto',
-                                  background: 'var(--primary-bg)',
-                                  color: 'var(--primary)',
-                                  border: '1px solid rgba(37,99,235,0.2)',
-                                  fontSize: 11,
-                                  fontWeight: 700,
+                                  background: '#EFF6FF',
+                                  color: '#1D4ED8',
+                                  border: '1.5px solid #93C5FD',
+                                  fontSize: 12.5,
+                                  fontWeight: 800,
+                                  letterSpacing: '0.02em',
                                   transition: 'all 0.15s',
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.color = 'var(--primary)'; }}
                               >
                                 View
                               </Button>
@@ -1259,6 +1290,8 @@ export default function Requests() {
                     : inc.latitude && inc.longitude
                     ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                     : 'Balayan';
+                  const rawType = inc.aiDetectedType || 'Emergency';
+                  const cleanType = rawType.replace(/\s*\([^)]*\)/g, '').trim() || normalized || 'Emergency';
                   const sev = (inc.severity || '').toUpperCase() || 'MEDIUM';
                   const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
                     CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
@@ -1347,7 +1380,7 @@ export default function Requests() {
                             ) : (
                               <HelpCircle size={16} style={{ color: '#64748B', flexShrink: 0 }} />
                             )}
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.aiDetectedType || 'Emergency'}</span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cleanType}</span>
                           </div>
                           <div style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -1429,58 +1462,57 @@ export default function Requests() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '7px 16px',
+                padding: '8px 18px',
                 borderTop: '1px solid #E2E8F0',
                 background: '#FAFBFC',
-                fontSize: 12,
-                color: '#64748B',
+                fontSize: 13,
+                color: '#475569',
                 flexWrap: 'wrap',
                 gap: 8,
-                position: 'sticky',
-                bottom: 0,
-                zIndex: 10,
+                flexShrink: 0,
                 boxShadow: '0 -2px 6px rgba(0,0,0,0.03)',
               }}>
-                <div style={{ whiteSpace: 'nowrap' }}>
-                  Showing <strong>{Math.min(sortedAndFiltered.length, (page - 1) * PAGE_SIZE + 1)}</strong> to <strong>{Math.min(sortedAndFiltered.length, page * PAGE_SIZE)}</strong> of <strong>{sortedAndFiltered.length}</strong> reports
+                <div style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>
+                  Showing <strong style={{ color: '#0F172A' }}>{Math.min(sortedAndFiltered.length, (page - 1) * PAGE_SIZE + 1)}</strong> to <strong style={{ color: '#0F172A' }}>{Math.min(sortedAndFiltered.length, page * PAGE_SIZE)}</strong> of <strong style={{ color: '#0F172A' }}>{sortedAndFiltered.length}</strong> reports
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'nowrap' }}>
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
                     style={{
-                      padding: '5px 12px',
-                      borderRadius: 7,
-                      border: '1px solid #E2E8F0',
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      border: '1.5px solid #CBD5E1',
                       background: page === 1 ? '#F1F5F9' : '#FFFFFF',
                       color: page === 1 ? '#94A3B8' : '#0F172A',
                       cursor: page === 1 ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 4,
-                      fontSize: 11.5,
+                      fontSize: 12.5,
                       fontWeight: 700,
                       whiteSpace: 'nowrap',
                       flexShrink: 0,
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    <ChevronLeft size={13} /> Previous
+                    <ChevronLeft size={14} /> Previous
                   </button>
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '4px 10px',
-                    borderRadius: 7,
+                    padding: '5px 12px',
+                    borderRadius: 8,
                     background: '#F1F5F9',
                     border: '1px solid #E2E8F0',
                     fontWeight: 800,
                     color: '#0F172A',
-                    fontSize: 11.5,
+                    fontSize: 12.5,
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
-                    minWidth: '55px',
+                    minWidth: '60px',
                   }}>
                     {page} / {totalPages}
                   </span>
@@ -1488,22 +1520,23 @@ export default function Requests() {
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     style={{
-                      padding: '5px 12px',
-                      borderRadius: 7,
-                      border: '1px solid #E2E8F0',
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      border: '1.5px solid #CBD5E1',
                       background: page === totalPages ? '#F1F5F9' : '#FFFFFF',
                       color: page === totalPages ? '#94A3B8' : '#0F172A',
                       cursor: page === totalPages ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 4,
-                      fontSize: 11.5,
+                      fontSize: 12.5,
                       fontWeight: 700,
                       whiteSpace: 'nowrap',
                       flexShrink: 0,
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    Next <ChevronRight size={13} />
+                    Next <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
