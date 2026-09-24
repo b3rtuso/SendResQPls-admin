@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { validatePhilippineMobile } from '../utils/phoneValidator';
+import { validatePassword } from '../utils/passwordValidator';
 
 export default function SettingsPage() {
   const { confirm } = useConfirm();
@@ -153,8 +154,9 @@ export default function SettingsPage() {
       showToast('error', 'Validation Error', phoneCheck.error || 'Invalid mobile number.');
       return;
     }
-    if (newAdmin.password.length < 8) {
-      showToast('error', 'Validation Error', 'Password must be at least 8 characters.');
+    const passCheck = validatePassword(newAdmin.password);
+    if (!passCheck.valid) {
+      showToast('error', 'Validation Error', passCheck.error || 'Password does not meet security requirements.');
       return;
     }
     setCreatingAdmin(true);
@@ -365,8 +367,9 @@ export default function SettingsPage() {
       showToast('error', 'Validation Error', 'All password fields are required.');
       return;
     }
-    if (newPassword.length < 6) {
-      showToast('error', 'Validation Error', 'New password must be at least 6 characters.');
+    const passCheck = validatePassword(newPassword);
+    if (!passCheck.valid) {
+      showToast('error', 'Validation Error', passCheck.error || 'Password does not meet security requirements.');
       return;
     }
     if (newPassword !== confirmPassword) {
