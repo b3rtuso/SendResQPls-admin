@@ -3,17 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
-  AlertTriangle, RefreshCw, ArrowRight, Ambulance, Car, HelpCircle,
+  AlertTriangle, RefreshCw, ArrowRight, Car, HelpCircle,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info, Clock, ChevronLeft, ChevronRight, CalendarDays, Target, Lock,
+  Info, Clock, ChevronLeft, ChevronRight, CalendarDays, Target, Lock, HardHat,
 } from 'lucide-react';
 import { TbReport } from 'react-icons/tb';
-import { MdPendingActions, MdLocalShipping, MdLandslide, MdEngineering } from 'react-icons/md';
+import { MdPendingActions, MdLocalShipping, MdLandslide } from 'react-icons/md';
 import { FaFileCircleCheck, FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { FiPhone } from 'react-icons/fi';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
-import { GiPoliceOfficerHead } from 'react-icons/gi';
+import { GiPoliceBadge } from 'react-icons/gi';
 import { IoBandage } from 'react-icons/io5';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
@@ -26,10 +26,10 @@ import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals,
 
 const DEPARTMENTS = [
   { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: FaFire,             color: '#EF4444', bg: '#FEF2F2', tel: 'tel:(043) 211-6387' },
-  { label: 'PNP',         sub: 'Philippine National Police', icon: GiPoliceOfficerHead, color: '#3B82F6', bg: '#EFF6FF', tel: 'tel:(043) 211-4325' },
+  { label: 'PNP',         sub: 'Philippine National Police', icon: GiPoliceBadge,      color: '#3B82F6', bg: '#EFF6FF', tel: 'tel:(043) 211-4325' },
   { label: 'Medical',     sub: 'EMS / Health Services',      icon: FaBriefcaseMedical,  color: '#22C55E', bg: '#ECFDF5', tel: 'tel:(043) 911-0012' },
-  { label: 'Engineering', sub: 'Public Works & Infra',       icon: MdEngineering,       color: '#F59E0B', bg: '#FEFCE8', tel: 'tel:(043) 211-5678' },
-  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Ambulance,          color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
+  { label: 'Engineering', sub: 'Public Works & Infra',       icon: HardHat,            color: '#F59E0B', bg: '#FEFCE8', tel: 'tel:(043) 211-5678' },
+  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: IoBandage,          color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
 ];
 
 const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }> = {
@@ -43,30 +43,37 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }>
 type TypeIconEntry = { icon: React.ElementType | null; emoji?: string; color: string };
 const TYPE_ICON: Record<string, TypeIconEntry> = {
   'Fire':         { icon: FaFire,            color: '#DC2626' },
-  'Flood':        { icon: FaHouseFloodWater, color: '#3B82F6' },
-  'Medical':      { icon: FaBriefcaseMedical,color: '#22C55E' },
-  'Crime':        { icon: RiCriminalFill,    color: '#000000' },
+  'Flood':        { icon: FaHouseFloodWater, color: '#0284C7' },
+  'Medical':      { icon: FaBriefcaseMedical,color: '#10B981' },
+  'Crime':        { icon: RiCriminalFill,    color: '#0F172A' },
   'Typhoon':      { icon: RiTyphoonFill,     color: '#8B5CF6' },
   'Landslide':    { icon: MdLandslide,       color: '#78716C' },
   'Trauma':       { icon: IoBandage,         color: '#F59E0B' },
-  'Accident':     { icon: Car,               color: '#3B82F6' },
-  'Unrecognized': { icon: HelpCircle,        color: '#64748B' },
-  'Unknown':      { icon: HelpCircle,        color: '#64748B' },
+  'Accident':     { icon: Car,               color: '#F97316' },
+  'Unrecognized': { icon: HelpCircle,        color: '#94A3B8' },
+  'Unknown':      { icon: HelpCircle,        color: '#94A3B8' },
 };
 
 const DONUT_COLORS: Record<string, string> = {
   'Fire': '#EF4444',
-  'Flood': '#3B82F6',
-  'Medical': '#22C55E',
-  'Accident': '#3B82F6',
+  'Flood': '#0284C7',
+  'Medical': '#10B981',
+  'Accident': '#F97316',
   'Trauma': '#F59E0B',
   'Typhoon': '#8B5CF6',
   'Landslide': '#78716C',
-  'Crime': '#000000',
-  'Other': '#94A3B8',
+  'Crime': '#0F172A',
+  'Other': '#64748B',
+  'Unrecognized': '#94A3B8',
+  'Unknown': '#A8A29E',
 };
 
-const defaultColor = '#64748B';
+const DYNAMIC_DONUT_PALETTE = ['#06B6D4', '#EC4899', '#14B8A6', '#6366F1', '#84CC16', '#D946EF', '#E11D48', '#0D9488'];
+
+const getDonutColor = (name: string, index = 0): string => {
+  if (DONUT_COLORS[name]) return DONUT_COLORS[name];
+  return DYNAMIC_DONUT_PALETTE[index % DYNAMIC_DONUT_PALETTE.length] || '#64748B';
+};
 
 // ── Count-up animation hook ──────────────────────────────────────────
 function useCountUp(target: number, duration = 900) {
@@ -165,79 +172,42 @@ export default function Dashboard() {
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
   const [serverDistribution, setServerDistribution] = useState<{ name: string; value: number }[] | null>(null);
   const [showComputationModal, setShowComputationModal] = useState(false);
-  const [carouselIndex, setCarouselIndex] = useState(1); // 1 = Forecast, 2 = Top Locations (0 and 3 are infinite wrap clones)
-  const [withTransition, setWithTransition] = useState(true);
+  const [activeSlide, setActiveSlide] = useState<0 | 1>(0); // 0 = Forecast, 1 = Top Locations
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const pointerStartX = useRef<number | null>(null);
   const isPointerDownRef = useRef(false);
-  const isAnimatingRef = useRef(false);
-
-  // Derived active slide index for switcher tabs & dots (0 = Forecast, 1 = Top Locations)
-  const activeSlide: 0 | 1 = (carouselIndex === 1 || carouselIndex === 3) ? 0 : 1;
 
   const sortedTopLocations = useMemo(() => {
     return [...topLocations].sort((a, b) => b.count - a.count);
   }, []);
 
   const handleNext = useCallback(() => {
-    if (isAnimatingRef.current) return;
-    isAnimatingRef.current = true;
-    setWithTransition(true);
-    setCarouselIndex(prev => prev + 1);
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-    }, 520);
+    setActiveSlide(prev => (prev === 0 ? 1 : 0));
   }, []);
 
   const handlePrev = useCallback(() => {
-    if (isAnimatingRef.current) return;
-    isAnimatingRef.current = true;
-    setWithTransition(true);
-    setCarouselIndex(prev => prev - 1);
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-    }, 520);
+    setActiveSlide(prev => (prev === 0 ? 1 : 0));
   }, []);
 
-  const handleTransitionEnd = () => {
-    isAnimatingRef.current = false;
-    if (carouselIndex === 3) {
-      // Reached cloned Forecast at end -> silently snap back to real Forecast at index 1
-      setWithTransition(false);
-      setCarouselIndex(1);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setWithTransition(true);
-        });
-      });
-    } else if (carouselIndex === 0) {
-      // Reached cloned Top Locations at start -> silently snap back to real Top Locations at index 2
-      setWithTransition(false);
-      setCarouselIndex(2);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setWithTransition(true);
-        });
-      });
-    }
-  };
-
-  // Auto-advance carousel in continuous slide loop every 6 seconds when not hovered and not dragging
+  // Auto-advance carousel every 6 seconds when not hovered, not dragging, and tab is visible
   useEffect(() => {
     if (isCarouselHovered || isDragging) return;
     const timer = setInterval(() => {
-      handleNext();
+      if (document.hidden) return;
+      setActiveSlide(prev => (prev === 0 ? 1 : 0));
     }, 6000);
     return () => clearInterval(timer);
-  }, [isCarouselHovered, isDragging, handleNext]);
+  }, [isCarouselHovered, isDragging]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     pointerStartX.current = e.clientX;
     isPointerDownRef.current = true;
     setIsDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch { /* ignore */ }
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -249,9 +219,9 @@ export default function Dashboard() {
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isPointerDownRef.current && pointerStartX.current !== null) {
       if (dragOffset < -40) {
-        handleNext();
+        setActiveSlide(1);
       } else if (dragOffset > 40) {
-        handlePrev();
+        setActiveSlide(0);
       }
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -556,7 +526,7 @@ export default function Dashboard() {
                 {/* Left Switcher Pills */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', padding: 3, borderRadius: 12 }}>
                   <button
-                    onClick={() => { if (activeSlide !== 0) handleNext(); }}
+                    onClick={() => setActiveSlide(0)}
                     style={{
                       padding: '6px 14px',
                       borderRadius: 9,
@@ -579,7 +549,7 @@ export default function Dashboard() {
                   </button>
 
                   <button
-                    onClick={() => { if (activeSlide !== 1) handleNext(); }}
+                    onClick={() => setActiveSlide(1)}
                     style={{
                       padding: '6px 14px',
                       borderRadius: 9,
@@ -693,76 +663,18 @@ export default function Dashboard() {
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerCancel}
                 >
-                  {/* Infinite 4-Panel Sliding Track (Cloned Ends for Seamless Infinite Loop) */}
+                  {/* Bounded 2-Panel Sliding Track */}
                   <div
-                    onTransitionEnd={handleTransitionEnd}
                     style={{
                       display: 'flex',
-                      width: '400%',
-                      transform: `translateX(calc(-${carouselIndex * 25}% + ${dragOffset}px))`,
-                      transition: isDragging
-                        ? 'none'
-                        : (withTransition ? 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'),
+                      width: '200%',
+                      transform: `translateX(calc(-${activeSlide * 50}% + ${dragOffset}px))`,
+                      transition: isDragging ? 'none' : 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)',
                       willChange: 'transform',
                     }}
                   >
-                    {/* Index 0: Top Locations (Clone for infinite backward wrap) */}
-                    <div style={{ width: '25%', flexShrink: 0, boxSizing: 'border-box' }}>
-                      <div style={{
-                        background: '#F8FAFC',
-                        borderRadius: 18,
-                        padding: '16px 20px',
-                        border: '1px solid #E2E8F0',
-                        minHeight: 148,
-                        boxSizing: 'border-box',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, width: '100%' }}>
-                          {sortedTopLocations.map((loc, i) => {
-                            const maxCount = sortedTopLocations[0]?.count || 1;
-                            const pct = Math.round((loc.count / maxCount) * 100);
-                            const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
-                            const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';
-                            return (
-                              <div key={`c0-${loc.name}`} style={{
-                                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                                background: badgeBg,
-                                borderRadius: 10, border: `1px solid ${i < 3 ? `${badgeColor}33` : '#E2E8F0'}`,
-                                transition: 'all 0.15s ease',
-                              }}>
-                                <div style={{
-                                  width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: 11, fontWeight: 800, color: 'white', background: badgeColor, flexShrink: 0,
-                                }}>
-                                  {i + 1}
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {loc.name}
-                                  </div>
-                                  <div style={{ height: 4, width: '100%', background: '#E2E8F0', borderRadius: 2, marginTop: 5, overflow: 'hidden' }}>
-                                    <div style={{ height: '100%', width: `${pct}%`, background: badgeColor, borderRadius: 2 }} />
-                                  </div>
-                                </div>
-                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                  <div style={{ fontSize: 14, fontWeight: 900, color: i < 3 ? badgeColor : '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
-                                    {loc.count}
-                                  </div>
-                                  <div style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>
-                                    Incidents
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Index 1: Incident Risk Forecast (Real) */}
-                    <div style={{ width: '25%', flexShrink: 0, boxSizing: 'border-box' }}>
+                    {/* Slide 0: Incident Risk Forecast */}
+                    <div style={{ width: '50%', flexShrink: 0, boxSizing: 'border-box' }}>
                       <div className="forecast-hero-card" style={{
                         background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
                         borderRadius: 18,
@@ -849,8 +761,8 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {/* Index 2: Top Incident Locations (Real) */}
-                    <div style={{ width: '25%', flexShrink: 0, boxSizing: 'border-box' }}>
+                    {/* Slide 1: Top Incident Locations */}
+                    <div style={{ width: '50%', flexShrink: 0, boxSizing: 'border-box' }}>
                       <div style={{
                         background: '#F8FAFC',
                         borderRadius: 18,
@@ -869,7 +781,7 @@ export default function Dashboard() {
                             const badgeColor = i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8';
                             const badgeBg = i === 0 ? '#FEF2F2' : i === 1 ? '#FFFBEB' : i === 2 ? '#EFF6FF' : '#FFFFFF';
                             return (
-                              <div key={`r2-${loc.name}`} style={{
+                              <div key={`loc-${loc.name}`} style={{
                                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                                 background: badgeBg,
                                 borderRadius: 10, border: `1px solid ${i < 3 ? `${badgeColor}33` : '#E2E8F0'}`,
@@ -900,94 +812,6 @@ export default function Dashboard() {
                               </div>
                             );
                           })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Index 3: Incident Risk Forecast (Clone for infinite forward wrap) */}
-                    <div style={{ width: '25%', flexShrink: 0, boxSizing: 'border-box' }}>
-                      <div className="forecast-hero-card" style={{
-                        background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
-                        borderRadius: 18,
-                        padding: '22px 28px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 24,
-                        boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(15, 41, 66, 0.25)',
-                        minHeight: 148,
-                        boxSizing: 'border-box',
-                        height: '100%',
-                      }}>
-                        {/* Left Content Column */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, flex: 1 }}>
-                          <span style={{
-                            background: '#FFFFFF',
-                            color: '#0F2942',
-                            fontSize: 12,
-                            fontWeight: 800,
-                            padding: '4px 16px',
-                            borderRadius: 9999,
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                          }}>
-                            {currentMonthName}
-                          </span>
-
-                          <div style={{
-                            fontSize: 18,
-                            fontWeight: 400,
-                            color: '#FFFFFF',
-                            lineHeight: 1.4,
-                            fontStyle: 'italic',
-                          }}>
-                            The incident most likely to occur this month is <strong style={{ fontWeight: 800, fontStyle: 'normal', textDecoration: 'underline', textUnderlineOffset: '4px' }}>{forecast?.type || 'Trauma'} Emergency</strong>.
-                          </div>
-                        </div>
-
-                        {/* Right Content Column: Donut Chart Indicator */}
-                        <div style={{
-                          position: 'relative',
-                          width: 104,
-                          height: 104,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}>
-                          <svg width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="52" cy="52" r="42" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="8" />
-                            <circle cx="52" cy="52" r="42" fill="none" stroke="#FFFFFF" strokeWidth="8" strokeDasharray="263.89" strokeDashoffset="86" strokeLinecap="round" />
-                          </svg>
-                          <div style={{
-                            position: 'absolute',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            textAlign: 'center',
-                            lineHeight: 1,
-                            pointerEvents: 'none',
-                          }}>
-                            <span style={{
-                              fontSize: 22,
-                              fontWeight: 900,
-                              color: '#FFFFFF',
-                              fontStyle: 'italic',
-                              lineHeight: 1,
-                            }}>
-                              {predictedCount}
-                            </span>
-                            <span style={{
-                              fontSize: 8.5,
-                              fontWeight: 800,
-                              color: 'rgba(255, 255, 255, 0.85)',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.06em',
-                              marginTop: 3,
-                            }}>
-                              incidents
-                            </span>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1043,7 +867,7 @@ export default function Dashboard() {
               }}>
                 <button
                   type="button"
-                  onClick={() => { if (activeSlide !== 0) handleNext(); }}
+                  onClick={() => setActiveSlide(0)}
                   aria-label="Slide 1: Incident Risk Forecast"
                   title="Incident Risk Forecast"
                   style={{
@@ -1060,7 +884,7 @@ export default function Dashboard() {
                 />
                 <button
                   type="button"
-                  onClick={() => { if (activeSlide !== 1) handleNext(); }}
+                  onClick={() => setActiveSlide(1)}
                   aria-label="Slide 2: Top Incident Locations"
                   title="Top Incident Locations"
                   style={{
@@ -1234,8 +1058,8 @@ export default function Dashboard() {
                         <stop offset="100%" stopColor="#B45309" />
                       </linearGradient>
                       <linearGradient id="accidentGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#F59E0B" />
-                        <stop offset="100%" stopColor="#B45309" />
+                        <stop offset="0%" stopColor="#F97316" />
+                        <stop offset="100%" stopColor="#EA580C" />
                       </linearGradient>
                       <linearGradient id="fireGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#EF4444" />
@@ -1299,7 +1123,7 @@ export default function Dashboard() {
                       dataKey="value"
                     >
                       {donutData.map((entry, index) => {
-                        const baseColor = DONUT_COLORS[entry.name] || defaultColor;
+                        const baseColor = getDonutColor(entry.name, index);
                         const isHovered = activeDonutIndex === index;
                         const hasHover = activeDonutIndex !== null;
                         return (
@@ -1344,7 +1168,7 @@ export default function Dashboard() {
 
               <div className="donut-legend-list">
                 {donutData.map((entry, index) => {
-                  const color = DONUT_COLORS[entry.name] || defaultColor;
+                  const color = getDonutColor(entry.name, index);
                   const isHovered = activeDonutIndex === index;
                   return (
                     <div

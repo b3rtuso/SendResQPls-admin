@@ -9,7 +9,7 @@
 export const TYPE_COLORS: Record<string, string> = {
   Medical:  '#22C55E',
   Trauma:   '#F59E0B',
-  Accident: '#3B82F6',
+  Accident: '#F97316',
   Fire:     '#EF4444',
   Crime:    '#000000',
   Other:    '#94A3B8',
