@@ -22,6 +22,7 @@ export default function Sidebar() {
   const { isSidebarOpen, closeSidebar } = useAdminNav();
   const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'MDRRMO Admin');
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('userEmail') || '');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     const syncUser = () => {
@@ -32,6 +33,15 @@ export default function Sidebar() {
     return () => window.removeEventListener('storage', syncUser);
   }, []);
 
+  useEffect(() => {
+    if (!showLogoutModal) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowLogoutModal(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [showLogoutModal]);
+
   const initials = userName
     .split(' ')
     .map(w => w[0])
@@ -40,7 +50,12 @@ export default function Sidebar() {
     .toUpperCase() || 'AD';
 
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const executeLogout = () => {
     ['token', 'userId', 'userName', 'userEmail', 'userRole'].forEach(k => localStorage.removeItem(k));
+    setShowLogoutModal(false);
     closeSidebar();
     navigate('/admin/login');
   };
@@ -357,6 +372,21 @@ export default function Sidebar() {
             overflow: hidden;
             text-overflow: ellipsis;
           }
+
+          @keyframes modalOverlayFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes modalCenterPop {
+            from {
+              opacity: 0;
+              transform: scale(0.92) translateY(16px);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1) translateY(0);
+            }
+          }
         `}</style>
 
         {/* Brand Header */}
@@ -416,6 +446,154 @@ export default function Sidebar() {
           </div>
         </div>
       </aside>
+
+      {/* Logout Confirmation Modal matching Mobile Design */}
+      {showLogoutModal && (
+        <div
+          onClick={() => setShowLogoutModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100000,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            animation: 'modalOverlayFade 0.2s ease-out',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 340,
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: 24,
+              padding: '28px 22px 22px',
+              textAlign: 'center',
+              boxShadow: '0 25px 60px -12px rgba(15, 23, 42, 0.25), 0 10px 20px -5px rgba(15, 23, 42, 0.1)',
+              animation: 'modalCenterPop 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+            <h2 style={{
+              color: '#0F1F38',
+              fontSize: 20,
+              fontWeight: 800,
+              lineHeight: 1.3,
+              margin: '0 0 20px',
+              letterSpacing: '-0.3px',
+            }}>
+              Are you sure you<br />want to log out?
+            </h2>
+
+            {/* Profile identity box — matching mobile blue theme */}
+            <div style={{
+              background: '#F0F7FF',
+              border: '1.5px solid #BFDBFE',
+              borderRadius: 16,
+              padding: '12px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              textAlign: 'left',
+              marginBottom: 22,
+            }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                background: 'linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%)',
+                color: '#FFFFFF',
+                fontWeight: 800,
+                fontSize: 15,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 4px 10px rgba(29, 78, 216, 0.25)',
+              }}>
+                {initials}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{
+                  color: '#0F1F38',
+                  fontWeight: 800,
+                  fontSize: 15.5,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  lineHeight: 1.2,
+                }}>
+                  {userName || 'MDRRMO Admin'}
+                </div>
+                <div style={{
+                  color: '#1D4ED8',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  marginTop: 3,
+                }}>
+                  {userEmail || 'Administrator'}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions: Red Log out & White Cancel */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                type="button"
+                onClick={executeLogout}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: 9999,
+                  background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                  color: '#FFFFFF',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  boxShadow: '0 4px 14px rgba(220, 38, 38, 0.3)',
+                  transition: 'opacity 0.15s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+              >
+                Log out
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: 9999,
+                  background: '#FFFFFF',
+                  color: '#334155',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  border: '1.5px solid #E2E8F0',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
