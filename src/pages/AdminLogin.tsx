@@ -269,7 +269,7 @@ export default function AdminLogin() {
           <div className={`al-showcase-inner ${mounted ? 'mounted' : ''}`}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
               <img
-                src="/logo.jpg"
+                src="/logo.svg"
                 alt="MDRRMO Balayan Logo"
                 style={{
                   width: 58,

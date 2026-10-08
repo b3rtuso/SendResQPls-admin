@@ -102,13 +102,14 @@ const TYPE_ICON: Record<string, TypeIconEntry> = {
   Fire:         { icon: FaFire,             color: '#EF4444' },
   Flood:        { icon: FaHouseFloodWater,  color: '#3B82F6' },
   Medical:      { icon: FaBriefcaseMedical, color: '#22C55E' },
-  Crime:        { icon: RiCriminalFill,     color: '#0F172A' },
+  Crime:        { icon: RiCriminalFill,     color: '#000000' },
   Typhoon:      { icon: RiTyphoonFill,      color: '#8B5CF6' },
   Landslide:    { icon: MdLandslide,        color: '#78716C' },
   Trauma:       { icon: IoBandage,          color: '#F59E0B' },
-  Accident:     { icon: Car,               color: '#3B82F6' },
-  Unrecognized: { icon: HelpCircle,         color: '#64748B' },
-  Unknown:      { icon: HelpCircle,         color: '#64748B' },
+  Accident:     { icon: Car,                color: '#F97316' },
+  Pending:      { icon: HelpCircle,         color: '#D97706' },
+  Unrecognized: { icon: HelpCircle,         color: '#D97706' },
+  Unknown:      { icon: HelpCircle,         color: '#D97706' },
 };
 
 const TYPE_DEPT_MAP: Record<string, Department> = {

@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="100%" height="100%">
+  <defs>
+    <!-- Left outer arc gradient: gold/amber -> red -> royal blue -->
+    <linearGradient id="arcLeftGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="50%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+
+    <!-- Right outer arc gradient: gold/amber -> red -> royal blue -->
+    <linearGradient id="arcRightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="50%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+
+    <!-- Subtle 3D overlap shadow for S, R, Q letters -->
+    <filter id="srqShadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="-8" dy="14" stdDeviation="14" flood-color="#000000" flood-opacity="0.32" />
+    </filter>
+
+    <filter id="topTextShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#DC2626" flood-opacity="0.65" />
+    </filter>
+
+    <!-- Arc path for BALAYAN MDRRMO curved text -->
+    <path id="topArcPath" d="M 245,260 A 330,330 0 0,1 755,260" fill="none" />
+  </defs>
+
+  <!-- Split Philippine Flag Background: Royal Blue top, Vibrant Red bottom -->
+  <rect x="0" y="0" width="1000" height="500" fill="#0044B4" />
+  <rect x="0" y="500" width="1000" height="500" fill="#FF1E27" />
+
+  <!-- Left Double Arcs -->
+  <path
+    d="M 134,336 A 405,405 0 0,1 276,178"
+    fill="none"
+    stroke="url(#arcLeftGrad)"
+    stroke-width="10"
+    stroke-linecap="round"
+  />
+  <path
+    d="M 164,336 A 376,376 0 0,1 292,202"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="10"
+    stroke-linecap="round"
+  />
+
+  <!-- Right Double Arcs -->
+  <path
+    d="M 724,178 A 405,405 0 0,1 866,336"
+    fill="none"
+    stroke="url(#arcRightGrad)"
+    stroke-width="10"
+    stroke-linecap="round"
+  />
+  <path
+    d="M 708,202 A 376,376 0 0,1 836,336"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="10"
+    stroke-linecap="round"
+  />
+
+  <!-- Curved Top Header Text -->
+  <text
+    fill="#FFFFFF"
+    font-family="'Montserrat', 'Inter', 'Segoe UI', 'Arial Black', sans-serif"
+    font-size="42"
+    font-weight="900"
+    letter-spacing="3.5"
+    filter="url(#topTextShadow)"
+  >
+    <textPath href="#topArcPath" startOffset="50%" text-anchor="middle">
+      BALAYAN MDRRMO
+    </textPath>
+  </text>
+
+  <!-- Giant Overlapping 3D SRQ Vector Paths (Q behind R behind S) -->
+  <!-- Letter Q -->
+  <g filter="url(#srqShadow)">
+    <path
+      fill="#FFFFFF"
+      d="M 772,340
+         C 868,340 935,404 935,495
+         C 935,556 903,606 854,631
+         L 928,704
+         L 815,704
+         L 768,650
+         C 674,648 610,585 610,495
+         C 610,404 676,340 772,340 Z
+         M 772,414
+         C 726,414 698,446 698,495
+         C 698,544 726,576 772,576
+         C 818,576 846,544 846,495
+         C 846,446 818,414 772,414 Z"
+    />
+  </g>
+
+  <!-- Letter R -->
+  <g filter="url(#srqShadow)">
+    <path
+      fill="#FFFFFF"
+      d="M 368,346
+         L 528,346
+         C 608,346 652,382 652,442
+         C 652,486 626,518 582,530
+         L 658,644
+         L 556,644
+         L 492,542
+         L 462,542
+         L 462,644
+         L 368,644 Z
+         M 462,414
+         L 462,478
+         L 516,478
+         C 544,478 560,465 560,446
+         C 560,427 544,414 516,414 Z"
+    />
+  </g>
+
+  <!-- Letter S -->
+  <g filter="url(#srqShadow)">
+    <path
+      fill="#FFFFFF"
+      d="M 234,338
+         C 314,338 364,374 368,434
+         L 276,434
+         C 272,412 256,400 230,400
+         C 206,400 190,410 190,425
+         C 190,442 208,450 256,460
+         C 332,476 372,502 372,556
+         C 372,616 318,652 234,652
+         C 146,652 94,612 90,548
+         L 184,548
+         C 188,574 206,588 238,588
+         C 264,588 280,577 280,560
+         C 280,542 262,534 212,522
+         C 140,506 100,480 100,428
+         C 100,372 152,338 234,338 Z"
+    />
+  </g>
+
+  <!-- Subtitle: SEND RESQ PLS -->
+  <text
+    x="508"
+    y="792"
+    fill="#FFFFFF"
+    font-family="'Montserrat', 'Inter', 'Segoe UI', Arial, sans-serif"
+    font-size="48"
+    font-weight="500"
+    letter-spacing="18"
+    text-anchor="middle"
+  >
+    SEND RESQ PLS
+  </text>
+</svg>

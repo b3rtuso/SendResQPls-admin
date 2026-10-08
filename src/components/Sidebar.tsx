@@ -392,7 +392,7 @@ export default function Sidebar() {
         {/* Brand Header */}
         <div className="sb-brand">
           <div className="sb-logo-box">
-            <img src="/logo.jpg" alt="SendResQPls" className="sb-logo-img" />
+            <img src="/logo.svg" alt="SendResQPls" className="sb-logo-img" />
           </div>
           <div style={{ minWidth: 0 }}>
             <div className="sb-brand-title">SendResQPls</div>

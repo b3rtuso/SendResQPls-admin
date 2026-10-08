@@ -42,16 +42,17 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }>
 
 type TypeIconEntry = { icon: React.ElementType | null; emoji?: string; color: string };
 const TYPE_ICON: Record<string, TypeIconEntry> = {
-  'Fire':         { icon: FaFire,            color: '#DC2626' },
-  'Flood':        { icon: FaHouseFloodWater, color: '#0284C7' },
-  'Medical':      { icon: FaBriefcaseMedical,color: '#10B981' },
-  'Crime':        { icon: RiCriminalFill,    color: '#0F172A' },
+  'Fire':         { icon: FaFire,            color: '#EF4444' },
+  'Flood':        { icon: FaHouseFloodWater, color: '#3B82F6' },
+  'Medical':      { icon: FaBriefcaseMedical,color: '#22C55E' },
+  'Crime':        { icon: RiCriminalFill,    color: '#000000' },
   'Typhoon':      { icon: RiTyphoonFill,     color: '#8B5CF6' },
   'Landslide':    { icon: MdLandslide,       color: '#78716C' },
   'Trauma':       { icon: IoBandage,         color: '#F59E0B' },
   'Accident':     { icon: Car,               color: '#F97316' },
-  'Unrecognized': { icon: HelpCircle,        color: '#94A3B8' },
-  'Unknown':      { icon: HelpCircle,        color: '#94A3B8' },
+  'Pending':      { icon: HelpCircle,        color: '#D97706' },
+  'Unrecognized': { icon: HelpCircle,        color: '#D97706' },
+  'Unknown':      { icon: HelpCircle,        color: '#D97706' },
 };
 
 const DONUT_COLORS: Record<string, string> = {

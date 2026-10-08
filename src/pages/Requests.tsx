@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, Image as ImageIcon, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Car, HelpCircle, Lock } from 'lucide-react';
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Car, HelpCircle, Lock } from 'lucide-react';
 import { FaFire, FaHouseFloodWater, FaLocationDot } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
@@ -28,13 +28,14 @@ const TYPE_ICON: Record<string, TypeIconEntry> = {
   Fire:         { icon: FaFire,            color: '#EF4444' },
   Flood:        { icon: FaHouseFloodWater, color: '#3B82F6' },
   Medical:      { icon: FaBriefcaseMedical,color: '#22C55E' },
-  Crime:        { icon: RiCriminalFill,    color: '#0F172A' },
+  Crime:        { icon: RiCriminalFill,    color: '#000000' },
   Typhoon:      { icon: RiTyphoonFill,     color: '#8B5CF6' },
   Landslide:    { icon: MdLandslide,       color: '#78716C' },
   Trauma:       { icon: IoBandage,         color: '#F59E0B' },
-  Accident:     { icon: Car,               color: '#3B82F6' },
-  Unrecognized: { icon: HelpCircle,        color: '#64748B' },
-  Unknown:      { icon: HelpCircle,        color: '#64748B' },
+  Accident:     { icon: Car,               color: '#F97316' },
+  Pending:      { icon: HelpCircle,        color: '#D97706' },
+  Unrecognized: { icon: HelpCircle,        color: '#D97706' },
+  Unknown:      { icon: HelpCircle,        color: '#D97706' },
 };
 
 const HAZARD_OPTIONS = [
@@ -43,8 +44,8 @@ const HAZARD_OPTIONS = [
   { id: 'Flood',      label: 'Flood',            icon: FaHouseFloodWater, color: '#3B82F6' },
   { id: 'Medical',    label: 'Medical',          icon: FaBriefcaseMedical,color: '#22C55E' },
   { id: 'Trauma',     label: 'Trauma',           icon: IoBandage,         color: '#F59E0B' },
-  { id: 'Accident',   label: 'Accident',         icon: Car,               color: '#3B82F6' },
-  { id: 'Crime',      label: 'Crime',            icon: RiCriminalFill,    color: '#0F172A' },
+  { id: 'Accident',   label: 'Accident',         icon: Car,               color: '#F97316' },
+  { id: 'Crime',      label: 'Crime',            icon: RiCriminalFill,    color: '#000000' },
   { id: 'Typhoon',    label: 'Typhoon',          icon: RiTyphoonFill,     color: '#8B5CF6' },
   { id: 'Landslide',  label: 'Landslide',        icon: MdLandslide,       color: '#78716C' },
 ];
@@ -187,6 +188,7 @@ export default function Requests() {
   const [page, setPage] = useState(1);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
@@ -1060,7 +1062,7 @@ export default function Requests() {
 
                           {/* Evidence Photo */}
                           <td className="rq-td" onClick={e => e.stopPropagation()}>
-                            {inc.photoUrl ? (
+                            {inc.photoUrl && !failedImages[inc.id] ? (
                               <div
                                 onClick={e => { e.stopPropagation(); setPreviewUrl(inc.photoUrl); }}
                                 title="Click to view photo evidence"
@@ -1068,11 +1070,16 @@ export default function Requests() {
                                 onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
                                 onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                               >
-                                <img src={inc.photoUrl} alt="Evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img
+                                  src={inc.photoUrl}
+                                  alt="Evidence"
+                                  onError={() => setFailedImages(prev => ({ ...prev, [inc.id]: true }))}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
                               </div>
                             ) : (
-                              <div className="rq-evidence-box" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'default' }}>
-                                <ImageIcon size={15} color="#94A3B8" />
+                              <div className="rq-evidence-box" style={{ background: `${ti.color}12`, border: `1px solid ${ti.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'default' }}>
+                                {ti.icon ? <ti.icon size={16} color={ti.color} /> : <HelpCircle size={16} color="#D97706" />}
                               </div>
                             )}
                           </td>
@@ -1357,7 +1364,7 @@ export default function Requests() {
 
                       {/* Middle: Incident Type, Evidence & Location */}
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        {inc.photoUrl ? (
+                        {inc.photoUrl && !failedImages[inc.id] ? (
                           <div
                             onClick={e => { e.stopPropagation(); setPreviewUrl(inc.photoUrl); }}
                             style={{
@@ -1365,11 +1372,16 @@ export default function Requests() {
                               border: '1px solid #E2E8F0', flexShrink: 0,
                             }}
                           >
-                            <img src={inc.photoUrl} alt="Evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img
+                              src={inc.photoUrl}
+                              alt="Evidence"
+                              onError={() => setFailedImages(prev => ({ ...prev, [inc.id]: true }))}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                           </div>
                         ) : (
-                          <div style={{ width: 52, height: 44, borderRadius: 8, background: '#F8FAFC', border: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <ImageIcon size={18} color="#94A3B8" />
+                          <div style={{ width: 52, height: 44, borderRadius: 8, background: `${ti.color}12`, border: `1px solid ${ti.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {ti.icon ? <ti.icon size={18} color={ti.color} /> : <HelpCircle size={18} color="#D97706" />}
                           </div>
                         )}
 
