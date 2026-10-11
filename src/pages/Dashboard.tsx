@@ -164,8 +164,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [stats, setStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
-  const [prevStats, setPrevStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
+  const [timeScope, setTimeScope] = useState<'TODAY' | 'ALL'>('TODAY');
+  const [todayStats, setTodayStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
+  const [allStats, setAllStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
+  const [prevTodayStats, setPrevTodayStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
+  const [prevAllStats, setPrevAllStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
@@ -303,25 +306,46 @@ export default function Dashboard() {
         setServerDistribution(distRes.data.distribution);
       }
 
+      const isDateToday = (dateStr?: string | null) => {
+        if (!dateStr) return false;
+        return new Date(dateStr).toDateString() === new Date().toDateString();
+      };
+
+      const calculatedToday = {
+        total:      incData.filter((i: Incident) => isDateToday(i.createdAt)).length,
+        pending:    incData.filter((i: Incident) => i.status === 'PENDING' && isDateToday(i.createdAt)).length,
+        dispatched: incData.filter((i: Incident) => i.status === 'DISPATCHED' && (isDateToday(i.updatedAt) || isDateToday(i.createdAt))).length,
+        resolved:   incData.filter((i: Incident) => i.status === 'RESOLVED' && isDateToday(i.updatedAt)).length,
+      };
+
+      const calculatedAll = {
+        total:      incData.length,
+        pending:    incData.filter((i: Incident) => i.status === 'PENDING').length,
+        dispatched: incData.filter((i: Incident) => i.status === 'DISPATCHED').length,
+        resolved:   incData.filter((i: Incident) => i.status === 'RESOLVED').length,
+      };
+
       if (summaryRes?.data?.data) {
         const s = summaryRes.data.data;
-        setPrevStats(stats); // store previous for trend delta
-        setStats({
-          total: s.total ?? 0,
-          pending: s.pending ?? 0,
-          dispatched: s.dispatched ?? 0,
-          resolved: s.resolvedToday ?? 0,
+        setPrevTodayStats(todayStats);
+        setPrevAllStats(allStats);
+        setTodayStats({
+          total:      s.createdToday ?? calculatedToday.total,
+          pending:    s.pendingToday ?? calculatedToday.pending,
+          dispatched: s.dispatchedToday ?? calculatedToday.dispatched,
+          resolved:   s.resolvedToday ?? calculatedToday.resolved,
+        });
+        setAllStats({
+          total:      s.total ?? calculatedAll.total,
+          pending:    s.pending ?? calculatedAll.pending,
+          dispatched: s.dispatched ?? calculatedAll.dispatched,
+          resolved:   s.resolved ?? calculatedAll.resolved,
         });
       } else {
-        const today = new Date().toDateString();
-        const next = {
-          total:      incData.length,
-          pending:    incData.filter((i: Incident) => i.status === 'PENDING').length,
-          dispatched: incData.filter((i: Incident) => i.status === 'DISPATCHED').length,
-          resolved:   incData.filter((i: Incident) => i.status === 'RESOLVED' && new Date(i.updatedAt).toDateString() === today).length,
-        };
-        setPrevStats(stats);
-        setStats(next);
+        setPrevTodayStats(todayStats);
+        setPrevAllStats(allStats);
+        setTodayStats(calculatedToday);
+        setAllStats(calculatedAll);
       }
     } catch {
       // Retain existing state on transient failure
@@ -346,20 +370,39 @@ export default function Dashboard() {
     };
   }, []);
 
-  const pendingCount = stats.pending;
+  const stats = timeScope === 'TODAY' ? todayStats : allStats;
+  const prevStats = timeScope === 'TODAY' ? prevTodayStats : prevAllStats;
+  const pendingCount = allStats.pending;
 
   const handleStatCardClick = (filter: Status | 'ALL') => {
     setStatusFilter(prev => prev === filter ? 'ALL' : filter);
   };
 
   const filteredIncidents = useMemo(() => {
-    if (statusFilter === 'ALL') return incidents;
-    if (statusFilter === 'RESOLVED') {
-      const today = new Date().toDateString();
-      return incidents.filter(inc => inc.status === 'RESOLVED' && new Date(inc.updatedAt).toDateString() === today);
+    const isDateToday = (dateStr?: string | null) => {
+      if (!dateStr) return false;
+      return new Date(dateStr).toDateString() === new Date().toDateString();
+    };
+
+    if (timeScope === 'TODAY') {
+      if (statusFilter === 'ALL') {
+        return incidents.filter(inc => isDateToday(inc.createdAt) || isDateToday(inc.updatedAt));
+      }
+      if (statusFilter === 'PENDING') {
+        return incidents.filter(inc => inc.status === 'PENDING' && isDateToday(inc.createdAt));
+      }
+      if (statusFilter === 'DISPATCHED') {
+        return incidents.filter(inc => inc.status === 'DISPATCHED' && (isDateToday(inc.updatedAt) || isDateToday(inc.createdAt)));
+      }
+      if (statusFilter === 'RESOLVED') {
+        return incidents.filter(inc => inc.status === 'RESOLVED' && isDateToday(inc.updatedAt));
+      }
+      return incidents.filter(inc => inc.status === statusFilter && (isDateToday(inc.createdAt) || isDateToday(inc.updatedAt)));
     }
+
+    if (statusFilter === 'ALL') return incidents;
     return incidents.filter(inc => inc.status === statusFilter);
-  }, [incidents, statusFilter]);
+  }, [incidents, statusFilter, timeScope]);
 
   const donutData = useMemo(() => {
     if (serverDistribution && serverDistribution.length > 0) {
@@ -442,11 +485,16 @@ export default function Dashboard() {
     };
   }, [incidents]);
 
-  const STAT_CARDS = [
-    { label: 'Total Reports',  value: stats.total,      accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: TbReport,          activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
-    { label: 'Pending',        value: stats.pending,    accent: '#D97706', chipBg: '#FFFBEB', chipBorder: '#FDE68A', icon: MdPendingActions,   activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
-    { label: 'Dispatched',     value: stats.dispatched, accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: MdLocalShipping, activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
-    { label: 'Resolved Today', value: stats.resolved,   accent: '#059669', chipBg: '#ECFDF5', chipBorder: '#D1FAE5', icon: FaFileCircleCheck,  activeGlow: 'rgba(34, 197, 94, 0.3)',  filter: 'RESOLVED' },
+  const STAT_CARDS = timeScope === 'TODAY' ? [
+    { label: 'Total Today',      value: stats.total,           accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: TbReport,          activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
+    { label: 'Pending Today',    value: stats.pending,         accent: '#D97706', chipBg: '#FFFBEB', chipBorder: '#FDE68A', icon: MdPendingActions,   activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
+    { label: 'Dispatched Today', value: stats.dispatched,      accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: MdLocalShipping, activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
+    { label: 'Resolved Today',   value: stats.resolved,        accent: '#059669', chipBg: '#ECFDF5', chipBorder: '#D1FAE5', icon: FaFileCircleCheck,  activeGlow: 'rgba(34, 197, 94, 0.3)',  filter: 'RESOLVED' },
+  ] : [
+    { label: 'Total Reports',    value: stats.total,           accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: TbReport,          activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
+    { label: 'Active Pending',   value: stats.pending,         accent: '#D97706', chipBg: '#FFFBEB', chipBorder: '#FDE68A', icon: MdPendingActions,   activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
+    { label: 'Active Dispatched',value: stats.dispatched,      accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: MdLocalShipping, activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
+    { label: 'Total Resolved',   value: stats.resolved,        accent: '#059669', chipBg: '#ECFDF5', chipBorder: '#D1FAE5', icon: FaFileCircleCheck,  activeGlow: 'rgba(34, 197, 94, 0.3)',  filter: 'RESOLVED' },
   ];
 
   if (loading && incidents.length === 0) {
@@ -957,10 +1005,109 @@ export default function Dashboard() {
 
         {/* ── Stat Cards Filter Section ─────────────────────── */}
         {/* ── Active Emergencies Banner ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }} aria-live="polite" role="status">
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#475569', letterSpacing: '0.01em' }}>
-            Filter by:
-          </span>
+        {/* ── Stat Cards Filter Section with Time Scope Toggle ─────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }} aria-live="polite" role="status">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#475569', letterSpacing: '0.01em' }}>
+              Filter by status:
+            </span>
+            {statusFilter !== 'ALL' && (
+              <button
+                type="button"
+                onClick={() => setStatusFilter('ALL')}
+                style={{
+                  background: '#F1F5F9',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: 6,
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                Clear filter ✕
+              </button>
+            )}
+          </div>
+
+          {/* Time Scope Toggle: Today vs All-Time Active Queue */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: '#F1F5F9',
+            padding: '3px',
+            borderRadius: 10,
+            border: '1px solid #E2E8F0',
+          }}>
+            <button
+              type="button"
+              onClick={() => setTimeScope('TODAY')}
+              style={{
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 700,
+                borderRadius: 7,
+                border: 'none',
+                cursor: 'pointer',
+                background: timeScope === 'TODAY' ? '#FFFFFF' : 'transparent',
+                color: timeScope === 'TODAY' ? '#0F172A' : '#64748B',
+                boxShadow: timeScope === 'TODAY' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span>📅</span>
+              <span>Today</span>
+              <span style={{
+                background: timeScope === 'TODAY' ? '#EFF6FF' : '#E2E8F0',
+                color: timeScope === 'TODAY' ? '#2563EB' : '#64748B',
+                fontSize: 10.5,
+                padding: '1px 6px',
+                borderRadius: 10,
+                fontWeight: 800,
+              }}>
+                {todayStats.total}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeScope('ALL')}
+              style={{
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 700,
+                borderRadius: 7,
+                border: 'none',
+                cursor: 'pointer',
+                background: timeScope === 'ALL' ? '#FFFFFF' : 'transparent',
+                color: timeScope === 'ALL' ? '#0F172A' : '#64748B',
+                boxShadow: timeScope === 'ALL' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span>🌐</span>
+              <span>All-Time Queue</span>
+              <span style={{
+                background: timeScope === 'ALL' ? '#EFF6FF' : '#E2E8F0',
+                color: timeScope === 'ALL' ? '#2563EB' : '#64748B',
+                fontSize: 10.5,
+                padding: '1px 6px',
+                borderRadius: 10,
+                fontWeight: 800,
+              }}>
+                {allStats.total}
+              </span>
+            </button>
+          </div>
         </div>
         <style>{`
           .db-stat-card {
@@ -1207,7 +1354,9 @@ export default function Dashboard() {
           <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden', border: '1px solid #F1F5F9' }}>
             <div style={{ padding: '18px 22px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Recent Incidents</div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>
+                  {timeScope === 'TODAY' ? "Today's Incidents" : 'Recent Incidents'}
+                </div>
                 {statusFilter !== 'ALL' && (
                   <span
                     onClick={() => setStatusFilter('ALL')}
@@ -1224,7 +1373,7 @@ export default function Dashboard() {
                       gap: 4
                     }}
                   >
-                    Filter: {statusFilter === 'RESOLVED' ? 'RESOLVED TODAY' : statusFilter} ✕
+                    Filter: {statusFilter === 'RESOLVED' ? (timeScope === 'TODAY' ? 'RESOLVED TODAY' : 'RESOLVED') : `${statusFilter}${timeScope === 'TODAY' ? ' TODAY' : ''}`} ✕
                   </span>
                 )}
               </div>
@@ -1278,8 +1427,18 @@ export default function Dashboard() {
                 }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>No reports match filter</div>
-                <div style={{ fontSize: 12.5, marginTop: 4, color: '#94A3B8' }}>Clear the status filter to see all items.</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>
+                  {timeScope === 'TODAY' && statusFilter !== 'ALL'
+                    ? `No ${statusFilter.toLowerCase()} reports recorded today`
+                    : timeScope === 'TODAY'
+                    ? 'No reports recorded today'
+                    : 'No reports match filter'}
+                </div>
+                <div style={{ fontSize: 12.5, marginTop: 4, color: '#94A3B8' }}>
+                  {timeScope === 'TODAY'
+                    ? 'Switch to All-Time Queue to view historical records, or clear filter.'
+                    : 'Clear the status filter to see all items.'}
+                </div>
               </div>
             ) : (
               <>
