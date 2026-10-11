@@ -314,7 +314,12 @@ export default function Dashboard() {
       const calculatedToday = {
         total:      incData.filter((i: Incident) => isDateToday(i.createdAt)).length,
         pending:    incData.filter((i: Incident) => i.status === 'PENDING' && isDateToday(i.createdAt)).length,
-        dispatched: incData.filter((i: Incident) => i.status === 'DISPATCHED').length,
+        dispatched: incData.filter((i: Incident) => {
+          if (i.status !== 'DISPATCHED') return false;
+          const dispatchAct = i.activities?.find(a => a.title?.includes('DISPATCHED'));
+          if (dispatchAct) return isDateToday(dispatchAct.createdAt);
+          return isDateToday(i.updatedAt);
+        }).length,
         resolved:   incData.filter((i: Incident) => i.status === 'RESOLVED' && isDateToday(i.updatedAt)).length,
       };
 
@@ -332,7 +337,7 @@ export default function Dashboard() {
         setTodayStats({
           total:      s.createdToday ?? calculatedToday.total,
           pending:    s.pendingToday ?? calculatedToday.pending,
-          dispatched: s.dispatched ?? calculatedToday.dispatched,
+          dispatched: s.dispatchedToday !== undefined ? s.dispatchedToday : calculatedToday.dispatched,
           resolved:   s.resolvedToday ?? calculatedToday.resolved,
         });
         setAllStats({
@@ -392,7 +397,12 @@ export default function Dashboard() {
         return incidents.filter(inc => inc.status === 'PENDING' && isDateToday(inc.createdAt));
       }
       if (statusFilter === 'DISPATCHED') {
-        return incidents.filter(inc => inc.status === 'DISPATCHED');
+        return incidents.filter(inc => {
+          if (inc.status !== 'DISPATCHED') return false;
+          const dispatchAct = inc.activities?.find(a => a.title?.includes('DISPATCHED'));
+          if (dispatchAct) return isDateToday(dispatchAct.createdAt);
+          return isDateToday(inc.updatedAt);
+        });
       }
       if (statusFilter === 'RESOLVED') {
         return incidents.filter(inc => inc.status === 'RESOLVED' && isDateToday(inc.updatedAt));
@@ -488,7 +498,7 @@ export default function Dashboard() {
   const STAT_CARDS = timeScope === 'TODAY' ? [
     { label: 'Total Today',      value: stats.total,           accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: TbReport,          activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
     { label: 'Pending Today',    value: stats.pending,         accent: '#D97706', chipBg: '#FFFBEB', chipBorder: '#FDE68A', icon: MdPendingActions,   activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
-    { label: 'Active Dispatched',value: stats.dispatched,      accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: MdLocalShipping, activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
+    { label: 'Dispatched Today', value: stats.dispatched,      accent: '#7C3AED', chipBg: '#F5F3FF', chipBorder: '#EDE9FE', icon: MdLocalShipping, activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
     { label: 'Resolved Today',   value: stats.resolved,        accent: '#059669', chipBg: '#ECFDF5', chipBorder: '#D1FAE5', icon: FaFileCircleCheck,  activeGlow: 'rgba(34, 197, 94, 0.3)',  filter: 'RESOLVED' },
   ] : [
     { label: 'Total Reports',    value: stats.total,           accent: '#2563EB', chipBg: '#EFF6FF', chipBorder: '#DBEAFE', icon: TbReport,          activeGlow: 'rgba(37, 99, 235, 0.3)',  filter: 'ALL' },
