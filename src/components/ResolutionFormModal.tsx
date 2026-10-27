@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { X,  Upload, Camera, FileText, HeartPulse, UserCheck, ShieldAlert } from 'lucide-react';
 import type { Incident, ResolutionForm } from '../types';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -76,6 +76,21 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
 
   const [formData, setFormData] = useState<ResolutionForm>(initialFormData);
   const [photoPreview, setPhotoPreview] = useState<string>('');
+
+  // Hydrate existing resolution questionnaire data and photo if present
+  useEffect(() => {
+    if (incident?.resolutionForm) {
+      setFormData({
+        ...initialFormData,
+        ...incident.resolutionForm,
+        procedurePhotoUrl: incident.resolutionForm.procedurePhotoUrl || '',
+      });
+      setPhotoPreview(incident.resolutionForm.procedurePhotoUrl || '');
+    } else {
+      setFormData(initialFormData);
+      setPhotoPreview('');
+    }
+  }, [incident, initialFormData]);
 
   if (!isOpen) return null;
 

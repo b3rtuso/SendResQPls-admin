@@ -1,4 +1,4 @@
-import { X, Download, FileText, CheckCircle2, MapPin, Shield, Calendar, Loader2 } from 'lucide-react';
+import { X, Download, FileText, CheckCircle2, MapPin, Shield, Calendar, Loader2, Camera } from 'lucide-react';
 import type { ReportPreviewData } from '../utils/reportGenerator';
 
 interface ReportPreviewModalProps {
@@ -354,6 +354,7 @@ export default function ReportPreviewModal({
                         <th style={{ padding: '8px 10px' }}>Patient / Reporter</th>
                         <th style={{ padding: '8px 10px' }}>Responders</th>
                         <th style={{ padding: '8px 10px' }}>Disposition</th>
+                        <th style={{ padding: '8px 10px', width: 75 }}>Photo</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -398,6 +399,26 @@ export default function ReportPreviewModal({
                             }}>
                               {r.disposition}
                             </span>
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            {r.photoUrl ? (
+                              <a
+                                href={r.photoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  padding: '3px 8px', borderRadius: 6,
+                                  background: '#EFF6FF', border: '1px solid #BFDBFE',
+                                  color: '#1D4ED8', fontSize: 11, fontWeight: 700, textDecoration: 'none',
+                                }}
+                                title="View attached procedure photo"
+                              >
+                                <Camera size={12} /> View
+                              </a>
+                            ) : (
+                              <span style={{ color: '#94A3B8', fontSize: 11 }}>—</span>
+                            )}
                           </td>
                         </tr>
                       ))}

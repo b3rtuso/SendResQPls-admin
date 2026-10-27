@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation, Copy, Phone, ChevronRight, Search, Car } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, Camera, User, Clock, ExternalLink, X, Building2, CheckCircle2, HelpCircle, Lock, ShieldAlert, MessageSquare, Navigation, Copy, Phone, ChevronRight, Search, Car, Edit3, FileCheck } from 'lucide-react';
 import { FaLocationDot, FaFire, FaHouseFloodWater } from 'react-icons/fa6';
 import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
@@ -142,6 +142,7 @@ export default function RequestDetails() {
   const [incident, setIncident] = useState<Incident | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPhoto, setShowPhoto] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; title: string } | null>(null);
   const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'info' });
   const [resolvedAddress, setResolvedAddress] = useState('');
   const [resolvingAddress, setResolvingAddress] = useState(false);
@@ -758,7 +759,7 @@ export default function RequestDetails() {
             <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
               {incident.photoUrl ? (
                 <div
-                  onClick={() => setShowPhoto(true)}
+                  onClick={() => setLightboxPhoto({ url: incident.photoUrl, title: 'Citizen Emergency Report Photo' })}
                   style={{ cursor: 'pointer', position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}
                   title="Click to enlarge"
                 >
@@ -1698,10 +1699,240 @@ export default function RequestDetails() {
             </div>
           </div>
         </div>
+
+        {/* ── INCIDENT RESOLUTION QUESTIONNAIRE & PROCEDURE PHOTO CARD ── */}
+        {(incident.resolutionForm || incident.status === 'RESOLVED') && (
+          <div className="card" style={{ marginTop: 24, overflow: 'hidden', border: '1.5px solid #CBD5E1', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
+            <div className="card-header" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+              background: 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
+              borderBottom: '1px solid #E2E8F0', padding: '16px 20px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  background: '#DCFCE7', color: '#16A34A',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '1px solid #BBF7D0', flexShrink: 0,
+                }}>
+                  <FileCheck size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
+                    Incident Resolution Questionnaire & Action Report
+                  </h3>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                    Official field response documentation, clinical vitals, patient narrative, and verified on-scene procedure photo.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowResolutionModal(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700,
+                    background: '#FFFFFF', color: '#1D4ED8', border: '1.5px solid #BFDBFE',
+                    cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Edit3 size={14} /> View / Edit Questionnaire
+                </button>
+              </div>
+            </div>
+
+            <div className="card-body" style={{ padding: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+                {/* 1. On-Scene Procedure Photo Container */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1E3A8A', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Camera size={14} /> On-Scene Procedure Photo
+                  </div>
+                  {incident.resolutionForm?.procedurePhotoUrl ? (
+                    <div
+                      onClick={() => setLightboxPhoto({ url: incident.resolutionForm!.procedurePhotoUrl!, title: 'Field Procedure & Rescue Action Photo' })}
+                      style={{
+                        cursor: 'pointer', position: 'relative', width: '100%', aspectRatio: '4/3',
+                        borderRadius: 12, overflow: 'hidden', border: '1.5px solid #E2E8F0',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                      }}
+                      title="Click to enlarge procedure photo"
+                    >
+                      <img
+                        src={incident.resolutionForm.procedurePhotoUrl}
+                        alt="Procedure photo"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
+                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.03)')}
+                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                      />
+                      <div style={{
+                        position: 'absolute', bottom: 10, right: 10,
+                        background: 'rgba(0,0,0,0.65)', color: 'white',
+                        borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        backdropFilter: 'blur(4px)',
+                      }}>
+                        <Camera size={13} /> Click to enlarge
+                      </div>
+                      <div style={{
+                        position: 'absolute', top: 10, left: 10,
+                        background: 'rgba(22, 163, 74, 0.9)', color: 'white',
+                        borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 700,
+                        backdropFilter: 'blur(4px)',
+                      }}>
+                        ✓ Resolution Evidence
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      aspectRatio: '4/3', borderRadius: 12, border: '2px dashed #CBD5E1',
+                      background: '#F8FAFC', display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center', gap: 8, padding: 16, textAlign: 'center',
+                    }}>
+                      <Camera size={32} color="#94A3B8" />
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>
+                        No procedure photo attached
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowResolutionModal(true)}
+                        style={{
+                          fontSize: 12, fontWeight: 700, color: '#2563EB', background: '#EFF6FF',
+                          border: '1px solid #BFDBFE', borderRadius: 6, padding: '5px 12px', cursor: 'pointer',
+                        }}
+                      >
+                        + Attach Photo in Questionnaire
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Patient & Incident Clinical Summary */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1E3A8A', marginBottom: 8 }}>
+                      Patient Information
+                    </div>
+                    <div style={{
+                      background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0', padding: '12px 14px',
+                      display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, fontSize: 13,
+                    }}>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Name</span>
+                        <div style={{ fontWeight: 700, color: '#0F172A', marginTop: 1 }}>{incident.resolutionForm?.patientName || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Age / Sex</span>
+                        <div style={{ fontWeight: 700, color: '#0F172A', marginTop: 1 }}>
+                          {incident.resolutionForm?.patientAge ? `${incident.resolutionForm.patientAge} y/o` : 'N/A'} • {incident.resolutionForm?.patientSex || 'N/A'}
+                        </div>
+                      </div>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Address</span>
+                        <div style={{ fontWeight: 600, color: '#0F172A', marginTop: 1 }}>{incident.resolutionForm?.patientAddress || 'Balayan, Batangas'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1E3A8A', marginBottom: 8 }}>
+                      Vital Signs & Assessment
+                    </div>
+                    <div style={{
+                      background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0', padding: '12px 14px',
+                      display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, fontSize: 12.5,
+                    }}>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700 }}>BP</span>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{incident.resolutionForm?.bloodPressure || '—'}</div>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700 }}>Pulse</span>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{incident.resolutionForm?.pulseRate ? `${incident.resolutionForm.pulseRate} bpm` : '—'}</div>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700 }}>SaO₂</span>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{incident.resolutionForm?.oxygenSaturation ? `${incident.resolutionForm.oxygenSaturation}%` : '—'}</div>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700 }}>Resp Rate</span>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{incident.resolutionForm?.respiratoryRate ? `${incident.resolutionForm.respiratoryRate}/min` : '—'}</div>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700 }}>Temp</span>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{incident.resolutionForm?.temperature ? `${incident.resolutionForm.temperature}°C` : '—'}</div>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700 }}>GCS Score</span>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{incident.resolutionForm?.gcsScore || '—'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Interventions & Disposition */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1E3A8A', marginBottom: 8 }}>
+                      Narrative & Interventions
+                    </div>
+                    <div style={{
+                      background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0', padding: '12px 14px',
+                      display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13,
+                    }}>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Incident Narrative</span>
+                        <div style={{ color: '#0F172A', marginTop: 2, lineHeight: 1.45 }}>{incident.resolutionForm?.howIncidentHappened || 'Standard on-scene triage conducted.'}</div>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Interventions Applied</span>
+                        <div style={{ color: '#0F172A', marginTop: 2, fontWeight: 600 }}>{incident.resolutionForm?.treatmentInterventions || 'Vitals checking and patient support rendered.'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1E3A8A', marginBottom: 8 }}>
+                      Responders & Disposition
+                    </div>
+                    <div style={{
+                      background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0', padding: '12px 14px',
+                      display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13,
+                    }}>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Responding Unit</span>
+                        <div style={{ fontWeight: 700, color: '#0F172A', marginTop: 1 }}>
+                          {incident.resolutionForm?.respondingAgency || 'MDRRMO Balayan'} ({incident.resolutionForm?.responderNames || 'On-Duty Crew'})
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Disposition</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                          <span style={{
+                            padding: '3px 8px', borderRadius: 6, fontSize: 11.5, fontWeight: 800,
+                            background: '#DCFCE7', color: '#166534', border: '1px solid #BBF7D0',
+                          }}>
+                            {incident.resolutionForm?.dispositionStatus || 'RESOLVED'}
+                          </span>
+                          <span style={{ color: '#475569', fontSize: 12.5, fontWeight: 600 }}>
+                            {incident.resolutionForm?.destinationFacility ? `→ ${incident.resolutionForm.destinationFacility}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Photo Lightbox Modal */}
-      {showPhoto && incident.photoUrl && (
+      {(lightboxPhoto || (showPhoto && incident.photoUrl)) && (
         <div
           style={{
             position: 'fixed',
@@ -1709,44 +1940,54 @@ export default function RequestDetails() {
             left: 0,
             width: '100vw',
             height: '100vh',
-            background: 'rgba(0,0,0,0.85)',
+            background: 'rgba(15, 23, 42, 0.92)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10000,
+            zIndex: 100000,
+            padding: 20,
             cursor: 'pointer',
           }}
-          onClick={() => setShowPhoto(false)}
+          onClick={() => { setLightboxPhoto(null); setShowPhoto(false); }}
         >
-          <button
-            onClick={() => setShowPhoto(false)}
-            style={{
-              position: 'absolute',
-              top: 24,
-              right: 24,
-              background: 'rgba(255,255,255,0.15)',
-              border: 'none',
-              borderRadius: '50%',
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'white',
-            }}
-          >
-            <X size={24} />
-          </button>
+          <div style={{
+            position: 'absolute', top: 20, left: 24, right: 24,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            color: 'white', zIndex: 1,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700 }}>
+              <Camera size={18} color="#60A5FA" /> {lightboxPhoto?.title || 'Incident Photo'}
+            </div>
+            <button
+              onClick={() => { setLightboxPhoto(null); setShowPhoto(false); }}
+              style={{
+                background: 'rgba(255,255,255,0.18)',
+                border: 'none',
+                borderRadius: '50%',
+                width: 40,
+                height: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'white',
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
           <img
-            src={incident.photoUrl}
-            alt="Incident photo"
+            src={lightboxPhoto?.url || incident.photoUrl}
+            alt={lightboxPhoto?.title || 'Incident photo'}
             onClick={(e) => e.stopPropagation()}
             style={{
-              maxWidth: '85vw',
-              maxHeight: '85vh',
-              borderRadius: 16,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+              maxWidth: '90vw',
+              maxHeight: '82vh',
+              borderRadius: 14,
+              boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
               objectFit: 'contain',
             }}
           />
