@@ -215,9 +215,9 @@ export default function Requests() {
       .catch((err) => console.warn('[Requests] Failed to load departments:', err));
   }, []);
 
-  // Sorting state
+  // Sorting state - default to newest-first (createdAt desc) so newly reported emergencies are on top
   type SortKey = 'id' | 'type' | 'location' | 'unit' | 'status' | 'createdAt' | 'urgency';
-  const [sortKey, setSortKey] = useState<SortKey>('urgency');
+  const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const handleSort = (key: SortKey) => {
@@ -441,7 +441,8 @@ export default function Requests() {
 
       if (valA < valB) return sortDir === 'asc' ? -1 : 1;
       if (valA > valB) return sortDir === 'asc' ? 1 : -1;
-      return 0;
+      // Tie-breaker: always sort newest createdAt first
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [incidents, filterStatus, filterType, search, sortKey, sortDir]);
 

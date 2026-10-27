@@ -87,10 +87,48 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setPhotoPreview(result);
-        setFormData((prev) => ({ ...prev, procedurePhotoUrl: result }));
+      reader.onload = (event) => {
+        const rawResult = event.target?.result as string;
+        if (!rawResult) return;
+
+        // Compress image via HTML5 Canvas to prevent 413 Payload Too Large / ERR_QUIC_PROTOCOL_ERROR
+        const img = new Image();
+        img.onload = () => {
+          const MAX_DIM = 1280;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_DIM) {
+              height = Math.round((height * MAX_DIM) / width);
+              width = MAX_DIM;
+            }
+          } else {
+            if (height > MAX_DIM) {
+              width = Math.round((width * MAX_DIM) / height);
+              height = MAX_DIM;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            setPhotoPreview(compressedDataUrl);
+            setFormData((prev) => ({ ...prev, procedurePhotoUrl: compressedDataUrl }));
+          } else {
+            setPhotoPreview(rawResult);
+            setFormData((prev) => ({ ...prev, procedurePhotoUrl: rawResult }));
+          }
+        };
+        img.onerror = () => {
+          setPhotoPreview(rawResult);
+          setFormData((prev) => ({ ...prev, procedurePhotoUrl: rawResult }));
+        };
+        img.src = rawResult;
       };
       reader.readAsDataURL(file);
     }

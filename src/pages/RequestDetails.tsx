@@ -954,8 +954,79 @@ export default function RequestDetails() {
                     {currentStatus}
                   </Badge>
                 </div>
+
+                {/* Real-Time Authenticity / Liveness Badge */}
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                    Scene Authenticity
+                  </div>
+                  {(() => {
+                    const notes = (incident.adminNotes || '').toLowerCase();
+                    const isRecapture = notes.includes('recapture') || notes.includes('screen') || notes.includes('printed');
+                    if (isRecapture) {
+                      return (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '6px 12px', borderRadius: 8,
+                          background: '#FEF2F2', border: '1.5px solid #FCA5A5',
+                          color: '#B91C1C', fontSize: 12.5, fontWeight: 800,
+                        }}>
+                          <AlertTriangle size={14} color="#EF4444" />
+                          ⚠️ SUSPECTED RECAPTURE (Non-Realtime)
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '6px 12px', borderRadius: 8,
+                        background: '#ECFDF5', border: '1.5px solid #A7F3D0',
+                        color: '#047857', fontSize: 12.5, fontWeight: 800,
+                      }}>
+                        <CheckCircle2 size={14} color="#10B981" />
+                        🟢 Verified Live Scene
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
+
+            {/* ── Suspected Recapture Warning Banner ── */}
+            {(() => {
+              const notes = incident.adminNotes || '';
+              if (!notes.toLowerCase().includes('recapture')) return null;
+              return (
+                <div style={{
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  background: 'rgba(245, 158, 11, 0.09)',
+                  border: '1.5px solid rgba(245, 158, 11, 0.35)',
+                  display: 'flex',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: 'rgba(245, 158, 11, 0.16)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <AlertTriangle size={20} color="#D97706" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#B45309', marginBottom: 4 }}>
+                      ⚠️ AI Authenticity Alert: Suspected Recaptured Media
+                    </div>
+                    <div style={{ fontSize: 12.5, color: '#92400E', lineHeight: 1.55 }}>
+                      {notes}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                      Auto-dispatch was paused to prevent false alarm responses to screen photos or old archived media. Verify with the citizen reporter before dispatching units.
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ── Reject Suggestion Banner (shown when AI cannot recognise the incident) ── */}
             {(() => {
