@@ -314,6 +314,11 @@ async function fetchImageBuffer(url: string): Promise<{ data: ArrayBuffer; ext: 
   }
 }
 
+
+function makeDrawingXml(rId: string, docId: number, name: string, cx: number, cy: number): string {
+  return `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${docId}" name="${name}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${docId}" name="${name}"/><pic:cNvPicPr><a:picLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1" noChangeArrowheads="1"/></pic:cNvPicPr></pic:nvPicPr><pic:blipFill><a:blip xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" r:embed="${rId}"/><a:stretch xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:fillRect/></a:stretch></pic:blipFill><pic:spPr bwMode="auto"><a:xfrm xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`;
+}
+
 export async function downloadDailyReport(incidents: Incident[], dateIso?: string) {
   const resolved = incidents.filter(i => i.status === 'RESOLVED');
   const sorted = [...resolved].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -330,6 +335,17 @@ export async function downloadDailyReport(incidents: Incident[], dateIso?: strin
   if (!contentTypes.includes('Extension="jpeg"') && !contentTypes.includes('Extension="jpg"')) {
     contentTypes = contentTypes.replace('</Types>', '<Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="jpg" ContentType="image/jpeg"/></Types>');
     zip.file('[Content_Types].xml', contentTypes);
+  }
+  if (!contentTypes.includes('Extension="png"')) {
+    contentTypes = contentTypes.replace('</Types>', '<Default Extension="png" ContentType="image/png"/></Types>');
+    zip.file('[Content_Types].xml', contentTypes);
+  }
+
+  // Safety check: ensure {@procedure_photo_xml} is properly recognized by docxtemplater
+  let docXml = zip.file('word/document.xml')?.asText() || '';
+  if (docXml.includes('{@procedure_photo_xml}') && !docXml.includes('<w:t>{@procedure_photo_xml}</w:t>')) {
+    docXml = docXml.replace('{@procedure_photo_xml}', '<w:p><w:r><w:t>{@procedure_photo_xml}</w:t></w:r></w:p>');
+    zip.file('word/document.xml', docXml);
   }
 
   let relsXml = zip.file('word/_rels/document.xml.rels')?.asText() || '';
@@ -363,21 +379,55 @@ export async function downloadDailyReport(incidents: Incident[], dateIso?: strin
         ? `immediately transported to ${rf.destinationFacility} for further evaluation`
         : (rf?.dispositionStatus ? `Status: ${rf.dispositionStatus}` : 'managed and rendered appropriate care on scene');
 
+      // Dual-photo side-by-side embedding (Citizen Report photo + Responder Procedure photo)
       let procedurePhotoXml = '';
-      const photoUrl = rf?.procedurePhotoUrl || inc.photoUrl;
-      if (photoUrl) {
-        const photoData = await fetchImageBuffer(photoUrl);
-        if (photoData) {
-          const relId = `rIdProcPhoto_${idx + 1}`;
-          const mediaName = `media/proc_photo_${idx + 1}.${photoData.ext}`;
-          zip.file(`word/${mediaName}`, photoData.data);
+      const citizenPhotoUrl = inc.photoUrl;
+      const procedurePhotoUrl = rf?.procedurePhotoUrl;
 
-          if (!relsXml.includes(relId)) {
-            relsXml = relsXml.replace('</Relationships>', `<Relationship Id="${relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${mediaName}"/></Relationships>`);
-          }
+      const [citizenPhotoData, procedurePhotoData] = await Promise.all([
+        citizenPhotoUrl ? fetchImageBuffer(citizenPhotoUrl) : Promise.resolve(null),
+        procedurePhotoUrl ? fetchImageBuffer(procedurePhotoUrl) : Promise.resolve(null),
+      ]);
 
-          procedurePhotoXml = `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="140" w:after="80"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="4572000" cy="3429000"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${2000 + idx}" name="Procedure Photo ${idx + 1}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${2000 + idx}" name="proc_photo_${idx + 1}.${photoData.ext}"/><pic:cNvPicPr><a:picLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1" noChangeArrowheads="1"/></pic:cNvPicPr></pic:nvPicPr><pic:blipFill><a:blip xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" r:embed="${relId}"/><a:stretch xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:fillRect/></a:stretch></pic:blipFill><pic:spPr bwMode="auto"><a:xfrm xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:off x="0" y="0"/><a:ext cx="4572000" cy="3429000"/></a:xfrm><a:prstGeom xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="60" w:after="160"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:i/><w:color w:val="64748B"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr><w:t>Attachment: On-Scene Emergency Procedure / Field Response Photo</w:t></w:r></w:p>`;
+      if (citizenPhotoData && procedurePhotoData) {
+        // Both photos exist: render side-by-side in a borderless 2-column table matching official reference
+        const relId1 = `rIdPhoto_${idx + 1}_citizen`;
+        const relId2 = `rIdPhoto_${idx + 1}_proc`;
+        const path1 = `media/inc_${idx + 1}_citizen.${citizenPhotoData.ext}`;
+        const path2 = `media/inc_${idx + 1}_proc.${procedurePhotoData.ext}`;
+
+        zip.file(`word/${path1}`, citizenPhotoData.data);
+        zip.file(`word/${path2}`, procedurePhotoData.data);
+
+        if (!relsXml.includes(relId1)) {
+          relsXml = relsXml.replace('</Relationships>', `<Relationship Id="${relId1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${path1}"/></Relationships>`);
         }
+        if (!relsXml.includes(relId2)) {
+          relsXml = relsXml.replace('</Relationships>', `<Relationship Id="${relId2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${path2}"/></Relationships>`);
+        }
+
+        const cx = 2857500; // ~3.125 inches
+        const cy = 3571875; // ~3.9 inches (matching reference photo proportions)
+
+        procedurePhotoXml = `<w:tbl><w:tblPr><w:tblW w:w="9360" w:type="dxa"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="none"/><w:left w:val="none"/><w:bottom w:val="none"/><w:right w:val="none"/><w:insideH w:val="none"/><w:insideV w:val="none"/></w:tblBorders><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tr><w:tc><w:tcPr><w:tcW w:w="4680" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="60" w:after="40"/></w:pPr><w:r>${makeDrawingXml(relId1, 1000 + idx * 2 + 1, 'Citizen Initial Incident Photo', cx, cy)}</w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="4680" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="60" w:after="40"/></w:pPr><w:r>${makeDrawingXml(relId2, 1000 + idx * 2 + 2, 'Responder Procedure Photo', cx, cy)}</w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/></w:pPr></w:p>`;
+      } else if (citizenPhotoData || procedurePhotoData) {
+        // Only one photo exists: render single centered drawing
+        const singlePhoto = citizenPhotoData || procedurePhotoData;
+        const isCitizen = !!citizenPhotoData;
+        const relId = `rIdPhoto_${idx + 1}_single`;
+        const path = `media/inc_${idx + 1}_single.${singlePhoto!.ext}`;
+
+        zip.file(`word/${path}`, singlePhoto!.data);
+
+        if (!relsXml.includes(relId)) {
+          relsXml = relsXml.replace('</Relationships>', `<Relationship Id="${relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${path}"/></Relationships>`);
+        }
+
+        const cx = 4572000; // 5.0 inches
+        const cy = 3429000; // 3.75 inches
+        const desc = isCitizen ? 'Citizen Initial Incident Photo' : 'Responder Procedure Photo';
+
+        procedurePhotoXml = `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="100" w:after="120"/></w:pPr><w:r>${makeDrawingXml(relId, 1000 + idx * 2 + 1, desc, cx, cy)}</w:r></w:p>`;
       }
 
       return {
