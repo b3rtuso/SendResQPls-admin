@@ -72,8 +72,8 @@ export function invalidateCache(pattern?: string) {
 }
 
 // === AUTH ===
-export const login = (email: string, password: string) =>
-  api.post('/auth/login', { email, password });
+export const login = (identifier: string, password: string) =>
+  api.post('/auth/login', { email: identifier, identifier, username: identifier, password });
 
 export const register = (data: { name: string; email: string; password: string; phoneNumber: string }) =>
   api.post('/auth/register', data);

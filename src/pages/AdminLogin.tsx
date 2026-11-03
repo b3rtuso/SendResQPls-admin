@@ -29,7 +29,7 @@ export default function AdminLogin() {
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError('Please enter your email, username, or full name, and password.');
       return;
     }
     setLoading(true);
@@ -396,7 +396,7 @@ export default function AdminLogin() {
                   letterSpacing: '0.01em',
                 }}
               >
-                Admin Email Address
+                Admin Email, Username, or Full Name
               </Label>
               <div style={wrapStyle('email')}>
                 <span
@@ -424,9 +424,9 @@ export default function AdminLogin() {
                 </span>
                 <Input
                   id="admin-email"
-                  type="email"
+                  type="text"
                   className={error ? 'al-input-error' : ''}
-                  placeholder="admin@balayan.gov.ph"
+                  placeholder="admin@balayan.gov.ph or admin username"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
                   onFocus={() => setFocusField('email')}
