@@ -180,11 +180,11 @@ export default function Requests() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<Status | 'ALL'>('ALL');
-  const [filterType, setFilterType] = useState<string>('ALL');
+  const [filterStatus, setFilterStatus] = useState<Status | 'ALL'>(() => ((typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_requests_status') : null) as Status | 'ALL') || 'ALL');
+  const [filterType, setFilterType] = useState<string>(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_requests_type') : null) || 'ALL');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_requests_search') : null) || '');
   const [page, setPage] = useState(1);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -1227,10 +1227,6 @@ export default function Requests() {
                                   background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
                                   whiteSpace: 'nowrap',
                                 }}>
-                                  <span style={{
-                                    width: 6, height: 6, borderRadius: '50%',
-                                    background: s.dot, display: 'inline-block',
-                                  }} />
                                   <span>{sev}</span>
                                 </Badge>
                               );
@@ -1422,7 +1418,6 @@ export default function Requests() {
                             padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
                             background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
                           }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot }} />
                             <span>{sev}</span>
                           </Badge>
                         )}

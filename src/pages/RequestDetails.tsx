@@ -933,12 +933,6 @@ export default function RequestDetails() {
                           color: s.color,
                           border: `1.5px solid ${s.border}`,
                         }}>
-                          <span style={{
-                            width: 7, height: 7, borderRadius: '50%',
-                            background: s.dot, display: 'inline-block',
-                            boxShadow: s.pulse ? `0 0 0 2px ${s.border}` : 'none',
-                            animation: s.pulse ? 'pulse-emergency 1.8s infinite' : 'none'
-                          }} />
                           {sev} PRIORITY
                         </span>
                       );
@@ -973,7 +967,7 @@ export default function RequestDetails() {
                           color: '#B91C1C', fontSize: 12.5, fontWeight: 800,
                         }}>
                           <AlertTriangle size={14} color="#EF4444" />
-                          ⚠️ SUSPECTED RECAPTURE (Non-Realtime)
+                          SUSPECTED RECAPTURE (Non-Realtime)
                         </div>
                       );
                     }
@@ -985,7 +979,7 @@ export default function RequestDetails() {
                         color: '#047857', fontSize: 12.5, fontWeight: 800,
                       }}>
                         <CheckCircle2 size={14} color="#10B981" />
-                        🟢 Verified Live Scene
+                        Verified Live Scene
                       </div>
                     );
                   })()}
@@ -1016,7 +1010,7 @@ export default function RequestDetails() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: '#B45309', marginBottom: 4 }}>
-                      ⚠️ AI Authenticity Alert: Suspected Recaptured Media
+                      AI Authenticity Alert: Suspected Recaptured Media
                     </div>
                     <div style={{ fontSize: 12.5, color: '#92400E', lineHeight: 1.55 }}>
                       {notes}

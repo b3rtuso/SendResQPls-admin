@@ -18,7 +18,7 @@ export default function CallLogs() {
   const [logs, setLogs] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_calllogs_search') : null) || '');
 
   const loadLogs = async () => {
     try {
@@ -214,7 +214,7 @@ export default function CallLogs() {
               type="text"
               placeholder="Search call logs, caller identity, department, phone number..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { const v = e.target.value; setSearch(v); try { sessionStorage.setItem('srq_admin_calllogs_search', v); } catch {} }}
               className="bg-[#F8FAFC] text-sm h-10 border-[#E2E8F0]"
               style={{ paddingLeft: 38 }}
             />

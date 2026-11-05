@@ -96,8 +96,18 @@ export default function SettingsPage() {
           phone: u.phoneNumber || '',
           department: 'MDRRMO Main Office'
         };
-        setProfile(loadedProfile);
         setOriginalProfile({ ...loadedProfile });
+        const savedDraft = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_profile_draft') : null;
+        if (savedDraft) {
+          try {
+            const parsed = JSON.parse(savedDraft);
+            setProfile({ ...loadedProfile, ...parsed });
+          } catch {
+            setProfile(loadedProfile);
+          }
+        } else {
+          setProfile(loadedProfile);
+        }
         if (u.name) localStorage.setItem('userName', u.name);
         if (u.email) localStorage.setItem('userEmail', u.email);
         if (u.phoneNumber) localStorage.setItem('userPhone', u.phoneNumber);
@@ -326,6 +336,7 @@ export default function SettingsPage() {
       };
       setProfile(updated);
       setOriginalProfile(updated);
+      try { sessionStorage.removeItem('srq_admin_profile_draft'); } catch {}
 
       localStorage.setItem('userName', updated.name);
       localStorage.setItem('userEmail', updated.email);
@@ -721,7 +732,7 @@ export default function SettingsPage() {
                     <input 
                       className="st-input" 
                       value={profile.name} 
-                      onChange={(e) => setProfile({ ...profile, name: e.target.value })} 
+                      onChange={(e) => { const updated = { ...profile, name: e.target.value }; setProfile(updated); try { sessionStorage.setItem('srq_admin_profile_draft', JSON.stringify(updated)); } catch {} }} 
                       placeholder="Administrator Name"
                     />
                   </div>
@@ -731,7 +742,7 @@ export default function SettingsPage() {
                       className="st-input" 
                       type="email" 
                       value={profile.email} 
-                      onChange={(e) => setProfile({ ...profile, email: e.target.value })} 
+                      onChange={(e) => { const updated = { ...profile, email: e.target.value }; setProfile(updated); try { sessionStorage.setItem('srq_admin_profile_draft', JSON.stringify(updated)); } catch {} }} 
                       placeholder="admin@mdrrmo.gov.ph"
                     />
                   </div>
@@ -756,7 +767,7 @@ export default function SettingsPage() {
                       inputMode="numeric"
                       maxLength={11}
                       value={profile.phone} 
-                      onChange={(e) => setProfile({ ...profile, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })} 
+                      onChange={(e) => { const updated = { ...profile, phone: e.target.value.replace(/\D/g, '').slice(0, 11) }; setProfile(updated); try { sessionStorage.setItem('srq_admin_profile_draft', JSON.stringify(updated)); } catch {} }} 
                       placeholder="09292695926 (11 digits)"
                     />
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>

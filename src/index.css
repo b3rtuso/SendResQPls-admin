@@ -746,14 +746,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   border: 1px solid transparent;
 }
 
-.badge::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
+/* .badge::before dot removed */
 
 .badge.pending   { background: var(--warning-bg);  color: #B45309; border-color: var(--warning-border); }
 .badge.reviewing { background: var(--primary-bg);  color: var(--primary-dark); border-color: rgba(37,99,235,0.2); }

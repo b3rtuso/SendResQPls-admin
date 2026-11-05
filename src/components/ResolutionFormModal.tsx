@@ -77,8 +77,20 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
   const [formData, setFormData] = useState<ResolutionForm>(initialFormData);
   const [photoPreview, setPhotoPreview] = useState<string>('');
 
-  // Hydrate existing resolution questionnaire data and photo if present
+  // Hydrate existing resolution questionnaire data and photo if present, prioritizing unsaved draft
   useEffect(() => {
+    const draftKey = incident?.id ? `srq_admin_resolution_draft_${incident.id}` : null;
+    const savedDraft = (typeof sessionStorage !== 'undefined' && draftKey) ? sessionStorage.getItem(draftKey) : null;
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        setFormData(parsed);
+        if (parsed.procedurePhotoUrl) setPhotoPreview(parsed.procedurePhotoUrl);
+        return;
+      } catch (e) {
+        console.warn('Failed to parse resolution draft', e);
+      }
+    }
     if (incident?.resolutionForm) {
       setFormData({
         ...initialFormData,
@@ -91,6 +103,14 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
       setPhotoPreview('');
     }
   }, [incident, initialFormData]);
+
+  // Auto-save draft to sessionStorage on change
+  useEffect(() => {
+    if (!incident?.id || !isOpen) return;
+    try {
+      sessionStorage.setItem(`srq_admin_resolution_draft_${incident.id}`, JSON.stringify(formData));
+    } catch {}
+  }, [formData, incident?.id, isOpen]);
 
   if (!isOpen) return null;
 
@@ -168,6 +188,9 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
     });
 
     if (shouldDiscard) {
+      if (incident?.id) {
+        try { sessionStorage.removeItem(`srq_admin_resolution_draft_${incident.id}`); } catch {}
+      }
       setFormData(initialFormData);
       setPhotoPreview('');
       onClose();
@@ -202,6 +225,9 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
     });
 
     if (!isConfirmed) return;
+    if (incident?.id) {
+      try { sessionStorage.removeItem(`srq_admin_resolution_draft_${incident.id}`); } catch {}
+    }
     onSubmit(formData);
   };
 

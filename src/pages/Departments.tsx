@@ -37,23 +37,51 @@ export default function Departments() {
   const { confirm } = useConfirm();
   const [departments, setDepartments] = useState<DepartmentInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_search') : null) || '');
   const [activeTab, setActiveTab] = useState<FilterStatus>('ALL');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Modal and Form States
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_modal_open') === 'true' : false));
   const [editingDept, setEditingDept] = useState<DepartmentInfo | null>(null);
   const [originalDept, setOriginalDept] = useState<DepartmentInfo | null>(null);
-  const [name, setName] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [headOfficer, setHeadOfficer] = useState('');
-  const [contact, setContact] = useState('');
-  const [email, setEmail] = useState('');
-  const [personnelCount, setPersonnelCount] = useState(0);
-  const [equipmentInput, setEquipmentInput] = useState('');
+  const [name, setName] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_name') : null) || '');
+  const [fullName, setFullName] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_fullName') : null) || '');
+  const [headOfficer, setHeadOfficer] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_headOfficer') : null) || '');
+  const [contact, setContact] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_contact') : null) || '');
+  const [email, setEmail] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_email') : null) || '');
+  const [personnelCount, setPersonnelCount] = useState(() => Number((typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_personnel') : null) || 0));
+  const [equipmentInput, setEquipmentInput] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_equipment') : null) || '');
   const [status, setStatus] = useState('Available');
   const [saving, setSaving] = useState(false);
+
+  const clearDeptDraft = () => {
+    try {
+      sessionStorage.removeItem('srq_admin_dept_modal_open');
+      sessionStorage.removeItem('srq_admin_dept_name');
+      sessionStorage.removeItem('srq_admin_dept_fullName');
+      sessionStorage.removeItem('srq_admin_dept_headOfficer');
+      sessionStorage.removeItem('srq_admin_dept_contact');
+      sessionStorage.removeItem('srq_admin_dept_email');
+      sessionStorage.removeItem('srq_admin_dept_personnel');
+      sessionStorage.removeItem('srq_admin_dept_equipment');
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (!showModal) return;
+    try {
+      sessionStorage.setItem('srq_admin_dept_modal_open', 'true');
+      sessionStorage.setItem('srq_admin_dept_name', name);
+      sessionStorage.setItem('srq_admin_dept_fullName', fullName);
+      sessionStorage.setItem('srq_admin_dept_headOfficer', headOfficer);
+      sessionStorage.setItem('srq_admin_dept_contact', contact);
+      sessionStorage.setItem('srq_admin_dept_email', email);
+      sessionStorage.setItem('srq_admin_dept_personnel', String(personnelCount));
+      sessionStorage.setItem('srq_admin_dept_equipment', equipmentInput);
+    } catch {}
+  }, [showModal, name, fullName, headOfficer, contact, email, personnelCount, equipmentInput]);
+
 
   const DEPARTMENT_FIELD_LABELS: Record<string, string> = {
     name: 'Dept Code',
@@ -135,7 +163,8 @@ export default function Departments() {
 
       // If unchanged -> close immediately
       if (changes.length === 0) {
-        setShowModal(false);
+        clearDeptDraft();
+      setShowModal(false);
         setEditingDept(null);
         setOriginalDept(null);
         return;
@@ -160,7 +189,8 @@ export default function Departments() {
         setPersonnelCount(originalDept.personnelCount);
         setEquipmentInput((originalDept.equipment || []).join(', '));
         setStatus(originalDept.status);
-        setShowModal(false);
+        clearDeptDraft();
+      setShowModal(false);
         setEditingDept(null);
         setOriginalDept(null);
       }
@@ -185,10 +215,12 @@ export default function Departments() {
         });
         if (!shouldDiscard) return;
       }
+      clearDeptDraft();
       setShowModal(false);
       setEditingDept(null);
       setOriginalDept(null);
     } else {
+      clearDeptDraft();
       setShowModal(false);
       setEditingDept(null);
       setOriginalDept(null);
@@ -250,6 +282,7 @@ export default function Departments() {
           detail: `New emergency response unit ${payload.name} was successfully registered.`,
         });
       }
+      clearDeptDraft();
       setShowModal(false);
       setEditingDept(null);
       setOriginalDept(null);
@@ -422,7 +455,7 @@ export default function Departments() {
                 type="text"
                 placeholder="Search units by name, head, or equipment..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); try { sessionStorage.setItem('srq_admin_dept_search', e.target.value); } catch {} }}
                 className="bg-[#F8FAFC] text-sm h-[42px] border-[#E2E8F0]"
                 style={{ paddingLeft: 38 }}
               />
