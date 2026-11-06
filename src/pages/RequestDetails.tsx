@@ -220,7 +220,13 @@ export default function RequestDetails() {
       if (res?.data) {
         setIncident(res.data);
         setCurrentStatus(res.data.status);
-        setNotes(res.data.adminNotes || '');
+        const serverNotes = res.data.adminNotes || '';
+        const savedNotesDraft = typeof sessionStorage !== 'undefined' && id ? sessionStorage.getItem(`srq_admin_notes_draft_${id}`) : null;
+        if (savedNotesDraft !== null && savedNotesDraft !== serverNotes) {
+          setNotes(savedNotesDraft);
+        } else {
+          setNotes(serverNotes);
+        }
         if (res.data.isLockedByOther) {
           setLockState({
             isLockedByOther: true,
@@ -434,17 +440,21 @@ export default function RequestDetails() {
     setActionLoading('notes');
 
     try {
-      const res = await updateIncidentStatus(id!, { status: currentStatus, adminNotes: notes });
+      const res = await updateIncidentStatus(id!, { adminNotes: notes.trim() });
       const updatedIncident = (res?.data as any)?.updated || res?.data;
       if (updatedIncident && updatedIncident.id) {
         setIncident((prev) => prev ? { ...prev, ...updatedIncident } : updatedIncident);
         setNotes(updatedIncident.adminNotes || '');
       }
+      if (id) {
+        try { sessionStorage.removeItem(`srq_admin_notes_draft_${id}`); } catch {}
+      }
       showToast('success', 'Notes saved', 'Admin notes have been updated successfully.');
       loadIncident(false);
-    } catch {
+    } catch (err: any) {
       setIncident((prev) => prev ? { ...prev, adminNotes: prevNotes } : prev);
-      showToast('error', 'Failed to save notes', 'Server returned an error. Notes reverted.');
+      const errMsg = err?.response?.data?.error || err?.response?.data?.message || 'Server returned an error. Notes reverted.';
+      showToast('error', 'Failed to save notes', errMsg);
     } finally {
       setActionLoading(null);
     }
@@ -465,6 +475,9 @@ export default function RequestDetails() {
 
     if (shouldDiscard) {
       setNotes(incident.adminNotes || '');
+      if (id) {
+        try { sessionStorage.removeItem(`srq_admin_notes_draft_${id}`); } catch {}
+      }
     }
   };
 
@@ -1662,7 +1675,19 @@ export default function RequestDetails() {
                     rows={3}
                     placeholder="Add notes about this incident..."
                     value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNotes(val);
+                      if (id) {
+                        try {
+                          if (val.trim() !== (incident?.adminNotes || '').trim()) {
+                            sessionStorage.setItem(`srq_admin_notes_draft_${id}`, val);
+                          } else {
+                            sessionStorage.removeItem(`srq_admin_notes_draft_${id}`);
+                          }
+                        } catch {}
+                      }
+                    }}
                   />
                 </div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
