@@ -17,7 +17,7 @@ import { GiPoliceBadge } from 'react-icons/gi';
 import { IoBandage } from 'react-icons/io5';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
-import { getIncidents, getAnalyticsSummary, getIncidentDistribution, invalidateCache } from '../api/client';
+import { getIncidents, getAnalyticsSummary, getIncidentDistribution, invalidateCache, createCallLog } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -162,6 +162,34 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function Dashboard() {
+  const triggerTelCall = (phoneNumber: string) => {
+    const cleaned = phoneNumber.replace(/[^\d+]/g, '');
+    if (!cleaned) return;
+    const formatted = cleaned.startsWith('09') ? `+63${cleaned.slice(1)}` : cleaned;
+    const a = document.createElement('a');
+    a.href = `tel:${formatted}`;
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleHotlineCall = (label: string, sub: string, telUri: string) => {
+    const rawNumber = telUri.replace(/^tel:/, '');
+    const adminName = localStorage.getItem('userName') || 'MDRRMO Dispatcher';
+    createCallLog({
+      requestId: 'DIRECT_HOTLINE',
+      callerName: adminName,
+      department: `${label} (${sub})`,
+      contact: rawNumber,
+      status: 'Accepted',
+    }).catch(err => {
+      console.warn('[Dashboard] Failed to log hotline call:', err);
+    });
+    triggerTelCall(rawNumber);
+  };
+
   const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [timeScope, setTimeScope] = useState<'TODAY' | 'ALL'>('TODAY');
@@ -1678,7 +1706,7 @@ export default function Dashboard() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => { window.location.href = tel; }}
+                    onClick={() => handleHotlineCall(label, sub, tel)}
                     style={{
                       width: '100%', padding: '8px', borderRadius: 8, height: 'auto',
                       background: '#F8FAFC', border: '1px solid #E2E8F0',

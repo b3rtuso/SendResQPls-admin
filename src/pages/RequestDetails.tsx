@@ -527,20 +527,38 @@ export default function RequestDetails() {
     }
   };
 
+  // Helper: trigger tel: protocol via a real <a> click so Windows Phone Link opens
+  const triggerTelCall = (phoneNumber: string) => {
+    const cleaned = phoneNumber.replace(/[^\d+]/g, '');
+    if (!cleaned) return;
+    // Format Philippine mobile numbers: 09xx → +639xx
+    const formatted = cleaned.startsWith('09') ? `+63${cleaned.slice(1)}` : cleaned;
+    const a = document.createElement('a');
+    a.href = `tel:${formatted}`;
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const handleCallDept = (_e: React.MouseEvent, dept: any) => {
     const adminName = localStorage.getItem('userName') || 'MDRRMO Dispatcher';
+    const deptName = dept?.name || dept?.abbr || dept?.key || 'MDRRMO Responder Unit';
+    const deptContact = dept?.contact || '(043) 211-1234';
+
     createCallLog({
-      requestId: id,
+      requestId: id || 'DISPATCH_CALL',
       callerName: adminName,
-      department: dept.abbr || dept.name,
-      contact: dept.contact,
+      department: deptName,
+      contact: deptContact,
       status: 'Accepted',
-    }).catch(() => {});
-    showToast('info', `Calling ${dept.name}`, `Initiated call to ${dept.contact}. Call log recorded.`);
-    const cleanNumber = (dept.contact || '').replace(/[^\d+]/g, '');
-    if (cleanNumber) {
-      window.location.href = `tel:${cleanNumber}`;
-    }
+    }).catch((err) => {
+      console.warn('[RequestDetails] Failed to log call:', err);
+    });
+
+    showToast('info', `Calling ${deptName}`, `Initiated call to ${deptContact}. Call log recorded.`);
+    triggerTelCall(deptContact);
   };
 
   const handleCallReporter = () => {
@@ -554,6 +572,7 @@ export default function RequestDetails() {
       status: 'Accepted',
     }).catch(() => {});
     showToast('info', `Calling Reporter`, `Initiated call to ${incident.reporter.phoneNumber}. Call log recorded.`);
+    triggerTelCall(incident.reporter.phoneNumber);
   };
 
   const openLocation = () => {
@@ -1388,7 +1407,7 @@ export default function RequestDetails() {
                       <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
                         <button
                           type="button"
-                          onClick={(e) => handleCallDept(e, { key: targetDeptCode || 'RESCUE', name: targetDeptName, contact: targetDeptContact })}
+                          onClick={(e) => handleCallDept(e, { key: targetDeptCode || 'RESCUE', name: targetDeptName, contact: targetDeptContact || '(043) 211-1234' })}
                           style={{
                             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                             padding: '8px 0', borderRadius: 8, fontSize: 12, fontWeight: 700,

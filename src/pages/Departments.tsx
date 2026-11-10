@@ -348,7 +348,15 @@ export default function Departments() {
       message: `Calling ${dept.name}`,
       detail: `Connecting to ${dept.contact}...`,
     });
-    window.location.href = `tel:${cleaned}`;
+    // Use a real <a> click so Windows Phone Link opens reliably
+    const formatted = cleaned.startsWith('09') ? `+63${cleaned.slice(1)}` : cleaned;
+    const a = document.createElement('a');
+    a.href = `tel:${formatted}`;
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleCopy = (dept: DepartmentInfo) => {
