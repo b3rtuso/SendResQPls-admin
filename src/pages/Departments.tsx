@@ -769,7 +769,7 @@ export default function Departments() {
                   <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Contact Number</Label>
                   <Input
                     type="text"
-                    placeholder="e.g. (043) 211-1234 / 0917-123-4567"
+                    placeholder="e.g. (043) 211-1234 / 0906-636-4019"
                     required
                     value={contact}
                     onChange={e => setContact(e.target.value)}
