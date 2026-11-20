@@ -269,7 +269,7 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 showBanner({
                   id: effectiveId,
                   type: data.aiDetectedType || 'Emergency',
-                  dept: data.aiRecommendedDept || 'MDRRMO',
+                  dept: data.aiRecommendedDept || 'Unassigned',
                 });
                 const newItem: NotifItem = {
                   id: effectiveId,

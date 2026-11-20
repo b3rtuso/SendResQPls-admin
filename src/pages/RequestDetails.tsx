@@ -22,6 +22,7 @@ import {
   heartbeatIncident,
   forceUnlockIncident,
   getDepartments,
+  reanalyzeUnrecognizedIncidents,
 } from '../api/client';
 import { getDeptTheme, getDeptDisplayName, getDeptContact, getDeptAbbr } from '../utils/departmentUtils';
 import ResolutionFormModal from '../components/ResolutionFormModal';
@@ -1144,11 +1145,13 @@ export default function RequestDetails() {
                   {(() => {
                     const notes = (incident.adminNotes || '').toLowerCase();
                     const type = (incident.aiDetectedType || '').toLowerCase();
-                    const isPrint = notes.includes('print recapture') || notes.includes('printed_photo') || notes.includes('printed');
-                    const isScreen = notes.includes('screen recapture') || notes.includes('screen_display') || notes.includes('screen') || notes.includes('recapture') || notes.includes('screenshot');
+                    const activityText = (incident.activities || []).map(a => a.title || '').join(' ').toLowerCase();
+                    const combined = `${notes} ${activityText}`;
+                    const isPrint = combined.includes('print recapture') || combined.includes('printed_photo') || combined.includes('printed');
+                    const isScreen = combined.includes('screen recapture') || combined.includes('screen_display') || combined.includes('digital_screenshot') || notes.includes('screen') || notes.includes('recapture') || notes.includes('screenshot') || activityText.includes('suspected recapture');
                     const isBlurry = notes.includes('blurry') || notes.includes('blur') || notes.includes('dark') || notes.includes('low light');
                     const isNonIncident = notes.includes('non-incident') || notes.includes('non-emergency') || notes.includes('not an emergency') || notes.includes('no emergency') || notes.includes('no disaster') || notes.includes('no hazard') || notes.includes('unrelated') || notes.includes('benign') || notes.includes('meme') || notes.includes('selfie') || notes.includes('scenery') || notes.includes('landscape') || notes.includes('portrait') || notes.includes('casual photo');
-                    const isUnidentified = notes.includes('cannot identify') || notes.includes('unclear') || notes.includes('unrecognized') || notes.includes('could not recognize') || notes.includes('low confidence') || type.includes('unrecognized') || type.includes('unknown') || type.includes('pending review');
+                    const isUnidentified = notes.includes('cannot identify') || notes.includes('could not classify') || notes.includes('flagged for manual review') || notes.includes('unclear') || notes.includes('unrecognized') || notes.includes('could not recognize') || notes.includes('low confidence') || type.includes('unrecognized') || type.includes('unknown') || type.includes('pending review');
 
                     let label = 'Verified Live Scene';
                     let bg = '#ECFDF5';
@@ -1259,6 +1262,36 @@ export default function RequestDetails() {
                           {actionLoading === 'reject' ? 'Rejecting...' : 'Reject Report'}
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setActionLoading('reclassify');
+                          try {
+                            await reanalyzeUnrecognizedIncidents();
+                            await loadIncident(false);
+                            showToast('success', 'AI Re-check Completed', 'Updated classification and scene authenticity.');
+                          } catch {
+                            showToast('error', 'AI Re-check Failed', 'Could not re-analyze this photo.');
+                          } finally {
+                            setActionLoading(null);
+                          }
+                        }}
+                        disabled={isSaving}
+                        style={{
+                          padding: '7px 14px',
+                          borderRadius: 8,
+                          background: '#FFFFFF',
+                          color: '#1D4ED8',
+                          border: '1.5px solid #BFDBFE',
+                          fontWeight: 700,
+                          fontSize: 12.5,
+                          cursor: isSaving ? 'not-allowed' : 'pointer',
+                          fontFamily: 'var(--font)',
+                          opacity: isSaving ? 0.6 : 1,
+                        }}
+                      >
+                        {actionLoading === 'reclassify' ? 'Re-checking AI...' : 'Re-check with AI'}
+                      </button>
                     </div>
                   </div>
                 </div>

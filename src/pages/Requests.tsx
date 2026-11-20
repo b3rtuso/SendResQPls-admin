@@ -312,7 +312,7 @@ export default function Requests() {
               photoUrl: data.photoUrl || '',
               description: data.description || '',
               aiDetectedType: data.aiDetectedType || 'Emergency',
-              aiRecommendedDept: data.aiRecommendedDept || 'RESCUE',
+              aiRecommendedDept: data.aiRecommendedDept || undefined,
               assignedDepartment: data.assignedDepartment || undefined,
               severity: data.severity || 'MEDIUM',
               urgencyScore: data.urgencyScore || 50,
@@ -463,11 +463,12 @@ export default function Requests() {
     };
 
     const getUnitLabel = (inc: Incident) => {
+      const isUnrecognizedType = /unrecognized|unknown|pending review|unclear|processing|analyzing/i.test(inc.aiDetectedType || '');
       const unit = inc.assignedDepartment
         ? (DEPT_NAMES[inc.assignedDepartment] || inc.assignedDepartment)
-        : inc.aiRecommendedDept
+        : !isUnrecognizedType && inc.aiRecommendedDept
         ? (DEPT_NAMES[inc.aiRecommendedDept] || inc.aiRecommendedDept)
-        : 'MDRRMO';
+        : 'Unassigned';
       return unit.toLowerCase();
     };
 
@@ -1353,12 +1354,12 @@ export default function Requests() {
                           <td className="rq-td" style={{ fontWeight: 700, fontSize: 13, color: '#1E293B', whiteSpace: 'nowrap' }}>
                             {inc.assignedDepartment ? (
                               <span>{DEPT_NAMES[inc.assignedDepartment] || inc.assignedDepartment}</span>
-                            ) : inc.aiRecommendedDept ? (
+                            ) : !hasPendingReview && !/unrecognized|unknown|unclear|processing|analyzing/i.test(rawType) && inc.aiRecommendedDept ? (
                               <span style={{ color: '#64748B', fontSize: 12 }}>
                                 Rec: {DEPT_NAMES[inc.aiRecommendedDept] || inc.aiRecommendedDept}
                               </span>
                             ) : (
-                              <span style={{ color: '#94A3B8', fontSize: 12 }}>MDRRMO</span>
+                              <span style={{ color: '#94A3B8', fontSize: 12, fontWeight: 600 }}>Unassigned</span>
                             )}
                           </td>
 
@@ -1598,9 +1599,9 @@ export default function Requests() {
                             <span style={{ fontWeight: 600 }}>
                               {inc.assignedDepartment
                                 ? (DEPT_NAMES[inc.assignedDepartment] || inc.assignedDepartment)
-                                : inc.aiRecommendedDept
+                                : !/unrecognized|unknown|pending review|unclear|processing|analyzing/i.test(rawType) && inc.aiRecommendedDept
                                 ? `Rec: ${DEPT_NAMES[inc.aiRecommendedDept] || inc.aiRecommendedDept}`
-                                : 'MDRRMO'}
+                                : 'Unassigned'}
                             </span>
                           </div>
                         </div>

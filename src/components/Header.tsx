@@ -124,11 +124,10 @@ export default function Header({ title, subtitle }: HeaderProps) {
           detail: remainingCount > 0 ? `Report archived. ${remainingCount} left in review stack.` : 'Unrecognized incident marked as invalid and archived.',
         });
       } else if (action === 'keep') {
-        // Keep for review — acquire lock in background and update note
+        // Keep for review — acquire lock in background without overwriting the specific AI adminNotes (e.g. Print recapture / Non-incident related)
         lockIncident(targetIncident.id).catch(() => {});
         updateIncidentStatus(targetIncident.id, {
           status: 'REVIEWING',
-          adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.'
         }).catch(() => {});
 
         showToast({

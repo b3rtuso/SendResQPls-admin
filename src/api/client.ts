@@ -113,6 +113,12 @@ export const batchUpdateIncidents = (data: { ids: string[]; status?: string; ass
     return res;
   });
 
+export const reanalyzeUnrecognizedIncidents = () =>
+  api.post('/incidents/reanalyze-unrecognized').then(res => {
+    invalidateCache('incidents');
+    return res;
+  });
+
 export const getIncidents = (skipCache = false) =>
   skipCache ? api.get('/incidents') : cachedGet('/incidents', 60000);
 export const getPaginatedIncidents = (params: { page?: number; limit?: number; status?: string; search?: string; sortBy?: string; sortDir?: string }) => {
