@@ -1,6 +1,7 @@
 import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Building2, FileText, PhoneCall, LayoutDashboard, HelpCircle, Settings as SettingsIcon } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useIncidentTicket } from '../hooks/useIncidentTicket';
 import { getIncidents, updateIncidentStatus, lockIncident } from '../api/client';
 import { useAdminNav } from '../context/AdminNavContext';
 import { useToast } from '../context/ToastContext';
@@ -30,6 +31,7 @@ const DEPARTMENTS_LIST = [
 
 export default function Header({ title, subtitle }: HeaderProps) {
   const navigate = useNavigate();
+  const { openIncident } = useIncidentTicket();
   const location = useLocation();
   const { showToast } = useToast();
   const { toggleSidebar } = useAdminNav();
@@ -137,7 +139,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
         // If explicitly requested or if it was the last item in the stack, navigate to details
         if (openImmediately || remainingCount === 0) {
-          navigate(`/requests/${targetIncident.id}`);
+          openIncident(targetIncident.id);
         }
       } else if (action === 'skip') {
         showToast({
@@ -681,16 +683,21 @@ export default function Header({ title, subtitle }: HeaderProps) {
               <strong>{newReportBanner.type}</strong> · Recommended Unit: {newReportBanner.dept}
             </div>
           </div>
-          <a
-            href={`/requests/${newReportBanner.id}`}
+          <button
+            type="button"
+            onClick={() => {
+              const targetId = newReportBanner.id;
+              setNewReportBanner(null);
+              openIncident(targetId);
+            }}
             style={{
               padding: '7px 16px', borderRadius: 8, background: 'white',
               color: '#DC2626', fontWeight: 700, fontSize: 12.5,
-              textDecoration: 'none', flexShrink: 0,
+              border: 'none', cursor: 'pointer', flexShrink: 0,
             }}
           >
             Review Report →
-          </a>
+          </button>
           <button
             onClick={() => setNewReportBanner(null)}
             style={{
@@ -828,7 +835,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                       {searchResults.incidents.map(inc => (
                         <div
                           key={inc.id}
-                          onClick={() => { setSearchOpen(false); navigate(`/requests/${inc.id}`); }}
+                          onClick={() => { setSearchOpen(false); openIncident(inc.id); }}
                           style={{
                             padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             cursor: 'pointer', transition: 'background 0.1s',
@@ -969,7 +976,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                         onClick={() => {
                           markNotificationRead(n.id);
                           setShowPanel(false);
-                          navigate(`/requests/${n.id}`);
+                          openIncident(n.id);
                         }}
                         style={{
                           display: 'flex', alignItems: 'flex-start', gap: 10,

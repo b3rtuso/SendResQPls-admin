@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useIncidentTicket } from '../hooks/useIncidentTicket';
 import Header from '../components/Header';
 import { Search, RefreshCw, ExternalLink, Trash2, Building2 } from 'lucide-react';
 import { FiPhone, FiPhoneIncoming } from 'react-icons/fi';
@@ -12,7 +12,7 @@ import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
 
 export default function CallLogs() {
-  const navigate = useNavigate();
+  const { openIncident } = useIncidentTicket();
   const { confirm } = useConfirm();
   const { showToast } = useToast();
   const [logs, setLogs] = useState<CallLog[]>([]);
@@ -297,7 +297,7 @@ export default function CallLogs() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => navigate(`/requests/${log.requestId}`)}
+                              onClick={() => openIncident(log.requestId!)}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -433,7 +433,7 @@ export default function CallLogs() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => navigate(`/requests/${log.requestId}`)}
+                            onClick={() => openIncident(log.requestId!)}
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',

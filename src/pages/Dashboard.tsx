@@ -136,6 +136,18 @@ function timeAgo(date: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+/** Checks whether an ISO timestamp falls within the user's current local calendar day. */
+function isCreatedToday(dateStr?: string | null): boolean {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return false;
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
+  const ts = d.getTime();
+  return ts >= startOfToday && ts < startOfTomorrow;
+}
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -336,21 +348,12 @@ export default function Dashboard() {
         setServerDistribution(distRes.data.distribution);
       }
 
-      const isDateToday = (dateStr?: string | null) => {
-        if (!dateStr) return false;
-        return new Date(dateStr).toDateString() === new Date().toDateString();
-      };
-
+      const todaysIncidents = incData.filter((i: Incident) => isCreatedToday(i.createdAt));
       const calculatedToday = {
-        total:      incData.filter((i: Incident) => isDateToday(i.createdAt)).length,
-        pending:    incData.filter((i: Incident) => i.status === 'PENDING' && isDateToday(i.createdAt)).length,
-        dispatched: incData.filter((i: Incident) => {
-          if (i.status !== 'DISPATCHED') return false;
-          const dispatchAct = i.activities?.find(a => a.title?.includes('DISPATCHED'));
-          if (dispatchAct) return isDateToday(dispatchAct.createdAt);
-          return isDateToday(i.updatedAt);
-        }).length,
-        resolved:   incData.filter((i: Incident) => i.status === 'RESOLVED' && isDateToday(i.updatedAt)).length,
+        total:      todaysIncidents.length,
+        pending:    todaysIncidents.filter((i: Incident) => i.status === 'PENDING').length,
+        dispatched: todaysIncidents.filter((i: Incident) => i.status === 'DISPATCHED').length,
+        resolved:   todaysIncidents.filter((i: Incident) => i.status === 'RESOLVED').length,
       };
 
       const calculatedAll = {
@@ -360,16 +363,12 @@ export default function Dashboard() {
         resolved:   incData.filter((i: Incident) => i.status === 'RESOLVED').length,
       };
 
-      if (summaryRes?.data?.data) {
-        const s = summaryRes.data.data;
-        setPrevTodayStats(todayStats);
-        setPrevAllStats(allStats);
-        setTodayStats({
-          total:      s.createdToday ?? calculatedToday.total,
-          pending:    s.pendingToday ?? calculatedToday.pending,
-          dispatched: s.dispatchedToday !== undefined ? s.dispatchedToday : calculatedToday.dispatched,
-          resolved:   s.resolvedToday ?? calculatedToday.resolved,
-        });
+      const s = summaryRes?.data?.data || summaryRes?.data;
+      setPrevTodayStats(todayStats);
+      setPrevAllStats(allStats);
+      // Derive Today counts strictly from local-midnight createdAt on the live dataset so stat cards, pill, and table stay exact.
+      setTodayStats(calculatedToday);
+      if (s && typeof s.total === 'number') {
         setAllStats({
           total:      s.total ?? calculatedAll.total,
           pending:    s.pending ?? calculatedAll.pending,
@@ -377,9 +376,6 @@ export default function Dashboard() {
           resolved:   s.resolved ?? calculatedAll.resolved,
         });
       } else {
-        setPrevTodayStats(todayStats);
-        setPrevAllStats(allStats);
-        setTodayStats(calculatedToday);
         setAllStats(calculatedAll);
       }
     } catch {
@@ -414,34 +410,12 @@ export default function Dashboard() {
   };
 
   const filteredIncidents = useMemo(() => {
-    const isDateToday = (dateStr?: string | null) => {
-      if (!dateStr) return false;
-      return new Date(dateStr).toDateString() === new Date().toDateString();
-    };
+    const scoped = timeScope === 'TODAY'
+      ? incidents.filter(inc => isCreatedToday(inc.createdAt))
+      : incidents;
 
-    if (timeScope === 'TODAY') {
-      if (statusFilter === 'ALL') {
-        return incidents.filter(inc => isDateToday(inc.createdAt) || isDateToday(inc.updatedAt));
-      }
-      if (statusFilter === 'PENDING') {
-        return incidents.filter(inc => inc.status === 'PENDING' && isDateToday(inc.createdAt));
-      }
-      if (statusFilter === 'DISPATCHED') {
-        return incidents.filter(inc => {
-          if (inc.status !== 'DISPATCHED') return false;
-          const dispatchAct = inc.activities?.find(a => a.title?.includes('DISPATCHED'));
-          if (dispatchAct) return isDateToday(dispatchAct.createdAt);
-          return isDateToday(inc.updatedAt);
-        });
-      }
-      if (statusFilter === 'RESOLVED') {
-        return incidents.filter(inc => inc.status === 'RESOLVED' && isDateToday(inc.updatedAt));
-      }
-      return incidents.filter(inc => inc.status === statusFilter && (isDateToday(inc.createdAt) || isDateToday(inc.updatedAt)));
-    }
-
-    if (statusFilter === 'ALL') return incidents;
-    return incidents.filter(inc => inc.status === statusFilter);
+    if (statusFilter === 'ALL') return scoped;
+    return scoped.filter(inc => inc.status === statusFilter);
   }, [incidents, statusFilter, timeScope]);
 
   const donutData = useMemo(() => {
@@ -1415,7 +1389,7 @@ export default function Dashboard() {
                       gap: 4
                     }}
                   >
-                    Filter: {statusFilter === 'RESOLVED' ? (timeScope === 'TODAY' ? 'RESOLVED TODAY' : 'RESOLVED') : statusFilter === 'DISPATCHED' ? 'ACTIVE DISPATCHED' : `${statusFilter}${timeScope === 'TODAY' ? ' TODAY' : ''}`} ✕
+                    Filter: {statusFilter === 'RESOLVED' ? (timeScope === 'TODAY' ? 'RESOLVED TODAY' : 'RESOLVED') : statusFilter === 'DISPATCHED' ? (timeScope === 'TODAY' ? 'DISPATCHED TODAY' : 'ACTIVE DISPATCHED') : `${statusFilter}${timeScope === 'TODAY' ? ' TODAY' : ''}`} ✕
                   </span>
                 )}
               </div>

@@ -32,6 +32,9 @@ const statusClass: Record<string, string> = {
 
 type FilterStatus = 'ALL' | 'Available' | 'On Standby' | 'Deployed';
 
+const sanitizeContactDigits = (val: string) => val.replace(/\D/g, '').slice(0, 11);
+const isValidElevenDigitContact = (val: string) => /^\d{11}$/.test(val);
+
 export default function Departments() {
   const { showToast } = useToast();
   const { confirm } = useConfirm();
@@ -48,7 +51,8 @@ export default function Departments() {
   const [name, setName] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_name') : null) || '');
   const [fullName, setFullName] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_fullName') : null) || '');
   const [headOfficer, setHeadOfficer] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_headOfficer') : null) || '');
-  const [contact, setContact] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_contact') : null) || '');
+  const [contact, setContact] = useState(() => sanitizeContactDigits((typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_contact') : null) || ''));
+  const [contactError, setContactError] = useState('');
   const [email, setEmail] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_email') : null) || '');
   const [personnelCount, setPersonnelCount] = useState(() => Number((typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_personnel') : null) || 0));
   const [equipmentInput, setEquipmentInput] = useState(() => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('srq_admin_dept_equipment') : null) || '');
@@ -98,7 +102,7 @@ export default function Departments() {
     name: name.toUpperCase().trim(),
     fullName: fullName.trim(),
     headOfficer: headOfficer.trim(),
-    contact: contact.trim(),
+    contact: (!editingDept || contact !== originalDept?.contact) ? sanitizeContactDigits(contact) : contact.trim(),
     email: email.trim(),
     personnelCount: parseInt(String(personnelCount), 10) || 0,
     equipment: equipmentInput.split(',').map((eq) => eq.trim()).filter(Boolean),
@@ -128,6 +132,7 @@ export default function Departments() {
     setFullName('');
     setHeadOfficer('');
     setContact('');
+    setContactError('');
     setEmail('');
     setPersonnelCount(0);
     setEquipmentInput('');
@@ -146,6 +151,7 @@ export default function Departments() {
     setFullName(dept.fullName);
     setHeadOfficer(dept.headOfficer);
     setContact(dept.contact);
+    setContactError('');
     setEmail(dept.email);
     setPersonnelCount(dept.personnelCount);
     setEquipmentInput((dept.equipment || []).join(', '));
@@ -164,7 +170,8 @@ export default function Departments() {
       // If unchanged -> close immediately
       if (changes.length === 0) {
         clearDeptDraft();
-      setShowModal(false);
+        setContactError('');
+        setShowModal(false);
         setEditingDept(null);
         setOriginalDept(null);
         return;
@@ -190,7 +197,8 @@ export default function Departments() {
         setEquipmentInput((originalDept.equipment || []).join(', '));
         setStatus(originalDept.status);
         clearDeptDraft();
-      setShowModal(false);
+        setContactError('');
+        setShowModal(false);
         setEditingDept(null);
         setOriginalDept(null);
       }
@@ -216,11 +224,13 @@ export default function Departments() {
         if (!shouldDiscard) return;
       }
       clearDeptDraft();
+      setContactError('');
       setShowModal(false);
       setEditingDept(null);
       setOriginalDept(null);
     } else {
       clearDeptDraft();
+      setContactError('');
       setShowModal(false);
       setEditingDept(null);
       setOriginalDept(null);
@@ -230,6 +240,18 @@ export default function Departments() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = getCurrentFormData();
+
+    const mustValidateContact = !editingDept || payload.contact !== originalDept?.contact;
+    if (mustValidateContact && !isValidElevenDigitContact(payload.contact)) {
+      setContactError('Contact number must be strictly 11 numeric digits (e.g., 09066364019).');
+      showToast({
+        type: 'danger',
+        message: 'Invalid Contact Number',
+        detail: 'Contact number must be strictly 11 numeric digits with no spaces or symbols.',
+      });
+      return;
+    }
+    setContactError('');
 
     if (editingDept && originalDept) {
       // 1. Detect which fields were actually changed
@@ -287,12 +309,12 @@ export default function Departments() {
       setEditingDept(null);
       setOriginalDept(null);
       loadDepartments();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save department:', err);
       showToast({
         type: 'danger',
         message: 'Failed to save department',
-        detail: 'Ensure department short code is unique and fields are valid.',
+        detail: err?.response?.data?.error || 'Ensure department short code is unique and fields are valid.',
       });
     } finally {
       setSaving(false);
@@ -766,15 +788,46 @@ export default function Departments() {
 
                 {/* Contact Number */}
                 <div className="form-group" style={{ margin: 0 }}>
-                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Contact Number</Label>
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Contact Number (11 Digits)</Label>
                   <Input
                     type="text"
-                    placeholder="e.g. (043) 211-1234 / 0906-636-4019"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    placeholder="e.g. 09066364019 (11 digits)"
                     required
+                    maxLength={11}
+                    minLength={(!editingDept || contact !== originalDept?.contact) ? 11 : undefined}
+                    pattern={(!editingDept || contact !== originalDept?.contact) ? '[0-9]{11}' : undefined}
+                    title="Enter strictly 11 numeric digits (e.g., 09066364019)"
                     value={contact}
-                    onChange={e => setContact(e.target.value)}
+                    onChange={e => {
+                      const digits = sanitizeContactDigits(e.target.value);
+                      setContact(digits);
+                      if (digits.length === 11) setContactError('');
+                    }}
+                    onPaste={e => {
+                      e.preventDefault();
+                      const digits = sanitizeContactDigits(e.clipboardData.getData('text'));
+                      setContact(digits);
+                      if (digits.length === 11) setContactError('');
+                    }}
                     className="w-full text-sm"
+                    style={contactError ? { borderColor: '#EF4444' } : undefined}
                   />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, fontSize: 11.5 }}>
+                    <span style={{ color: contactError ? '#DC2626' : 'var(--text-muted)', fontWeight: contactError ? 600 : 400 }}>
+                      {contactError
+                        ? contactError
+                        : editingDept && contact === originalDept?.contact && !isValidElevenDigitContact(contact)
+                        ? 'Existing legacy format preserved unless edited (new entries require 11 digits).'
+                        : 'Numbers only, strictly 11 digits (e.g., 09066364019).'}
+                    </span>
+                    {(!editingDept || contact !== originalDept?.contact) && (
+                      <span style={{ fontWeight: 700, color: contact.length === 11 ? '#16A34A' : '#64748B', fontVariantNumeric: 'tabular-nums', flexShrink: 0, marginLeft: 8 }}>
+                        {contact.length} / 11 digits
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Email Address */}

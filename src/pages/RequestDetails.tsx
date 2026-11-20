@@ -124,6 +124,34 @@ const TYPE_DEPT_MAP: Record<string, Department> = {
   'Landslide': 'ENGINEERING',
 };
 
+const TYPE_URGENCY_MAP: Record<string, { severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'; urgencyScore: number }> = {
+  Fire: { severity: 'CRITICAL', urgencyScore: 92 },
+  Trauma: { severity: 'CRITICAL', urgencyScore: 92 },
+  Flood: { severity: 'HIGH', urgencyScore: 75 },
+  Medical: { severity: 'HIGH', urgencyScore: 75 },
+  'Vehicular Accident': { severity: 'HIGH', urgencyScore: 75 },
+  Crime: { severity: 'HIGH', urgencyScore: 75 },
+  Typhoon: { severity: 'HIGH', urgencyScore: 75 },
+  Landslide: { severity: 'HIGH', urgencyScore: 75 },
+};
+
+const DEFAULT_SEVERITY_SCORES: Record<string, number> = {
+  CRITICAL: 92,
+  HIGH: 75,
+  MEDIUM: 52,
+  LOW: 25,
+};
+
+/** Resolve clamped 1-100 urgency score for an incident, falling back cleanly by severity tier. */
+function resolveUrgencyDisplay(incident: Pick<Incident, 'severity' | 'urgencyScore'>): { sev: string; score: number } {
+  const sev = (incident.severity || 'MEDIUM').toUpperCase();
+  const score =
+    typeof incident.urgencyScore === 'number' && incident.urgencyScore > 0
+      ? Math.max(1, Math.min(100, incident.urgencyScore))
+      : (DEFAULT_SEVERITY_SCORES[sev] ?? 52);
+  return { sev, score };
+}
+
 interface ToastState {
   show: boolean;
   message: string;
@@ -585,16 +613,44 @@ export default function RequestDetails() {
   const handleReclassify = async (newType: string) => {
     if (!id || !incident) return;
     const targetDept = (TYPE_DEPT_MAP[newType] || 'RESCUE') as Department;
+    const urgencyMeta = TYPE_URGENCY_MAP[newType] || { severity: 'HIGH' as const, urgencyScore: 75 };
     const prevType = incident.aiDetectedType;
     const prevDept = incident.assignedDepartment;
+    const prevSeverity = incident.severity;
+    const prevUrgencyScore = incident.urgencyScore;
     setActionLoading('reclassify');
-    setIncident(prev => prev ? ({ ...prev, aiDetectedType: newType, assignedDepartment: targetDept }) : prev);
+    setIncident(prev =>
+      prev
+        ? {
+            ...prev,
+            aiDetectedType: newType,
+            assignedDepartment: targetDept,
+            severity: urgencyMeta.severity,
+            urgencyScore: urgencyMeta.urgencyScore,
+          }
+        : prev
+    );
     try {
-      await updateIncidentStatus(id, { aiDetectedType: newType, assignedDepartment: targetDept });
+      await updateIncidentStatus(id, {
+        aiDetectedType: newType,
+        assignedDepartment: targetDept,
+        severity: urgencyMeta.severity,
+        urgencyScore: urgencyMeta.urgencyScore,
+      });
       showToast('success', `Hazard Reclassified: ${newType}`, `Assigned to ${deptNames[targetDept] || targetDept}.`);
       loadIncident(false);
     } catch {
-      setIncident(prev => prev ? ({ ...prev, aiDetectedType: prevType, assignedDepartment: prevDept }) : prev);
+      setIncident(prev =>
+        prev
+          ? {
+              ...prev,
+              aiDetectedType: prevType,
+              assignedDepartment: prevDept,
+              severity: prevSeverity,
+              urgencyScore: prevUrgencyScore,
+            }
+          : prev
+      );
       showToast('error', 'Failed to reclassify', 'Server error while updating hazard type.');
     } finally {
       setActionLoading(null);
@@ -1017,9 +1073,7 @@ export default function RequestDetails() {
                     Severity &amp; Urgency Score
                   </div>
                   {(() => {
-                    const sev = (incident.severity || 'MEDIUM').toUpperCase();
-                    const defaultScores: Record<string, number> = { CRITICAL: 92, HIGH: 75, MEDIUM: 52, LOW: 25 };
-                    const score = typeof incident.urgencyScore === 'number' ? Math.max(1, Math.min(100, incident.urgencyScore)) : (defaultScores[sev] ?? 52);
+                    const { sev, score } = resolveUrgencyDisplay(incident);
                     const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
                       CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
                       HIGH:     { bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3', dot: '#F43F5E' },
@@ -1594,6 +1648,47 @@ export default function RequestDetails() {
                     <Clock size={16} />
                     <strong>Reported:</strong> {new Date(incident.createdAt).toLocaleString()}
                   </div>
+                  {(() => {
+                    const { sev, score } = resolveUrgencyDisplay(incident);
+                    const badgeColor =
+                      sev === 'CRITICAL' ? '#B91C1C' : sev === 'HIGH' ? '#BE123C' : sev === 'MEDIUM' ? '#B45309' : '#047857';
+                    return (
+                      <div className="dept-detail" style={{ alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                        <AlertTriangle size={16} style={{ color: badgeColor, flexShrink: 0 }} />
+                        <strong>Urgency Score:</strong>
+                        <span style={{
+                          fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                          fontWeight: 800,
+                          color: badgeColor,
+                          background: '#F8FAFC',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: 6,
+                          padding: '2px 8px',
+                          fontSize: 12.5,
+                        }}>
+                          {score} / 100
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: badgeColor }}>({sev})</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowUrgencyFormula(true)}
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: '#EFF6FF',
+                            color: '#1D4ED8',
+                            border: '1px solid #BFDBFE',
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font)',
+                          }}
+                        >
+                          View Formula
+                        </button>
+                      </div>
+                    );
+                  })()}
                   {incident.aiRecommendedDept && (
                     <div className="dept-detail">
                       <Brain size={16} />
@@ -2270,7 +2365,7 @@ export default function RequestDetails() {
       )}
       {/* ── Urgency Score Formula Modal ── */}
       {showUrgencyFormula && (() => {
-        const sev = (incident.severity || 'MEDIUM').toUpperCase();
+        const { sev, score } = resolveUrgencyDisplay(incident);
         const tierMeta: Record<string, { base: number; min: number; max: number; adj: string; color: string; bg: string }> = {
           CRITICAL: { base: 92, min: 85, max: 100, adj: '+6 (High) / 0 (Med) / -4 (Low)', color: '#B91C1C', bg: '#FEF2F2' },
           HIGH:     { base: 75, min: 65, max: 84,  adj: '+7 (High) / 0 (Med) / -5 (Low)', color: '#BE123C', bg: '#FFF1F2' },
@@ -2278,7 +2373,6 @@ export default function RequestDetails() {
           LOW:      { base: 25, min: 1,  max: 39,  adj: 'Fixed (25 fallback / 10 unrecognized)', color: '#047857', bg: '#ECFDF5' },
         };
         const meta = tierMeta[sev] || tierMeta.MEDIUM;
-        const score = typeof incident.urgencyScore === 'number' ? Math.max(1, Math.min(100, incident.urgencyScore)) : meta.base;
         const diff = score - meta.base;
         const diffLabel = diff > 0 ? `+${diff}` : `${diff}`;
         return (

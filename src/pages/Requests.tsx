@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useIncidentTicket } from '../hooks/useIncidentTicket';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
 import { Search, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, X, CheckCircle2, Filter, ArrowUpDown, ArrowUp, ArrowDown, Car, HelpCircle, Lock } from 'lucide-react';
@@ -125,6 +125,19 @@ const TAB_THEMES: Record<string, {
 const STATUS_TABS: (Status | 'ALL')[] = ['ALL', 'PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED', 'REJECTED'];
 const PAGE_SIZE = 10;
 
+type SortKey = 'id' | 'type' | 'location' | 'unit' | 'status' | 'createdAt' | 'urgency';
+const SEVERITY_RANK: Record<string, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+const STATUS_RANK: Record<string, number> = { PENDING: 1, REVIEWING: 2, DISPATCHED: 3, RESOLVED: 4, REJECTED: 5 };
+const SORT_FIELD_LABELS: Record<SortKey, string> = {
+  createdAt: 'Reported Date',
+  urgency: 'Severity',
+  status: 'Triage Status',
+  type: 'Hazard Type',
+  location: 'Barangay',
+  unit: 'Assigned Unit',
+  id: 'Incident ID',
+};
+
 const DEPT_NAMES: Record<string, string> = {
   BFP: 'BFP (Fire)',
   PNP: 'PNP (Police)',
@@ -176,7 +189,7 @@ export function getIncidentUrgencyScore(inc: Incident): number {
 }
 
 export default function Requests() {
-  const navigate = useNavigate();
+  const { openIncident, claimingId } = useIncidentTicket();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -216,17 +229,22 @@ export default function Requests() {
   }, []);
 
   // Sorting state - default to newest-first (createdAt desc) so newly reported emergencies are on top
-  type SortKey = 'id' | 'type' | 'location' | 'unit' | 'status' | 'createdAt' | 'urgency';
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
-      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
-      setSortDir('desc');
+      setSortDir(key === 'createdAt' || key === 'urgency' ? 'desc' : 'asc');
     }
+    setPage(1);
+  };
+
+  const toggleSortDir = () => {
+    setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    setPage(1);
   };
 
   const handleManualRefresh = async () => {
@@ -308,6 +326,27 @@ export default function Requests() {
         const id = data.id || data.incidentId;
         if (id && data.status) {
           setIncidents(prev => prev.map(inc => inc.id === id ? { ...inc, status: data.status, assignedDepartment: data.assignedDepartment ?? inc.assignedDepartment } : inc));
+        }
+      } else if (data && eventName === 'incident_locked') {
+        const id = data.incidentId || data.id;
+        if (id) {
+          setIncidents(prev => prev.map(inc => inc.id === id ? {
+            ...inc,
+            lockedByAdminId: data.lockedByAdminId,
+            lockedByAdminName: data.lockedByAdminName,
+            lockedAt: data.lockedAt,
+            status: data.status || inc.status,
+          } : inc));
+        }
+      } else if (data && eventName === 'incident_unlocked') {
+        const id = data.incidentId || data.id;
+        if (id) {
+          setIncidents(prev => prev.map(inc => inc.id === id ? {
+            ...inc,
+            lockedByAdminId: null,
+            lockedByAdminName: null,
+            lockedAt: null,
+          } : inc));
         }
       }
 
@@ -398,51 +437,85 @@ export default function Requests() {
       const mSearch = search === '' ||
         inc.id.toLowerCase().includes(search.toLowerCase()) ||
         (inc.aiDetectedType || '').toLowerCase().includes(search.toLowerCase()) ||
+        (inc.assignedDepartment || '').toLowerCase().includes(search.toLowerCase()) ||
         (inc.aiRecommendedDept || '').toLowerCase().includes(search.toLowerCase()) ||
         (inc.barangay ? inc.barangay.toLowerCase().includes(search.toLowerCase()) : (inc.latitude && inc.longitude && getNearestBarangay(inc.latitude, inc.longitude).toLowerCase().includes(search.toLowerCase())));
       return mStatus && mType && mSearch;
     });
 
-    return list.sort((a, b) => {
-      let valA: any = '';
-      let valB: any = '';
+    const getTime = (inc: Incident) => {
+      const t = new Date(inc.createdAt).getTime();
+      return Number.isFinite(t) ? t : 0;
+    };
+
+    const getTypeLabel = (inc: Incident) => {
+      const raw = inc.aiDetectedType || 'Emergency';
+      return (raw.replace(/\s*\([^)]*\)/g, '').trim() || normalizeIncidentType(inc.aiDetectedType) || 'Emergency').toLowerCase();
+    };
+
+    const getBarangayLabel = (inc: Incident) => {
+      const brgy = inc.barangay
+        ? inc.barangay.split(',')[0]
+        : inc.latitude && inc.longitude
+        ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
+        : 'Balayan';
+      return brgy.trim().toLowerCase();
+    };
+
+    const getUnitLabel = (inc: Incident) => {
+      const unit = inc.assignedDepartment
+        ? (DEPT_NAMES[inc.assignedDepartment] || inc.assignedDepartment)
+        : inc.aiRecommendedDept
+        ? (DEPT_NAMES[inc.aiRecommendedDept] || inc.aiRecommendedDept)
+        : 'MDRRMO';
+      return unit.toLowerCase();
+    };
+
+    const dir = sortDir === 'asc' ? 1 : -1;
+
+    return [...list].sort((a, b) => {
+      let cmp = 0;
 
       switch (sortKey) {
         case 'id':
-          valA = a.id;
-          valB = b.id;
+          cmp = a.id.slice(0, 8).toUpperCase().localeCompare(b.id.slice(0, 8).toUpperCase());
           break;
         case 'type':
-          valA = a.aiDetectedType || '';
-          valB = b.aiDetectedType || '';
+          cmp = getTypeLabel(a).localeCompare(getTypeLabel(b));
           break;
         case 'location':
-          valA = a.barangay || (a.latitude && a.longitude ? getNearestBarangay(a.latitude, a.longitude) : '');
-          valB = b.barangay || (b.latitude && b.longitude ? getNearestBarangay(b.latitude, b.longitude) : '');
+          cmp = getBarangayLabel(a).localeCompare(getBarangayLabel(b));
           break;
         case 'unit':
-          valA = a.assignedDepartment || a.aiRecommendedDept || '';
-          valB = b.assignedDepartment || b.aiRecommendedDept || '';
+          cmp = getUnitLabel(a).localeCompare(getUnitLabel(b));
           break;
         case 'status':
-          valA = a.status;
-          valB = b.status;
+          cmp = (STATUS_RANK[a.status] ?? 99) - (STATUS_RANK[b.status] ?? 99);
           break;
-        case 'urgency':
-          valA = getIncidentUrgencyScore(a);
-          valB = getIncidentUrgencyScore(b);
+        case 'urgency': {
+          const isTerminalA = a.status === 'RESOLVED' || a.status === 'REJECTED';
+          const isTerminalB = b.status === 'RESOLVED' || b.status === 'REJECTED';
+          const rankA = isTerminalA ? 0 : (SEVERITY_RANK[(a.severity || 'MEDIUM').toUpperCase()] ?? 2);
+          const rankB = isTerminalB ? 0 : (SEVERITY_RANK[(b.severity || 'MEDIUM').toUpperCase()] ?? 2);
+          cmp = rankA - rankB;
+          if (cmp === 0) {
+            const scoreA = typeof a.urgencyScore === 'number' ? a.urgencyScore : getIncidentUrgencyScore(a);
+            const scoreB = typeof b.urgencyScore === 'number' ? b.urgencyScore : getIncidentUrgencyScore(b);
+            cmp = scoreA - scoreB;
+          }
           break;
+        }
         case 'createdAt':
         default:
-          valA = new Date(a.createdAt).getTime();
-          valB = new Date(b.createdAt).getTime();
+          cmp = getTime(a) - getTime(b);
           break;
       }
 
-      if (valA < valB) return sortDir === 'asc' ? -1 : 1;
-      if (valA > valB) return sortDir === 'asc' ? 1 : -1;
-      // Tie-breaker: always sort newest createdAt first
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (cmp !== 0) return cmp * dir;
+      // Tie-breaker follows sortDir so toggling Asc/Desc always produces a predictable reversal.
+      const timeDiff = getTime(a) - getTime(b);
+      if (timeDiff !== 0) return timeDiff * dir;
+      return a.id.localeCompare(b.id) * dir;
     });
   }, [incidents, filterStatus, filterType, search, sortKey, sortDir]);
 
@@ -591,6 +664,20 @@ export default function Requests() {
           position: sticky;
           top: 0;
           z-index: 5;
+        }
+
+        .rq-th.sortable {
+          transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .rq-th.sortable:hover {
+          background: #EFF6FF;
+          color: #1D4ED8;
+        }
+
+        .rq-th.sortable.active-sort {
+          color: #2563EB;
+          background: #F1F5F9;
         }
 
         .rq-td {
@@ -899,6 +986,72 @@ export default function Requests() {
             )}
           </div>
 
+          {/* Sort Field & Up/Down Toggle */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <select
+              aria-label="Sort incidents by"
+              value={sortKey}
+              onChange={e => {
+                const nextKey = e.target.value as SortKey;
+                setSortKey(nextKey);
+                setSortDir(nextKey === 'createdAt' || nextKey === 'urgency' ? 'desc' : 'asc');
+                setPage(1);
+              }}
+              style={{
+                padding: '7px 10px',
+                borderRadius: 8,
+                border: '1px solid #CBD5E1',
+                background: '#FFFFFF',
+                color: '#1E293B',
+                fontSize: 13,
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {(Object.keys(SORT_FIELD_LABELS) as SortKey[]).map(key => (
+                <option key={key} value={key}>
+                  Sort: {SORT_FIELD_LABELS[key]}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={toggleSortDir}
+              aria-label={`Toggle sort order (currently ${sortDir === 'asc' ? 'ascending' : 'descending'})`}
+              title={`Toggle ascending / descending (${SORT_FIELD_LABELS[sortKey]})`}
+              style={{
+                padding: '7px 12px',
+                borderRadius: 8,
+                border: '1.5px solid #BFDBFE',
+                background: '#EFF6FF',
+                color: '#1D4ED8',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 12.5,
+                fontWeight: 800,
+                fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s',
+              }}
+            >
+              {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+              <span>
+                {sortKey === 'createdAt'
+                  ? sortDir === 'asc'
+                    ? 'Oldest'
+                    : 'Newest'
+                  : sortDir === 'asc'
+                  ? 'Asc'
+                  : 'Desc'}
+              </span>
+            </button>
+          </div>
+
           <div style={{ flex: 1 }} />
 
           {/* Actions */}
@@ -959,61 +1112,103 @@ export default function Requests() {
                           style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
                         />
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('id')} style={{ width: 105, minWidth: 100, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th
+                        className={`rq-th sortable ${sortKey === 'id' ? 'active-sort' : ''}`}
+                        onClick={() => handleSort('id')}
+                        aria-sort={sortKey === 'id' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        title="Sort by Incident ID"
+                        style={{ width: 105, minWidth: 100, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Incident ID</span>
                           {sortKey === 'id' ? (
-                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
-                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.5 }} />}
                         </div>
                       </th>
                       <th className="rq-th" style={{ width: 56, minWidth: 54 }}>Evidence</th>
-                      <th className="rq-th sortable" onClick={() => handleSort('type')} style={{ minWidth: 140, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th
+                        className={`rq-th sortable ${sortKey === 'type' ? 'active-sort' : ''}`}
+                        onClick={() => handleSort('type')}
+                        aria-sort={sortKey === 'type' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        title="Sort by Hazard Type"
+                        style={{ minWidth: 140, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Hazard Type</span>
                           {sortKey === 'type' ? (
-                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
-                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.5 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('location')} style={{ minWidth: 125, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th
+                        className={`rq-th sortable ${sortKey === 'location' ? 'active-sort' : ''}`}
+                        onClick={() => handleSort('location')}
+                        aria-sort={sortKey === 'location' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        title="Sort by Barangay Location"
+                        style={{ minWidth: 125, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Barangay Location</span>
                           {sortKey === 'location' ? (
-                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
-                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.5 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('unit')} style={{ minWidth: 125, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th
+                        className={`rq-th sortable ${sortKey === 'unit' ? 'active-sort' : ''}`}
+                        onClick={() => handleSort('unit')}
+                        aria-sort={sortKey === 'unit' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        title="Sort by Assigned Unit"
+                        style={{ minWidth: 125, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Assigned Unit</span>
                           {sortKey === 'unit' ? (
-                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
-                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.5 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('status')} style={{ width: 115, minWidth: 110, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th
+                        className={`rq-th sortable ${sortKey === 'status' ? 'active-sort' : ''}`}
+                        onClick={() => handleSort('status')}
+                        aria-sort={sortKey === 'status' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        title="Sort by Triage Status"
+                        style={{ width: 115, minWidth: 110, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Triage Status</span>
                           {sortKey === 'status' ? (
-                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
-                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.5 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')} style={{ width: 85, minWidth: 80, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th
+                        className={`rq-th sortable ${sortKey === 'createdAt' ? 'active-sort' : ''}`}
+                        onClick={() => handleSort('createdAt')}
+                        aria-sort={sortKey === 'createdAt' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        title="Sort by Reported Date"
+                        style={{ width: 85, minWidth: 80, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Reported</span>
                           {sortKey === 'createdAt' ? (
-                            sortDir === 'asc' ? <ArrowUp size={12} color="#2563EB" /> : <ArrowDown size={12} color="#2563EB" />
-                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.5 }} />}
                         </div>
                       </th>
-                      <th className="rq-th sortable" onClick={() => handleSort('urgency')} style={{ width: 95, minWidth: 90, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <th
+                        className={`rq-th sortable ${sortKey === 'urgency' ? 'active-sort' : ''}`}
+                        onClick={() => handleSort('urgency')}
+                        aria-sort={sortKey === 'urgency' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        title="Sort by Severity / Urgency"
+                        style={{ width: 95, minWidth: 90, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span>Severity</span>
                           {sortKey === 'urgency' ? (
-                            sortDir === 'asc' ? <ArrowUp size={12} color="#DC2626" /> : <ArrowDown size={12} color="#DC2626" />
-                          ) : <ArrowUpDown size={11} style={{ opacity: 0.35 }} />}
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#DC2626" /> : <ArrowDown size={13} color="#DC2626" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.5 }} />}
                         </div>
                       </th>
                       <th className="rq-th" style={{ textAlign: 'right', whiteSpace: 'nowrap', width: 145, minWidth: 140 }}>Actions</th>
@@ -1038,10 +1233,11 @@ export default function Requests() {
                         <tr
                           key={inc.id}
                           className={`rq-tr ${selectedIds.has(inc.id) ? 'selected-row' : ''}`}
-                          onClick={() => navigate(`/requests/${inc.id}`)}
+                          onClick={() => openIncident(inc.id)}
                           style={{
                             borderBottom: '1px solid #F1F5F9',
-                            cursor: 'pointer',
+                            cursor: claimingId === inc.id ? 'wait' : 'pointer',
+                            opacity: claimingId === inc.id ? 0.7 : 1,
                             background: selectedIds.has(inc.id) ? 'rgba(37, 99, 235, 0.04)' : undefined,
                           }}
                         >
@@ -1258,7 +1454,8 @@ export default function Requests() {
                                 size="sm"
                                 variant="outline"
                                 className="rq-btn-view"
-                                onClick={() => navigate(`/requests/${inc.id}`)}
+                                disabled={claimingId === inc.id}
+                                onClick={(e) => { e.stopPropagation(); openIncident(inc.id); }}
                                 style={{
                                   padding: '5px 14px',
                                   borderRadius: 8,
@@ -1310,7 +1507,8 @@ export default function Requests() {
                     <div
                       key={inc.id}
                       className={`rq-mobile-card ${selectedIds.has(inc.id) ? 'selected' : ''}`}
-                      onClick={() => navigate(`/requests/${inc.id}`)}
+                      onClick={() => openIncident(inc.id)}
+                      style={{ opacity: claimingId === inc.id ? 0.7 : 1 }}
                     >
                       {/* Top Row: ID, Status, Timestamp */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -1441,7 +1639,8 @@ export default function Requests() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => navigate(`/requests/${inc.id}`)}
+                            disabled={claimingId === inc.id}
+                            onClick={(e) => { e.stopPropagation(); openIncident(inc.id); }}
                             style={{
                               padding: '5px 14px',
                               borderRadius: 7,
