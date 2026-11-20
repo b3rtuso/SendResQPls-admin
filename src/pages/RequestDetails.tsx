@@ -1082,29 +1082,45 @@ export default function RequestDetails() {
                   </div>
                   {(() => {
                     const notes = (incident.adminNotes || '').toLowerCase();
-                    const isRecapture = notes.includes('recapture') || notes.includes('screen') || notes.includes('printed');
-                    if (isRecapture) {
-                      return (
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          padding: '6px 12px', borderRadius: 8,
-                          background: '#FEF2F2', border: '1.5px solid #FCA5A5',
-                          color: '#B91C1C', fontSize: 12.5, fontWeight: 800,
-                        }}>
-                          <AlertTriangle size={14} color="#EF4444" />
-                          SUSPECTED RECAPTURE (Non-Realtime)
-                        </div>
-                      );
+                    const type = (incident.aiDetectedType || '').toLowerCase();
+                    const isPrint = notes.includes('print recapture') || notes.includes('printed_photo') || notes.includes('printed');
+                    const isScreen = notes.includes('screen recapture') || notes.includes('screen_display') || notes.includes('screen') || notes.includes('recapture') || notes.includes('screenshot');
+                    const isBlurry = notes.includes('blurry') || notes.includes('blur') || notes.includes('dark') || notes.includes('low light');
+                    const isNonIncident = notes.includes('non-incident') || notes.includes('not an emergency') || notes.includes('no emergency') || notes.includes('unrelated') || notes.includes('benign') || notes.includes('meme') || notes.includes('selfie');
+                    const isUnidentified = notes.includes('cannot identify') || notes.includes('unclear') || notes.includes('unrecognized') || notes.includes('could not recognize') || notes.includes('low confidence') || type.includes('unrecognized') || type.includes('unknown') || type.includes('pending review');
+
+                    let label = 'Verified Live Scene';
+                    let bg = '#ECFDF5';
+                    let border = '#A7F3D0';
+                    let color = '#047857';
+                    let isWarn = false;
+
+                    if (isPrint) {
+                      label = 'Print Recapture';
+                      bg = '#FEF2F2'; border = '#FCA5A5'; color = '#B91C1C'; isWarn = true;
+                    } else if (isScreen) {
+                      label = 'Screen Recapture';
+                      bg = '#FEF2F2'; border = '#FCA5A5'; color = '#B91C1C'; isWarn = true;
+                    } else if (isBlurry) {
+                      label = 'Blurry Photo';
+                      bg = '#FFFBEB'; border = '#FDE68A'; color = '#B45309'; isWarn = true;
+                    } else if (isNonIncident) {
+                      label = 'Non-Incident Related';
+                      bg = '#FFF7ED'; border = '#FED7AA'; color = '#C2410C'; isWarn = true;
+                    } else if (isUnidentified) {
+                      label = 'Cannot Identify';
+                      bg = '#F1F5F9'; border = '#CBD5E1'; color = '#475569'; isWarn = true;
                     }
+
                     return (
                       <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         padding: '6px 12px', borderRadius: 8,
-                        background: '#ECFDF5', border: '1.5px solid #A7F3D0',
-                        color: '#047857', fontSize: 12.5, fontWeight: 800,
+                        background: bg, border: `1.5px solid ${border}`,
+                        color, fontSize: 12.5, fontWeight: 800,
                       }}>
-                        <CheckCircle2 size={14} color="#10B981" />
-                        Verified Live Scene
+                        {isWarn ? <AlertTriangle size={14} color={color} /> : <CheckCircle2 size={14} color="#10B981" />}
+                        {label}
                       </div>
                     );
                   })()}
