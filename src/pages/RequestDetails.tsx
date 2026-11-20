@@ -22,7 +22,6 @@ import {
   heartbeatIncident,
   forceUnlockIncident,
   getDepartments,
-  reanalyzeUnrecognizedIncidents,
 } from '../api/client';
 import { getDeptTheme, getDeptDisplayName, getDeptContact, getDeptAbbr } from '../utils/departmentUtils';
 import ResolutionFormModal from '../components/ResolutionFormModal';
@@ -1240,8 +1239,8 @@ export default function RequestDetails() {
                         ? 'This photo does not appear to show an active emergency (e.g., scenery, casual portrait, or unrelated scene). Review the photo — reject if it is not an emergency, or select the correct hazard type.'
                         : 'The AI could not identify a valid emergency incident in the submitted photo. Review the photo — reject if it is a false alarm, or select the correct hazard type.'}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                      {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (
+                    {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
                         <button
                           onClick={() => handleStatusUpdate('REJECTED')}
                           disabled={isSaving}
@@ -1261,38 +1260,8 @@ export default function RequestDetails() {
                         >
                           {actionLoading === 'reject' ? 'Rejecting...' : 'Reject Report'}
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          setActionLoading('reclassify');
-                          try {
-                            await reanalyzeUnrecognizedIncidents();
-                            await loadIncident(false);
-                            showToast('success', 'AI Re-check Completed', 'Updated classification and scene authenticity.');
-                          } catch {
-                            showToast('error', 'AI Re-check Failed', 'Could not re-analyze this photo.');
-                          } finally {
-                            setActionLoading(null);
-                          }
-                        }}
-                        disabled={isSaving}
-                        style={{
-                          padding: '7px 14px',
-                          borderRadius: 8,
-                          background: '#FFFFFF',
-                          color: '#1D4ED8',
-                          border: '1.5px solid #BFDBFE',
-                          fontWeight: 700,
-                          fontSize: 12.5,
-                          cursor: isSaving ? 'not-allowed' : 'pointer',
-                          fontFamily: 'var(--font)',
-                          opacity: isSaving ? 0.6 : 1,
-                        }}
-                      >
-                        {actionLoading === 'reclassify' ? 'Re-checking AI...' : 'Re-check with AI'}
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
