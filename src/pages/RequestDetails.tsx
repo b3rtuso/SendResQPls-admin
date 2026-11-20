@@ -2366,15 +2366,20 @@ export default function RequestDetails() {
       {/* ── Urgency Score Formula Modal ── */}
       {showUrgencyFormula && (() => {
         const { sev, score } = resolveUrgencyDisplay(incident);
-        const tierMeta: Record<string, { base: number; min: number; max: number; adj: string; color: string; bg: string }> = {
-          CRITICAL: { base: 92, min: 85, max: 100, adj: '+6 (High) / 0 (Med) / -4 (Low)', color: '#B91C1C', bg: '#FEF2F2' },
-          HIGH:     { base: 75, min: 65, max: 84,  adj: '+7 (High) / 0 (Med) / -5 (Low)', color: '#BE123C', bg: '#FFF1F2' },
-          MEDIUM:   { base: 52, min: 40, max: 64,  adj: '+8 (High) / 0 (Med) / -7 (Low)', color: '#B45309', bg: '#FFFBEB' },
-          LOW:      { base: 25, min: 1,  max: 39,  adj: 'Fixed (25 fallback / 10 unrecognized)', color: '#047857', bg: '#ECFDF5' },
+        const tierMeta: Record<string, { base: number; min: number; max: number; examples: string; adj: string; color: string; bg: string }> = {
+          CRITICAL: { base: 92, min: 85, max: 100, examples: 'Fire, severe trauma, collapse, drowning', adj: '+6 if clear / -4 if unclear', color: '#B91C1C', bg: '#FEF2F2' },
+          HIGH:     { base: 75, min: 65, max: 84,  examples: 'Flood, vehicular crash, medical, landslide', adj: '+7 if clear / -5 if unclear', color: '#BE123C', bg: '#FFF1F2' },
+          MEDIUM:   { base: 52, min: 40, max: 64,  examples: 'Fallen tree, road hazard, utility issue', adj: '+8 if clear / -7 if unclear', color: '#B45309', bg: '#FFFBEB' },
+          LOW:      { base: 25, min: 1,  max: 39,  examples: 'Unclear photo (25) or non-emergency (10)', adj: 'Fixed score', color: '#047857', bg: '#ECFDF5' },
         };
         const meta = tierMeta[sev] || tierMeta.MEDIUM;
         const diff = score - meta.base;
-        const diffLabel = diff > 0 ? `+${diff}` : `${diff}`;
+        const breakdownText =
+          diff === 0
+            ? `Started at ${meta.base} pts (no adjustment)`
+            : diff > 0
+            ? `Started at ${meta.base} pts + ${diff} pts (clear/severe scene)`
+            : `Started at ${meta.base} pts - ${Math.abs(diff)} pts (unclear/less severe scene)`;
         return (
           <div
             onClick={() => setShowUrgencyFormula(false)}
@@ -2387,15 +2392,15 @@ export default function RequestDetails() {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                width: '100%', maxWidth: 560, background: '#FFFFFF', borderRadius: 18,
+                width: '100%', maxWidth: 580, background: '#FFFFFF', borderRadius: 18,
                 padding: 24, boxShadow: '0 24px 60px rgba(15, 23, 42, 0.25)',
                 border: '1px solid #E2E8F0', maxHeight: '90vh', overflowY: 'auto',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0F172A' }}>Urgency Score Computation</h3>
-                  <p style={{ margin: '2px 0 0', fontSize: 12.5, color: '#64748B' }}>How SendResQPls calculates the 1–100 priority score</p>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0F172A' }}>How Urgency Score Works</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 12.5, color: '#64748B' }}>A simple 1–100 rating showing how urgent this emergency is</p>
                 </div>
                 <button
                   type="button"
@@ -2407,37 +2412,43 @@ export default function RequestDetails() {
               </div>
 
               <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Formula</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Simple Formula</div>
                 <div style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: 13, fontWeight: 700, color: '#1D4ED8' }}>
-                  Urgency Score = clamp(Base Score + Confidence Adjustment, Tier Min, Tier Max)
+                  Urgency Score = Starting Score + Photo Clarity Points
                 </div>
+                <p style={{ margin: '6px 0 0', fontSize: 12, color: '#475569', lineHeight: 1.4 }}>
+                  Higher number = more urgent. The final score always stays within its priority level&apos;s range.
+                </p>
               </div>
 
               <div style={{ background: meta.bg, border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: meta.color, textTransform: 'uppercase', marginBottom: 6 }}>This Incident&apos;s Score</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: meta.color, textTransform: 'uppercase', marginBottom: 6 }}>This Report&apos;s Score</div>
                 <div style={{ fontSize: 13.5, color: '#0F172A', lineHeight: 1.6 }}>
-                  <div><strong>Detected Type:</strong> {incident.aiDetectedType || 'Pending Analysis'}</div>
-                  <div><strong>Severity Tier:</strong> {sev} ({meta.min}–{meta.max})</div>
-                  <div><strong>Calculation:</strong> Base ({meta.base}) {diff >= 0 ? `+ ${diff}` : `- ${Math.abs(diff)}`} ({diffLabel} AI adjustment) = <strong>{score} / 100</strong></div>
+                  <div><strong>Emergency Type:</strong> {incident.aiDetectedType || 'Pending Analysis'}</div>
+                  <div><strong>Priority Level:</strong> {sev} ({meta.min}–{meta.max} pts)</div>
+                  <div><strong>Score Breakdown:</strong> {breakdownText} → <strong>{score} / 100</strong></div>
                 </div>
               </div>
 
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>Severity Tier Reference</div>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>Priority Levels Guide</div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
                 <thead>
                   <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                    <th style={{ padding: '8px 10px' }}>Tier</th>
-                    <th style={{ padding: '8px 10px' }}>Base</th>
-                    <th style={{ padding: '8px 10px' }}>Range</th>
-                    <th style={{ padding: '8px 10px' }}>Confidence Adj.</th>
+                    <th style={{ padding: '8px 10px' }}>Level</th>
+                    <th style={{ padding: '8px 10px' }}>Score</th>
+                    <th style={{ padding: '8px 10px' }}>Examples</th>
+                    <th style={{ padding: '8px 10px' }}>Clarity Adjustment</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as const).map((tier) => (
                     <tr key={tier} style={{ borderBottom: '1px solid #F1F5F9', background: tier === sev ? '#EFF6FF' : 'transparent' }}>
                       <td style={{ padding: '8px 10px', fontWeight: 800, color: tierMeta[tier].color }}>{tier}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: 700 }}>{tierMeta[tier].base}</td>
-                      <td style={{ padding: '8px 10px' }}>{tierMeta[tier].min}–{tierMeta[tier].max}</td>
+                      <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontWeight: 700, color: '#0F172A' }}>{tierMeta[tier].min}–{tierMeta[tier].max}</div>
+                        <div style={{ fontSize: 11, color: '#64748B' }}>Starts at {tierMeta[tier].base}</div>
+                      </td>
+                      <td style={{ padding: '8px 10px', color: '#334155' }}>{tierMeta[tier].examples}</td>
                       <td style={{ padding: '8px 10px', color: '#475569' }}>{tierMeta[tier].adj}</td>
                     </tr>
                   ))}
