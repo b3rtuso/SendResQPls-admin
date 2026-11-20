@@ -1233,7 +1233,7 @@ export default function Requests() {
                         <tr
                           key={inc.id}
                           className={`rq-tr ${selectedIds.has(inc.id) ? 'selected-row' : ''}`}
-                          onClick={() => openIncident(inc.id)}
+                          onClick={() => openIncident(inc.id, inc)}
                           style={{
                             borderBottom: '1px solid #F1F5F9',
                             cursor: claimingId === inc.id ? 'wait' : 'pointer',
@@ -1455,7 +1455,7 @@ export default function Requests() {
                                 variant="outline"
                                 className="rq-btn-view"
                                 disabled={claimingId === inc.id}
-                                onClick={(e) => { e.stopPropagation(); openIncident(inc.id); }}
+                                onClick={(e) => { e.stopPropagation(); openIncident(inc.id, inc); }}
                                 style={{
                                   padding: '5px 14px',
                                   borderRadius: 8,
@@ -1507,7 +1507,7 @@ export default function Requests() {
                     <div
                       key={inc.id}
                       className={`rq-mobile-card ${selectedIds.has(inc.id) ? 'selected' : ''}`}
-                      onClick={() => openIncident(inc.id)}
+                      onClick={() => openIncident(inc.id, inc)}
                       style={{ opacity: claimingId === inc.id ? 0.7 : 1 }}
                     >
                       {/* Top Row: ID, Status, Timestamp */}
@@ -1640,7 +1640,7 @@ export default function Requests() {
                             size="sm"
                             variant="outline"
                             disabled={claimingId === inc.id}
-                            onClick={(e) => { e.stopPropagation(); openIncident(inc.id); }}
+                            onClick={(e) => { e.stopPropagation(); openIncident(inc.id, inc); }}
                             style={{
                               padding: '5px 14px',
                               borderRadius: 7,

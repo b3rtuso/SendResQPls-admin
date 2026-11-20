@@ -164,14 +164,20 @@ export default function RequestDetails() {
   const navigate = useNavigate();
   const location = useLocation();
   const navState = (location.state as IncidentTicketNavigationState | null) || null;
+  const prefetchedIncident = navState?.prefetchedIncident && navState.prefetchedIncident.id === id
+    ? navState.prefetchedIncident
+    : null;
   const { confirm } = useConfirm();
-  const [currentStatus, setCurrentStatus] = useState<Status>('PENDING');
+  const [currentStatus, setCurrentStatus] = useState<Status>(prefetchedIncident?.status || 'PENDING');
   type ActionLoadingType = 'reject' | 'status' | 'dept' | 'notes' | 'reclassify' | null;
   const [actionLoading, setActionLoading] = useState<ActionLoadingType>(null);
   const isSaving = actionLoading !== null;
-  const [notes, setNotes] = useState('');
-  const [incident, setIncident] = useState<Incident | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState(() => {
+    const savedDraft = typeof sessionStorage !== 'undefined' && id ? sessionStorage.getItem(`srq_admin_notes_draft_${id}`) : null;
+    return savedDraft ?? prefetchedIncident?.adminNotes ?? '';
+  });
+  const [incident, setIncident] = useState<Incident | null>(prefetchedIncident);
+  const [loading, setLoading] = useState(!prefetchedIncident);
   const [showPhoto, setShowPhoto] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; title: string } | null>(null);
   const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'info' });
@@ -388,7 +394,8 @@ export default function RequestDetails() {
   };
 
   useEffect(() => {
-    loadIncident(true);
+    // If we already have prefetchedIncident from navigation state, refresh silently in parallel with lock acquisition
+    loadIncident(!prefetchedIncident);
 
     const handleSseUpdate = (e: Event) => {
       const customEv = e as CustomEvent;
@@ -1140,7 +1147,7 @@ export default function RequestDetails() {
                     const isPrint = notes.includes('print recapture') || notes.includes('printed_photo') || notes.includes('printed');
                     const isScreen = notes.includes('screen recapture') || notes.includes('screen_display') || notes.includes('screen') || notes.includes('recapture') || notes.includes('screenshot');
                     const isBlurry = notes.includes('blurry') || notes.includes('blur') || notes.includes('dark') || notes.includes('low light');
-                    const isNonIncident = notes.includes('non-incident') || notes.includes('not an emergency') || notes.includes('no emergency') || notes.includes('unrelated') || notes.includes('benign') || notes.includes('meme') || notes.includes('selfie');
+                    const isNonIncident = notes.includes('non-incident') || notes.includes('non-emergency') || notes.includes('not an emergency') || notes.includes('no emergency') || notes.includes('no disaster') || notes.includes('no hazard') || notes.includes('unrelated') || notes.includes('benign') || notes.includes('meme') || notes.includes('selfie') || notes.includes('scenery') || notes.includes('landscape') || notes.includes('portrait') || notes.includes('casual photo');
                     const isUnidentified = notes.includes('cannot identify') || notes.includes('unclear') || notes.includes('unrecognized') || notes.includes('could not recognize') || notes.includes('low confidence') || type.includes('unrecognized') || type.includes('unknown') || type.includes('pending review');
 
                     let label = 'Verified Live Scene';
@@ -1182,10 +1189,22 @@ export default function RequestDetails() {
               </div>
             </div>
 
-            {/* ── Reject Suggestion Banner (shown when AI cannot recognise the incident) ── */}
+            {/* ── Reject Suggestion Banner (shown when AI cannot recognise the incident or photo is non-incident) ── */}
             {(() => {
               const type = (incident.aiDetectedType || '').toLowerCase();
+              const notesLower = (incident.adminNotes || '').toLowerCase();
+              const isNonIncidentBanner =
+                notesLower.includes('non-incident') ||
+                notesLower.includes('non-emergency') ||
+                notesLower.includes('not an emergency') ||
+                notesLower.includes('no emergency') ||
+                notesLower.includes('unrelated') ||
+                notesLower.includes('benign') ||
+                notesLower.includes('selfie') ||
+                notesLower.includes('scenery') ||
+                notesLower.includes('portrait');
               const isUnrecognized =
+                isNonIncidentBanner ||
                 type.includes('unrecognized') ||
                 type.includes('unknown') ||
                 type.includes('pending review') ||
@@ -1211,11 +1230,12 @@ export default function RequestDetails() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: '#DC2626', marginBottom: 4 }}>
-                      AI Alert: Unrecognized Incident
+                      {isNonIncidentBanner ? 'AI Alert: Non-Incident Related Photo' : 'AI Alert: Unrecognized Incident'}
                     </div>
                     <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                      The AI could not identify a valid emergency incident in the submitted photo.
-                      Review the photo — reject if it is a false alarm, or select the correct hazard type.
+                      {isNonIncidentBanner
+                        ? 'This photo does not appear to show an active emergency (e.g., scenery, casual portrait, or unrelated scene). Review the photo — reject if it is not an emergency, or select the correct hazard type.'
+                        : 'The AI could not identify a valid emergency incident in the submitted photo. Review the photo — reject if it is a false alarm, or select the correct hazard type.'}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
                       {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (

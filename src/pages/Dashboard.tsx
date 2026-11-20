@@ -1479,7 +1479,7 @@ export default function Dashboard() {
                             style={{ borderBottom: '1px solid #F8FAFC', cursor: 'pointer', transition: 'background 0.1s' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#F5F8FF'}
                             onMouseLeave={e => e.currentTarget.style.background = ''}
-                            onClick={() => openIncident(inc.id)}
+                            onClick={() => openIncident(inc.id, inc)}
                           >
                             <td style={{ padding: '13px 18px', fontFamily: 'monospace', fontSize: 10.5, color: '#94A3B8', whiteSpace: 'nowrap' }}>
                               #{inc.id.slice(0, 8).toUpperCase()}
@@ -1537,7 +1537,7 @@ export default function Dashboard() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={e => { e.stopPropagation(); openIncident(inc.id); }}
+                                onClick={e => { e.stopPropagation(); openIncident(inc.id, inc); }}
                                 style={{
                                   padding: '5px 12px', borderRadius: 7, height: 'auto',
                                   background: 'var(--primary-bg)', color: 'var(--primary)',
@@ -1571,7 +1571,7 @@ export default function Dashboard() {
                     return (
                       <div
                         key={inc.id}
-                        onClick={() => openIncident(inc.id)}
+                        onClick={() => openIncident(inc.id, inc)}
                         style={{
                           background: '#F8FAFC',
                           borderRadius: 10,
@@ -1633,7 +1633,7 @@ export default function Dashboard() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={e => { e.stopPropagation(); openIncident(inc.id); }}
+                            onClick={e => { e.stopPropagation(); openIncident(inc.id, inc); }}
                             style={{
                               padding: '4px 12px',
                               borderRadius: 7,
