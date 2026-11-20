@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIncidentTicket } from '../hooks/useIncidentTicket';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
@@ -191,6 +192,7 @@ export default function Dashboard() {
   };
 
   const navigate = useNavigate();
+  const { openIncident } = useIncidentTicket();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [timeScope, setTimeScope] = useState<'TODAY' | 'ALL'>('TODAY');
   const [todayStats, setTodayStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
@@ -491,13 +493,15 @@ export default function Dashboard() {
     const avgCrime = Math.round(((hist2024.Crime || 0) + (hist2025.Crime || 0)) / 2);
     const avgFire = Math.round(((hist2024.Fire || 0) + (hist2025.Fire || 0)) / 2);
 
+    const catSum = (avgTrauma + avgMedical + avgAccident + avgCrime + avgFire) || predictedCount;
     const projectedCategories = [
-      { name: 'Trauma', count: avgTrauma, percentage: ((avgTrauma / predictedCount) * 100).toFixed(1), dept: 'Medical EMS / Trauma Unit', icon: IoBandage, color: '#F59E0B' },
-      { name: 'Medical', count: avgMedical, percentage: ((avgMedical / predictedCount) * 100).toFixed(1), dept: 'EMS / Health Services', icon: FaBriefcaseMedical, color: '#22C55E' },
-      ...(avgAccident > 0 ? [{ name: 'Accident', count: avgAccident, percentage: ((avgAccident / predictedCount) * 100).toFixed(1), dept: 'Traffic / PNP', icon: Car, color: '#3B82F6' }] : []),
-      ...(avgCrime > 0 ? [{ name: 'Crime', count: avgCrime, percentage: ((avgCrime / predictedCount) * 100).toFixed(1), dept: 'PNP Police', icon: RiCriminalFill, color: '#8B5CF6' }] : []),
-      ...(avgFire > 0 ? [{ name: 'Fire', count: avgFire, percentage: ((avgFire / predictedCount) * 100).toFixed(1), dept: 'BFP Fire Protection', icon: FaFire, color: '#EF4444' }] : []),
+      { name: 'Trauma', count: avgTrauma, percentage: ((avgTrauma / catSum) * 100).toFixed(1), dept: 'Medical EMS / Trauma Unit', icon: IoBandage, color: '#F59E0B' },
+      { name: 'Medical', count: avgMedical, percentage: ((avgMedical / catSum) * 100).toFixed(1), dept: 'EMS / Health Services', icon: FaBriefcaseMedical, color: '#22C55E' },
+      ...(avgAccident > 0 ? [{ name: 'Accident', count: avgAccident, percentage: ((avgAccident / catSum) * 100).toFixed(1), dept: 'Traffic / PNP', icon: Car, color: '#3B82F6' }] : []),
+      ...(avgCrime > 0 ? [{ name: 'Crime', count: avgCrime, percentage: ((avgCrime / catSum) * 100).toFixed(1), dept: 'PNP Police', icon: RiCriminalFill, color: '#8B5CF6' }] : []),
+      ...(avgFire > 0 ? [{ name: 'Fire', count: avgFire, percentage: ((avgFire / catSum) * 100).toFixed(1), dept: 'BFP Fire Protection', icon: FaFire, color: '#EF4444' }] : []),
     ].sort((a, b) => b.count - a.count);
+    const dominantType = projectedCategories[0]?.name || forecast?.type || 'Trauma';
 
     // 2. Current Month Live Incidents Logged to Date in Database
     const currentMonthLiveIncidents = incidents.filter(inc => {
@@ -517,6 +521,7 @@ export default function Dashboard() {
       hist2025Total,
       predictedCount,
       projectedCategories,
+      dominantType,
       forecast,
       currentMonthLiveIncidents,
       allTimeTotal,
@@ -580,10 +585,9 @@ export default function Dashboard() {
 
         {/* ── Top Incident Intelligence Carousel (Risk Forecast & Top Locations) ── */}
         {(() => {
-          const currentMonthName = new Date().toLocaleDateString('en-PH', { month: 'long' });
-          const currentMonthShort = new Date().toLocaleDateString('en-PH', { month: 'short' });
-          const forecast = monthlyDetails.find(m => m.month.toLowerCase() === currentMonthShort.toLowerCase()) || monthlyDetails[new Date().getMonth()];
-          const predictedCount = forecast?.desc.match(/~(\d+)|\b(\d+)\s+incidents/)?.[1] || forecast?.desc.match(/\d+/)?.[0] || '41';
+          const currentMonthName = computationAnalysis.currentMonthLong;
+          const predictedCount = String(computationAnalysis.predictedCount);
+          const dominantType = computationAnalysis.dominantType;
 
           return (
             <div
@@ -796,7 +800,7 @@ export default function Dashboard() {
                             lineHeight: 1.4,
                             fontStyle: 'italic',
                           }}>
-                            The incident most likely to occur this month is <strong style={{ fontWeight: 800, fontStyle: 'normal', textDecoration: 'underline', textUnderlineOffset: '4px' }}>{forecast?.type || 'Trauma'} Emergency</strong>.
+                            The incident most likely to occur this month is <strong style={{ fontWeight: 800, fontStyle: 'normal', textDecoration: 'underline', textUnderlineOffset: '4px' }}>{dominantType} Emergency</strong>.
                           </div>
                         </div>
 
@@ -1501,7 +1505,7 @@ export default function Dashboard() {
                             style={{ borderBottom: '1px solid #F8FAFC', cursor: 'pointer', transition: 'background 0.1s' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#F5F8FF'}
                             onMouseLeave={e => e.currentTarget.style.background = ''}
-                            onClick={() => navigate(`/requests/${inc.id}`)}
+                            onClick={() => openIncident(inc.id)}
                           >
                             <td style={{ padding: '13px 18px', fontFamily: 'monospace', fontSize: 10.5, color: '#94A3B8', whiteSpace: 'nowrap' }}>
                               #{inc.id.slice(0, 8).toUpperCase()}
@@ -1559,7 +1563,7 @@ export default function Dashboard() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={e => { e.stopPropagation(); navigate(`/requests/${inc.id}`); }}
+                                onClick={e => { e.stopPropagation(); openIncident(inc.id); }}
                                 style={{
                                   padding: '5px 12px', borderRadius: 7, height: 'auto',
                                   background: 'var(--primary-bg)', color: 'var(--primary)',
@@ -1593,7 +1597,7 @@ export default function Dashboard() {
                     return (
                       <div
                         key={inc.id}
-                        onClick={() => navigate(`/requests/${inc.id}`)}
+                        onClick={() => openIncident(inc.id)}
                         style={{
                           background: '#F8FAFC',
                           borderRadius: 10,
@@ -1655,7 +1659,7 @@ export default function Dashboard() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={e => { e.stopPropagation(); navigate(`/requests/${inc.id}`); }}
+                            onClick={e => { e.stopPropagation(); openIncident(inc.id); }}
                             style={{
                               padding: '4px 12px',
                               borderRadius: 7,
@@ -1839,7 +1843,7 @@ export default function Dashboard() {
                   }}>
                     <div style={{ fontSize: 11, color: '#D97706', fontWeight: 700 }}>Peak Risk Category</div>
                     <div style={{ fontSize: 15, fontWeight: 800, color: '#92400E' }}>
-                      {computationAnalysis.forecast?.type || 'Trauma'} Emergency
+                      {computationAnalysis.dominantType} Emergency
                     </div>
                   </div>
                 </div>

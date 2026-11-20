@@ -86,9 +86,9 @@ export const yearlySummary = {
   totalCurrentYear: 199,       // Jan–May 2026 actual
   peakMonth: 'Jan',            // 61 incidents
   peakMonthCount: 61,
-  yoyGrowth: -14,              // 2025 had 510 total vs projected ~394 for 2026
-  predictedTotal: 394,         // sum of actual + predicted
-  previousYearTotal: 460,      // 2024 total (most recent full year)
+  yoyGrowth: -14,              // (394 - 460) / 460 = -14.3% vs 2024 full year
+  predictedTotal: 394,         // sum of Jan–May actual (199) + Jun–Dec 2-yr seasonal avg (195)
+  previousYearTotal: 460,      // 2024 full-year total
 };
 
 // ── Historical yearly totals ────────────────────────────────────────

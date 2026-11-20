@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import type { IncidentTicketNavigationState } from '../hooks/useIncidentTicket';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
@@ -133,6 +134,8 @@ interface ToastState {
 export default function RequestDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const navState = (location.state as IncidentTicketNavigationState | null) || null;
   const { confirm } = useConfirm();
   const [currentStatus, setCurrentStatus] = useState<Status>('PENDING');
   type ActionLoadingType = 'reject' | 'status' | 'dept' | 'notes' | 'reclassify' | null;
@@ -147,11 +150,17 @@ export default function RequestDetails() {
   const [resolvedAddress, setResolvedAddress] = useState('');
   const [resolvingAddress, setResolvingAddress] = useState(false);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [showUrgencyFormula, setShowUrgencyFormula] = useState(false);
   const [lockState, setLockState] = useState<{
     isLockedByOther: boolean;
     lockedByAdminName?: string;
     lockedAt?: string;
-  }>({ isLockedByOther: false });
+  }>(() => ({
+    isLockedByOther: Boolean(navState?.lockedByOther),
+    lockedByAdminName: navState?.lockedByAdminName,
+    lockedAt: navState?.lockedAt,
+  }));
+  const hasLockRef = useRef<boolean>(Boolean(navState?.ticketAcquired));
   const [isTakingOver, setIsTakingOver] = useState(false);
 
   const [departmentsList, setDepartmentsList] = useState<DepartmentInfo[]>([]);
@@ -244,19 +253,37 @@ export default function RequestDetails() {
     }
   }, [id, showToast]);
 
-  // Lock acquisition & 30s heartbeat lifecycle
+  // Lock acquisition, 30s heartbeat & pagehide/unmount release lifecycle
   useEffect(() => {
     if (!id) return;
     let isCancelled = false;
 
     const acquireLock = async () => {
+      // If we just navigated from useIncidentTicket with an explicit result, skip duplicate POST /lock
+      if (navState?.ticketAcquired) {
+        hasLockRef.current = true;
+        setLockState({ isLockedByOther: false });
+        return;
+      }
+      if (navState?.lockedByOther) {
+        hasLockRef.current = false;
+        setLockState({
+          isLockedByOther: true,
+          lockedByAdminName: navState.lockedByAdminName,
+          lockedAt: navState.lockedAt,
+        });
+        return;
+      }
+
       try {
         const res = await lockIncident(id);
         if (!isCancelled && res.data) {
+          hasLockRef.current = Boolean(res.data.locked);
           setLockState({ isLockedByOther: false });
         }
       } catch (err: any) {
         if (!isCancelled && err.response?.status === 423) {
+          hasLockRef.current = false;
           setLockState({
             isLockedByOther: true,
             lockedByAdminName: err.response.data?.lockedByAdminName,
@@ -269,17 +296,42 @@ export default function RequestDetails() {
     acquireLock();
 
     const heartbeatTimer = setInterval(() => {
-      if (!lockState.isLockedByOther) {
-        heartbeatIncident(id).catch(() => {});
+      if (hasLockRef.current) {
+        heartbeatIncident(id).catch((err: any) => {
+          if (err?.response?.status === 423) {
+            hasLockRef.current = false;
+            setLockState({ isLockedByOther: true });
+          }
+        });
       }
     }, 30000);
+
+    const releaseOnPageHide = () => {
+      if (!hasLockRef.current) return;
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://sendresqpls.onrender.com/api');
+      try {
+        fetch(`${apiBase}/incidents/${id}/unlock`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          keepalive: true,
+        }).catch(() => {});
+      } catch { /* ignore */ }
+    };
+
+    window.addEventListener('pagehide', releaseOnPageHide);
 
     return () => {
       isCancelled = true;
       clearInterval(heartbeatTimer);
-      unlockIncident(id).catch(() => {});
+      window.removeEventListener('pagehide', releaseOnPageHide);
+      if (hasLockRef.current) {
+        hasLockRef.current = false;
+        unlockIncident(id).catch(() => {});
+      }
     };
-  }, [id, lockState.isLockedByOther]);
+  }, [id]);
 
   const handleForceTakeover = async () => {
     if (!id) return;
@@ -296,6 +348,7 @@ export default function RequestDetails() {
     setIsTakingOver(true);
     try {
       await forceUnlockIncident(id);
+      hasLockRef.current = true;
       setLockState({ isLockedByOther: false });
       showToast('success', 'Incident Lock Acquired', 'You now have full control of this emergency report.');
       loadIncident(false);
@@ -311,9 +364,30 @@ export default function RequestDetails() {
 
     const handleSseUpdate = (e: Event) => {
       const customEv = e as CustomEvent;
+      const eventName = customEv.detail?.event;
       const data = customEv.detail?.data;
+      const targetId = data?.incidentId || data?.id;
+      const currentAdminId = localStorage.getItem('userId');
+
+      if (eventName === 'incident_locked' && targetId === id) {
+        if (data?.lockedByAdminId && data.lockedByAdminId !== currentAdminId) {
+          hasLockRef.current = false;
+          setLockState({
+            isLockedByOther: true,
+            lockedByAdminName: data.lockedByAdminName,
+            lockedAt: data.lockedAt,
+          });
+        }
+        return;
+      }
+
+      if (eventName === 'incident_unlocked' && targetId === id) {
+        loadIncident(false);
+        return;
+      }
+
       // If the SSE event is for this incident or a general incident update, reload
-      if (!data || !data.id || data.id === id || (customEv.detail?.event === 'incidents_batch_updated' && data.ids?.includes(id))) {
+      if (!data || !targetId || targetId === id || (eventName === 'incidents_batch_updated' && data.ids?.includes(id))) {
         loadIncident(false);
       }
     };
@@ -625,7 +699,7 @@ export default function RequestDetails() {
   if (incident && lockState.isLockedByOther) {
     return (
       <>
-        <Header title={`Incident #${id?.slice(0, 8)} (Locked)`} subtitle="Emergency request currently being handled by another dispatcher" />
+        <Header title={`Incident #${id?.slice(0, 8)} (In Review)`} subtitle="Already in review by another administrator" />
         <div className="page-content" style={{ maxWidth: 640, margin: '48px auto', textAlign: 'center' }}>
           <div style={{
             background: '#FFFFFF',
@@ -664,14 +738,14 @@ export default function RequestDetails() {
               letterSpacing: '0.05em',
               marginBottom: 14,
             }}>
-              <Lock size={13} /> Active Dispatch Session
+              <Lock size={13} /> Already in Review
             </div>
 
             <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>
-              This Incident is Currently Locked
+              Already in Review by Another Administrator
             </h2>
             <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.6, marginBottom: 24 }}>
-              <strong>{lockState.lockedByAdminName || 'Another Dispatcher'}</strong> is actively reviewing, dispatching, or updating this emergency report. To prevent conflicting dispatches, parallel modifications are blocked until they finish or release the incident.
+              This request is already in review by <strong>{lockState.lockedByAdminName || 'another administrator'}</strong>. Parallel modifications are blocked until they finish or release the request.
             </p>
 
             <div style={{
@@ -937,39 +1011,58 @@ export default function RequestDetails() {
                   })()}
                 </div>
 
-                {/* Severity Rating */}
+                {/* Severity Rating & Urgency Score */}
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
-                    Severity Rating
+                    Severity &amp; Urgency Score
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    {(() => {
-                      const sev = (incident.severity || 'MEDIUM').toUpperCase();
-                      const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
-                        CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
-                        HIGH:     { bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3', dot: '#F43F5E' },
-                        MEDIUM:   { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', dot: '#F59E0B' },
-                        LOW:      { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981' },
-                      };
-                      const s = sevColors[sev] || sevColors.MEDIUM;
-                      return (
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '6px 12px',
-                          borderRadius: 8,
-                          fontSize: 13,
-                          fontWeight: 800,
-                          background: s.bg,
-                          color: s.color,
-                          border: `1.5px solid ${s.border}`,
-                        }}>
-                          {sev} PRIORITY
-                        </span>
-                      );
-                    })()}
-                  </div>
+                  {(() => {
+                    const sev = (incident.severity || 'MEDIUM').toUpperCase();
+                    const defaultScores: Record<string, number> = { CRITICAL: 92, HIGH: 75, MEDIUM: 52, LOW: 25 };
+                    const score = typeof incident.urgencyScore === 'number' ? Math.max(1, Math.min(100, incident.urgencyScore)) : (defaultScores[sev] ?? 52);
+                    const sevColors: Record<string, { bg: string; color: string; border: string; dot: string; pulse?: boolean }> = {
+                      CRITICAL: { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', pulse: true },
+                      HIGH:     { bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3', dot: '#F43F5E' },
+                      MEDIUM:   { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', dot: '#F59E0B' },
+                      LOW:      { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981' },
+                    };
+                    const s = sevColors[sev] || sevColors.MEDIUM;
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 800,
+                            background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
+                          }}>
+                            {sev} PRIORITY
+                          </span>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            padding: '6px 10px', borderRadius: 8, fontSize: 13, fontWeight: 800,
+                            background: '#F8FAFC', color: '#0F172A', border: '1.5px solid #E2E8F0',
+                            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                          }}>
+                            {score} / 100
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowUrgencyFormula(true)}
+                            style={{
+                              padding: '5px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 700,
+                              background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE',
+                              cursor: 'pointer', fontFamily: 'var(--font)',
+                            }}
+                          >
+                            View Formula
+                          </button>
+                        </div>
+                        <div style={{ width: '100%', maxWidth: 260, height: 6, borderRadius: 999, background: '#E2E8F0', overflow: 'hidden' }}>
+                          <div style={{ width: `${score}%`, height: '100%', background: s.dot, borderRadius: 999, transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Status */}
@@ -1018,42 +1111,6 @@ export default function RequestDetails() {
                 </div>
               </div>
             </div>
-
-            {/* ── Suspected Recapture Warning Banner ── */}
-            {(() => {
-              const notes = incident.adminNotes || '';
-              if (!notes.toLowerCase().includes('recapture')) return null;
-              return (
-                <div style={{
-                  padding: '14px 16px',
-                  borderRadius: 12,
-                  background: 'rgba(245, 158, 11, 0.09)',
-                  border: '1.5px solid rgba(245, 158, 11, 0.35)',
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'flex-start',
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                    background: 'rgba(245, 158, 11, 0.16)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <AlertTriangle size={20} color="#D97706" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#B45309', marginBottom: 4 }}>
-                      AI Authenticity Alert: Suspected Recaptured Media
-                    </div>
-                    <div style={{ fontSize: 12.5, color: '#92400E', lineHeight: 1.55 }}>
-                      {notes}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                      Auto-dispatch was paused to prevent false alarm responses to screen photos or old archived media. Verify with the citizen reporter before dispatching units.
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* ── Reject Suggestion Banner (shown when AI cannot recognise the incident) ── */}
             {(() => {
@@ -2195,6 +2252,91 @@ export default function RequestDetails() {
           </div>
         </div>
       )}
+      {/* ── Urgency Score Formula Modal ── */}
+      {showUrgencyFormula && (() => {
+        const sev = (incident.severity || 'MEDIUM').toUpperCase();
+        const tierMeta: Record<string, { base: number; min: number; max: number; adj: string; color: string; bg: string }> = {
+          CRITICAL: { base: 92, min: 85, max: 100, adj: '+6 (High) / 0 (Med) / -4 (Low)', color: '#B91C1C', bg: '#FEF2F2' },
+          HIGH:     { base: 75, min: 65, max: 84,  adj: '+7 (High) / 0 (Med) / -5 (Low)', color: '#BE123C', bg: '#FFF1F2' },
+          MEDIUM:   { base: 52, min: 40, max: 64,  adj: '+8 (High) / 0 (Med) / -7 (Low)', color: '#B45309', bg: '#FFFBEB' },
+          LOW:      { base: 25, min: 1,  max: 39,  adj: 'Fixed (25 fallback / 10 unrecognized)', color: '#047857', bg: '#ECFDF5' },
+        };
+        const meta = tierMeta[sev] || tierMeta.MEDIUM;
+        const score = typeof incident.urgencyScore === 'number' ? Math.max(1, Math.min(100, incident.urgencyScore)) : meta.base;
+        const diff = score - meta.base;
+        const diffLabel = diff > 0 ? `+${diff}` : `${diff}`;
+        return (
+          <div
+            onClick={() => setShowUrgencyFormula(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '100%', maxWidth: 560, background: '#FFFFFF', borderRadius: 18,
+                padding: 24, boxShadow: '0 24px 60px rgba(15, 23, 42, 0.25)',
+                border: '1px solid #E2E8F0', maxHeight: '90vh', overflowY: 'auto',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0F172A' }}>Urgency Score Computation</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 12.5, color: '#64748B' }}>How SendResQPls calculates the 1–100 priority score</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowUrgencyFormula(false)}
+                  style={{ border: 'none', background: '#F1F5F9', borderRadius: 999, width: 32, height: 32, cursor: 'pointer', fontWeight: 700, color: '#475569' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Formula</div>
+                <div style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: 13, fontWeight: 700, color: '#1D4ED8' }}>
+                  Urgency Score = clamp(Base Score + Confidence Adjustment, Tier Min, Tier Max)
+                </div>
+              </div>
+
+              <div style={{ background: meta.bg, border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: meta.color, textTransform: 'uppercase', marginBottom: 6 }}>This Incident&apos;s Score</div>
+                <div style={{ fontSize: 13.5, color: '#0F172A', lineHeight: 1.6 }}>
+                  <div><strong>Detected Type:</strong> {incident.aiDetectedType || 'Pending Analysis'}</div>
+                  <div><strong>Severity Tier:</strong> {sev} ({meta.min}–{meta.max})</div>
+                  <div><strong>Calculation:</strong> Base ({meta.base}) {diff >= 0 ? `+ ${diff}` : `- ${Math.abs(diff)}`} ({diffLabel} AI adjustment) = <strong>{score} / 100</strong></div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>Severity Tier Reference</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
+                    <th style={{ padding: '8px 10px' }}>Tier</th>
+                    <th style={{ padding: '8px 10px' }}>Base</th>
+                    <th style={{ padding: '8px 10px' }}>Range</th>
+                    <th style={{ padding: '8px 10px' }}>Confidence Adj.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as const).map((tier) => (
+                    <tr key={tier} style={{ borderBottom: '1px solid #F1F5F9', background: tier === sev ? '#EFF6FF' : 'transparent' }}>
+                      <td style={{ padding: '8px 10px', fontWeight: 800, color: tierMeta[tier].color }}>{tier}</td>
+                      <td style={{ padding: '8px 10px', fontWeight: 700 }}>{tierMeta[tier].base}</td>
+                      <td style={{ padding: '8px 10px' }}>{tierMeta[tier].min}–{tierMeta[tier].max}</td>
+                      <td style={{ padding: '8px 10px', color: '#475569' }}>{tierMeta[tier].adj}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
