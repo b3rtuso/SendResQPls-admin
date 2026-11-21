@@ -483,6 +483,11 @@ export default function Header({ title, subtitle }: HeaderProps) {
                   <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
                     {currentUnrecognized.type || 'Unspecified Incident'}
                   </div>
+                  {currentUnrecognized.reason && (
+                    <div style={{ fontSize: 12, color: '#B45309', fontWeight: 600, marginTop: 4 }}>
+                      {currentUnrecognized.reason}
+                    </div>
+                  )}
                 </div>
                 {unrecognizedQueue.length > 1 ? (
                   <span style={{

@@ -292,8 +292,8 @@ export default function Requests() {
       const eventName = detail?.event;
       const data = detail?.data;
 
-      // Optimistically insert new report into state immediately
-      if (data && (eventName === 'new_incident' || eventName === 'incident_created')) {
+      // Optimistically insert or update report into state immediately (including AI completion & unrecognized_incident)
+      if (data && (eventName === 'new_incident' || eventName === 'incident_created' || eventName === 'unrecognized_incident')) {
         const id = data.id || data.incidentId;
         if (id) {
           setIncidents(prev => {

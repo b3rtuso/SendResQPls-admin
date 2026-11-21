@@ -70,6 +70,7 @@ export interface UnrecognizedIncident {
   id: string;
   type: string;
   confidence: string;
+  reason?: string;
 }
 
 export interface NotifItem {
@@ -182,21 +183,28 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setNotifications(items);
       setUnseenCount(newCount);
 
-      // Populate unrecognized queue on page load/refresh from incidents needing review
+      // Populate unrecognized queue on page load/refresh from recent unhandled incidents needing triage
       const handledIds = getHandledUnrecognizedIds();
+      const nowMs = Date.now();
       const pendingUnrecognized = incidents.filter((inc: any) => {
-        // Only unhandled PENDING incidents belong in the initial triage pop-up modal!
-        // If already in REVIEWING, DISPATCHED, RESOLVED, or REJECTED, it has already been triaged.
-        if (inc.status !== 'PENDING') return false;
+        // Backend saves AI-unrecognized / low-confidence reports directly as REVIEWING (or PENDING before triage).
+        // Only surface unhandled, unlocked reports from the last 24h so old resolved/rejected/locked items never spam.
+        const isTriageStatus = inc.status === 'PENDING' || inc.status === 'REVIEWING';
+        if (!isTriageStatus) return false;
         if (handledIds.has(inc.id)) return false;
+        if (inc.lockedByAdminId) return false;
+
+        const createdMs = inc.createdAt ? new Date(inc.createdAt).getTime() : 0;
+        const isRecent = createdMs > 0 && nowMs - createdMs <= 24 * 60 * 60 * 1000;
+        if (inc.status === 'REVIEWING' && !isRecent) return false;
 
         const type = (inc.aiDetectedType || '').toLowerCase();
         const notes = (inc.adminNotes || '').toLowerCase();
 
-        // If already explicitly flagged for manual review, exclude from pop-up modal
+        // If already explicitly flagged for manual review by an admin, exclude from pop-up modal
         if (notes.includes('flagged for manual review')) return false;
 
-        // Only include if explicitly flagged as unrecognized/unknown or low-confidence AI analysis
+        // Match unrecognized, low-confidence, or any of the 4 AI non-live scene authenticity flags
         return (
           type.includes('unrecognized') ||
           type.includes('unknown') ||
@@ -204,7 +212,12 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           type.includes('low confidence') ||
           notes.includes('could not recognize') ||
           notes.includes('low confidence') ||
-          notes.includes('confidence: low')
+          notes.includes('confidence: low') ||
+          notes.includes('blurry photo') ||
+          notes.includes('non-incident related') ||
+          notes.includes('screen recapture') ||
+          notes.includes('print recapture') ||
+          notes.includes('cannot identify')
         );
       });
 
@@ -216,7 +229,8 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             .map((inc: any) => ({
               id: inc.id,
               type: inc.aiDetectedType || 'Unrecognized Incident',
-              confidence: (inc.adminNotes || '').toLowerCase().includes('low') ? 'low' : 'low',
+              confidence: 'low',
+              reason: inc.adminNotes || undefined,
             }));
           return [...prev, ...newItems];
         });
@@ -289,6 +303,10 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             try {
               const data = eventData || (event.data ? JSON.parse(event.data) : {});
               const effectiveId = data.id || data.incidentId || '';
+              // Clear any stale pre-AI "Analyzing..." banner for this same incident so it doesn't linger behind the modal
+              if (effectiveId) {
+                setNewReportBanner(prev => (prev && prev.id === effectiveId ? null : prev));
+              }
               const handledIds = getHandledUnrecognizedIds();
               if (effectiveId && !handledIds.has(effectiveId)) {
                 setUnrecognizedQueue(prev => {
@@ -297,6 +315,7 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     id: effectiveId,
                     type: data.aiDetectedType || 'Unknown',
                     confidence: data.aiConfidence || 'low',
+                    reason: data.adminNotes || data.sceneCategory || undefined,
                   }];
                 });
               }
