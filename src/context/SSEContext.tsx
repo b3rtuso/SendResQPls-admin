@@ -183,16 +183,15 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setNotifications(items);
       setUnseenCount(newCount);
 
-      // Populate unrecognized queue on page load/refresh from recent unhandled incidents needing triage
+      // Populate unrecognized queue from recent unhandled incidents needing triage
       const handledIds = getHandledUnrecognizedIds();
       const nowMs = Date.now();
       const pendingUnrecognized = incidents.filter((inc: any) => {
         // Backend saves AI-unrecognized / low-confidence reports directly as REVIEWING (or PENDING before triage).
-        // Only surface unhandled, unlocked reports from the last 24h so old resolved/rejected/locked items never spam.
+        // Surface unhandled reports from the last 24h so dispatchers always get the Reject / Keep review modal.
         const isTriageStatus = inc.status === 'PENDING' || inc.status === 'REVIEWING';
         if (!isTriageStatus) return false;
         if (handledIds.has(inc.id)) return false;
-        if (inc.lockedByAdminId) return false;
 
         const createdMs = inc.createdAt ? new Date(inc.createdAt).getTime() : 0;
         const isRecent = createdMs > 0 && nowMs - createdMs <= 24 * 60 * 60 * 1000;
@@ -368,9 +367,12 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     connect();
     fetchNotifications();
+    // Periodic 15s background sync guarantees unrecognized/low-confidence reports still pop up even if SSE drops
+    const syncInterval = setInterval(fetchNotifications, 15000);
 
     return () => {
       aborted = true;
+      clearInterval(syncInterval);
       sseRef.current?.abort();
       if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
     };

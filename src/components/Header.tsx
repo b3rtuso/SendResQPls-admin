@@ -52,8 +52,10 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const [decidingIncident, setDecidingIncident] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Check if admin is currently in the middle of working on an incident
-  const isWorkingOnIncident = location.pathname.startsWith('/requests/') && location.pathname !== '/requests';
+  // Only suppress the modal if the admin is already viewing THIS exact unrecognized incident
+  const isViewingCurrentUnrecognized = Boolean(
+    currentUnrecognized && location.pathname === `/requests/${currentUnrecognized.id}`
+  );
 
   // Global search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -353,8 +355,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
         }
       `}</style>
 
-      {/* Unrecognized Incident Modal (Stackable Review Queue — Suppressed while actively on an incident page) */}
-      {currentUnrecognized && !isWorkingOnIncident && (
+      {/* Unrecognized Incident Modal (Stackable Review Queue — Suppressed only if already viewing that exact incident) */}
+      {currentUnrecognized && !isViewingCurrentUnrecognized && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 10000,
           background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(6px)',
