@@ -255,8 +255,12 @@ export default function RequestDetails() {
     handleStatusUpdate(confirmModal.targetStatus);
   };
 
+  const isFetchingIncidentRef = useRef(false);
+
   const loadIncident = useCallback(async (showLoading = false) => {
     if (!id) return;
+    if (!showLoading && isFetchingIncidentRef.current) return;
+    isFetchingIncidentRef.current = true;
     if (showLoading) setLoading(true);
     try {
       const res = await fetchIncident(id, true);
@@ -283,6 +287,7 @@ export default function RequestDetails() {
         showToast('error', 'Failed to load incident', 'Could not fetch incident details from the database.');
       }
     } finally {
+      isFetchingIncidentRef.current = false;
       if (showLoading) setLoading(false);
     }
   }, [id, showToast]);
@@ -329,16 +334,37 @@ export default function RequestDetails() {
 
     acquireLock();
 
-    const heartbeatTimer = setInterval(() => {
-      if (hasLockRef.current) {
+    const sendHeartbeat = () => {
+      if (!hasLockRef.current || document.hidden) return;
+      heartbeatIncident(id).catch((err: any) => {
+        if (err?.response?.status === 423) {
+          hasLockRef.current = false;
+          setLockState({ isLockedByOther: true });
+        }
+      });
+    };
+
+    const heartbeatTimer = setInterval(sendHeartbeat, 30000);
+
+    const handleVisibilityResume = () => {
+      if (!document.hidden && hasLockRef.current) {
         heartbeatIncident(id).catch((err: any) => {
           if (err?.response?.status === 423) {
             hasLockRef.current = false;
             setLockState({ isLockedByOther: true });
+          } else {
+            // Re-acquire lock if it quietly expired while tab was sleeping
+            lockIncident(id).then((res) => {
+              if (!isCancelled && res.data) {
+                hasLockRef.current = Boolean(res.data.locked);
+                setLockState({ isLockedByOther: false });
+              }
+            }).catch(() => {});
           }
         });
       }
-    }, 30000);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityResume);
 
     const releaseOnPageHide = () => {
       if (!hasLockRef.current) return;
@@ -359,6 +385,7 @@ export default function RequestDetails() {
     return () => {
       isCancelled = true;
       clearInterval(heartbeatTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityResume);
       window.removeEventListener('pagehide', releaseOnPageHide);
       if (hasLockRef.current) {
         hasLockRef.current = false;
@@ -428,13 +455,19 @@ export default function RequestDetails() {
     };
 
     window.addEventListener('incident-sse-update', handleSseUpdate);
-    // Relaxed fallback timer (60s safety heartbeat instead of 8s aggressive polling)
+    // Relaxed fallback timer (60s safety heartbeat, paused while tab is hidden)
     const interval = setInterval(() => {
-      loadIncident(false);
+      if (!document.hidden) loadIncident(false);
     }, 60000);
+
+    const handleTabVisible = () => {
+      if (!document.hidden) loadIncident(false);
+    };
+    document.addEventListener('visibilitychange', handleTabVisible);
 
     return () => {
       window.removeEventListener('incident-sse-update', handleSseUpdate);
+      document.removeEventListener('visibilitychange', handleTabVisible);
       clearInterval(interval);
     };
   }, [loadIncident, id]);

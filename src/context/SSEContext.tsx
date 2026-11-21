@@ -120,6 +120,10 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sseRef = useRef<AbortController | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectDelayRef = useRef<number>(2000);
+  const isFetchingNotifsRef = useRef<boolean>(false);
+  const lastNotifSigRef = useRef<string>('');
   const location = useLocation();
   const pathnameRef = useRef(location.pathname);
   const { showToast } = useToast();
@@ -163,6 +167,8 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const fetchNotifications = useCallback(async () => {
+    if (isFetchingNotifsRef.current) return;
+    isFetchingNotifsRef.current = true;
     try {
       const res = await getIncidents();
       const incidents: any[] = res.data || [];
@@ -182,8 +188,12 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }));
 
       const newCount = items.filter(n => n.isNew).length;
-      setNotifications(items);
-      setUnseenCount(newCount);
+      const nextSig = items.map(n => `${n.id}:${n.status}:${n.type}:${n.isNew}`).join('|');
+      if (nextSig !== lastNotifSigRef.current) {
+        lastNotifSigRef.current = nextSig;
+        setNotifications(items);
+        setUnseenCount(newCount);
+      }
 
       // Populate unrecognized queue from recent unhandled incidents needing triage
       const handledIds = getHandledUnrecognizedIds();
@@ -254,6 +264,8 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } catch {
       // fail silently
+    } finally {
+      isFetchingNotifsRef.current = false;
     }
   }, []);
 
@@ -261,9 +273,26 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     let aborted = false;
 
+    const scheduleReconnect = () => {
+      if (aborted) return;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      const delay = reconnectDelayRef.current;
+      reconnectDelayRef.current = Math.min(15000, delay * 2);
+      reconnectTimerRef.current = setTimeout(() => {
+        reconnectTimerRef.current = null;
+        if (!aborted) connect();
+      }, delay);
+    };
+
     const connect = () => {
+      if (aborted) return;
       const token = localStorage.getItem('token');
       if (!token) return;
+
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
 
       sseRef.current?.abort();
       const ctrl = new AbortController();
@@ -275,6 +304,7 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         onopen: async (res) => {
           if (res.ok) {
+            reconnectDelayRef.current = 2000;
             setIsConnected(true);
           }
         },
@@ -387,11 +417,14 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         },
 
+        onclose() {
+          setIsConnected(false);
+          scheduleReconnect();
+        },
+
         onerror(err) {
           setIsConnected(false);
-          if (!aborted) {
-            setTimeout(connect, 2000);
-          }
+          scheduleReconnect();
           throw err;
         },
 
@@ -401,12 +434,23 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     connect();
     fetchNotifications();
-    // Periodic 15s background sync guarantees unrecognized/low-confidence reports still pop up even if SSE drops
-    const syncInterval = setInterval(fetchNotifications, 15000);
+    // Periodic 15s background sync (paused while tab is hidden to avoid background churn)
+    const syncInterval = setInterval(() => {
+      if (!document.hidden) fetchNotifications();
+    }, 15000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchNotifications();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       aborted = true;
       clearInterval(syncInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       sseRef.current?.abort();
       if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
     };

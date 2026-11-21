@@ -213,15 +213,17 @@ export default function Header({ title, subtitle }: HeaderProps) {
     setUnrecognizedQueue([]);
   };
 
+  const isModalVisible = Boolean(currentUnrecognized && !isViewingCurrentUnrecognized) || Boolean(photoLightboxUrl);
+
   useEffect(() => {
-    if (currentUnrecognized) {
-      const originalOverflow = document.body.style.overflow;
+    if (isModalVisible) {
       document.body.style.overflow = 'hidden';
       return () => {
-        document.body.style.overflow = originalOverflow;
+        document.body.style.overflow = '';
       };
     }
-  }, [currentUnrecognized]);
+    document.body.style.overflow = '';
+  }, [isModalVisible]);
 
   return (
     <>
