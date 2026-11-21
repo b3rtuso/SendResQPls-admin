@@ -1,4 +1,4 @@
-import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Building2, FileText, PhoneCall, LayoutDashboard, HelpCircle, Settings as SettingsIcon } from 'lucide-react';
+import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu, Bot, Info, Layers, Building2, FileText, PhoneCall, LayoutDashboard, HelpCircle, Settings as SettingsIcon, Camera, Maximize2 } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIncidentTicket } from '../hooks/useIncidentTicket';
@@ -50,6 +50,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
   } = useSSE();
   const [showPanel, setShowPanel] = useState(false);
   const [decidingIncident, setDecidingIncident] = useState(false);
+  const [photoLightboxUrl, setPhotoLightboxUrl] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Only suppress the modal if the admin is already viewing THIS exact unrecognized incident
@@ -463,9 +464,88 @@ export default function Header({ title, subtitle }: HeaderProps) {
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: '22px 26px 26px' }}>
-              <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.5, margin: '0 0 16px' }}>
-                A report was submitted that could not be confidently identified by the AI system. Please review the details and decide whether to keep or reject this report.
+            <div style={{ padding: '20px 24px 24px', overflowY: 'auto' }}>
+              {/* Submitted Photo Preview (View Photo) */}
+              {(() => {
+                const resolvedPhotoUrl =
+                  currentUnrecognized.photoUrl ||
+                  incidentsList.find((inc) => inc.id === currentUnrecognized.id)?.photoUrl;
+                if (!resolvedPhotoUrl) return null;
+                return (
+                  <div
+                    onClick={() => setPhotoLightboxUrl(resolvedPhotoUrl)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPhotoLightboxUrl(resolvedPhotoUrl); }}
+                    style={{
+                      position: 'relative',
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      border: '1px solid #E2E8F0',
+                      background: '#0F172A',
+                      marginBottom: 14,
+                      cursor: 'pointer',
+                    }}
+                    title="Click to view full photo"
+                  >
+                    <img
+                      src={resolvedPhotoUrl}
+                      alt="Submitted incident evidence"
+                      style={{
+                        width: '100%',
+                        height: 185,
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        right: 10,
+                        bottom: 10,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 11px',
+                        borderRadius: 999,
+                        background: 'rgba(15, 23, 42, 0.78)',
+                        color: '#FFFFFF',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        backdropFilter: 'blur(6px)',
+                      }}
+                    >
+                      <Maximize2 size={12} />
+                      <span>View Full Photo</span>
+                    </div>
+                    {currentUnrecognized.barangay && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: 10,
+                          bottom: 10,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          padding: '5px 10px',
+                          borderRadius: 999,
+                          background: 'rgba(15, 23, 42, 0.72)',
+                          color: '#F8FAFC',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          backdropFilter: 'blur(6px)',
+                        }}
+                      >
+                        <Camera size={11} />
+                        <span>{currentUnrecognized.barangay}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <p style={{ fontSize: 13.5, color: '#334155', lineHeight: 1.5, margin: '0 0 14px' }}>
+                A report was submitted that could not be confidently identified by the AI system. Inspect the photo above and decide whether to reject or keep this report for review.
               </p>
 
               {/* Current Incident Meta Box */}
@@ -659,6 +739,59 @@ export default function Header({ title, subtitle }: HeaderProps) {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Full-Screen Photo Lightbox for Unrecognized Incident Modal */}
+      {photoLightboxUrl && (
+        <div
+          onClick={() => setPhotoLightboxUrl(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 10050,
+            background: 'rgba(15, 23, 42, 0.88)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setPhotoLightboxUrl(null)}
+            aria-label="Close photo preview"
+            style={{
+              position: 'fixed',
+              top: 20,
+              right: 20,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.16)',
+              border: '1px solid rgba(255,255,255,0.3)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={photoLightboxUrl}
+            alt="Full incident photo"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '92vw',
+              maxHeight: '88vh',
+              borderRadius: 14,
+              objectFit: 'contain',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+            }}
+          />
         </div>
       )}
 

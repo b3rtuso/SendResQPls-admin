@@ -71,6 +71,8 @@ export interface UnrecognizedIncident {
   type: string;
   confidence: string;
   reason?: string;
+  photoUrl?: string;
+  barangay?: string;
 }
 
 export interface NotifItem {
@@ -244,6 +246,8 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               type: inc.aiDetectedType || 'Unrecognized Incident',
               confidence: 'low',
               reason: inc.adminNotes || undefined,
+              photoUrl: inc.photoUrl || undefined,
+              barangay: inc.barangay || inc.formattedAddress || undefined,
             }));
           return [...prev, ...newItems];
         });
@@ -329,6 +333,8 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     type: data.aiDetectedType || 'Unknown',
                     confidence: data.aiConfidence || 'low',
                     reason: data.adminNotes || data.sceneCategory || undefined,
+                    photoUrl: data.photoUrl || undefined,
+                    barangay: data.barangay || undefined,
                   }];
                 });
               }
