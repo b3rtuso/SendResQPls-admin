@@ -130,6 +130,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
         lockIncident(targetIncident.id).catch(() => {});
         updateIncidentStatus(targetIncident.id, {
           status: 'REVIEWING',
+          triageDecision: 'KEPT',
         }).catch(() => {});
 
         showToast({

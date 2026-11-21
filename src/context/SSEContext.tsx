@@ -188,10 +188,24 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const nowMs = Date.now();
       const pendingUnrecognized = incidents.filter((inc: any) => {
         // Backend saves AI-unrecognized / low-confidence reports directly as REVIEWING (or PENDING before triage).
-        // Surface unhandled reports from the last 24h so dispatchers always get the Reject / Keep review modal.
+        // Surface only unhandled, unclaimed reports from the last 24h so once ANY admin accepts/rejects/claims it,
+        // it never triggers again on other admin accounts (e.g. Test vs. MDRRMO).
         const isTriageStatus = inc.status === 'PENDING' || inc.status === 'REVIEWING';
         if (!isTriageStatus) return false;
         if (handledIds.has(inc.id)) return false;
+        if (inc.lockedByAdminId) return false;
+
+        // Exclude if ANY admin has already triaged, accepted, assigned, or annotated this incident in PostgreSQL
+        const hasAdminAction =
+          Array.isArray(inc.activities) &&
+          inc.activities.some((a: any) =>
+            a.type === 'STATUS_CHANGE' ||
+            a.type === 'ASSIGNED' ||
+            a.type === 'ADMIN_NOTE' ||
+            a.type === 'RESOLVED' ||
+            a.type === 'REJECTED'
+          );
+        if (hasAdminAction) return false;
 
         const createdMs = inc.createdAt ? new Date(inc.createdAt).getTime() : 0;
         const isRecent = createdMs > 0 && nowMs - createdMs <= 24 * 60 * 60 * 1000;
@@ -345,9 +359,23 @@ export const SSEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           if (event.event === 'incident_locked') {
             try {
-              const data = JSON.parse(event.data);
-              if (data.lockedByAdminId && data.lockedByAdminId !== localStorage.getItem('userId')) {
-                setUnrecognizedQueue(prev => prev.filter(item => item.id !== data.incidentId));
+              const data = eventData || JSON.parse(event.data);
+              const lockedId = data.incidentId || data.id;
+              if (lockedId && data.lockedByAdminId) {
+                addHandledUnrecognizedId(lockedId);
+                setUnrecognizedQueue(prev => prev.filter(item => item.id !== lockedId));
+              }
+            } catch { /* ignore */ }
+          }
+
+          if (event.event === 'incident_updated' || event.event === 'status_updated') {
+            try {
+              const data = eventData || JSON.parse(event.data);
+              const updatedId = data.id || data.incidentId;
+              if (updatedId) {
+                // Any admin action (Keep for Review, Reject, Dispatch, Resolve) clears the triage modal on all consoles
+                addHandledUnrecognizedId(updatedId);
+                setUnrecognizedQueue(prev => prev.filter(item => item.id !== updatedId));
               }
             } catch { /* ignore */ }
           }
